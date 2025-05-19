@@ -255,6 +255,17 @@
         ]
       ]
     },
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "success": {
       "main": [
         [
@@ -267,17 +278,6 @@
         [
           {
             "node": "Failed Flows",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Execute Workflow Trigger": {
-      "main": [
-        [
-          {
-            "node": "Config",
             "type": "main",
             "index": 0
           }
@@ -324,9 +324,9 @@
         "operation": "get",
         "workflowId": {
           "__rl": true,
-          "value": "r4VezGvhXQDdUTX3",
+          "value": "RZV2cUJb1XqJEXl4",
           "mode": "list",
-          "cachedResultName": "My workflow (#r4VezGvhXQDdUTX3)"
+          "cachedResultName": "GitHub (#RZV2cUJb1XqJEXl4)"
         },
         "requestOptions": {}
       },
@@ -552,15 +552,15 @@
         "operation": "edit",
         "owner": {
           "__rl": true,
-          "mode": "",
-          "value": "={{ $('Config').first().item.repo_owner }}"
+          "value": "={{ $('Config').first().json.repo_owner }}",
+          "mode": ""
         },
         "repository": {
           "__rl": true,
-          "mode": "",
-          "value": "={{ $('Config').first().item.repo_name }}"
+          "value": "={{ $('Config').first().json.repo_name }}",
+          "mode": ""
         },
-        "filePath": "={{ $('Config').first().item.repo_path }}{{ $json.subPath }}{{$('Execute Workflow Trigger').first().json.id}}.json",
+        "filePath": "={{ $('Config').first().json.repo_path }}{{ $json.subPath }}{{$('Execute Workflow Trigger').first().json.id}}.json",
         "fileContent": "={{$('isDiffOrNew').item.json[\"n8n_data_stringy\"]}}",
         "commitMessage": "={{$('Execute Workflow Trigger').first().json.name}} ({{$json.github_status}})"
       },
@@ -765,15 +765,15 @@
         "operation": "get",
         "owner": {
           "__rl": true,
-          "mode": "",
-          "value": "={{ $('Config').first().item.repo_owner }}"
+          "value": "={{ $('Config').first().json.repo_owner }}",
+          "mode": ""
         },
         "repository": {
           "__rl": true,
-          "mode": "",
-          "value": "={{ $('Config').first().item.repo_name }}"
+          "value": "={{ $('Config').first().json.repo_name }}",
+          "mode": ""
         },
-        "filePath": "={{ $('Config').first().item.repo_path }}{{ $('Execute Workflow Trigger').first().json.createdAt.split('-')[0] }}/{{ $('Execute Workflow Trigger').first().json.createdAt.split('-')[1] }}/{{$json.id}}.json",
+        "filePath": "={{ $('Config').first().json.repo_path }}{{ $('Execute Workflow Trigger').first().json.createdAt.split('-')[0] }}/{{ $('Execute Workflow Trigger').first().json.createdAt.split('-')[1] }}/{{$json.id}}.json",
         "asBinaryProperty": false,
         "additionalParameters": {}
       },
@@ -866,6 +866,19 @@
     },
     {
       "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        840
+      ],
+      "id": "47c55ad8-588f-427d-92b6-a375d76d8c2e",
+      "name": "Execute Workflow Trigger"
+    },
+    {
+      "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
@@ -876,7 +889,7 @@
           "conditions": [
             {
               "id": "2b4daaac-0df3-4d57-9c5a-46ea49fccb44",
-              "leftValue": "=$json.success",
+              "leftValue": "=$json.Done",
               "rightValue": "\"true\"",
               "operator": {
                 "type": "string",
@@ -896,19 +909,6 @@
       ],
       "id": "af0e05b0-ba8f-48b6-b4dc-acbc7102bb56",
       "name": "success"
-    },
-    {
-      "parameters": {
-        "inputSource": "passthrough"
-      },
-      "type": "n8n-nodes-base.executeWorkflowTrigger",
-      "typeVersion": 1.1,
-      "position": [
-        60,
-        840
-      ],
-      "id": "47c55ad8-588f-427d-92b6-a375d76d8c2e",
-      "name": "Execute Workflow Trigger"
     }
   ],
   "pinData": {},
@@ -974,6 +974,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-05-19T13:26:11.000Z",
-  "versionId": "11a48918-7211-4677-a74d-1c2d700043db"
+  "updatedAt": "2025-05-19T14:04:25.000Z",
+  "versionId": "c9f8ff90-8730-46eb-b037-952d2a62dd9f"
 }
