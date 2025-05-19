@@ -889,11 +889,12 @@
           "conditions": [
             {
               "id": "2b4daaac-0df3-4d57-9c5a-46ea49fccb44",
-              "leftValue": "=$json.Done",
-              "rightValue": "\"true\"",
+              "leftValue": "={{ $json.Done }}",
+              "rightValue": "=\"true\"",
               "operator": {
-                "type": "string",
-                "operation": "equals"
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
               }
             }
           ],
@@ -974,6 +975,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-05-19T14:04:25.000Z",
-  "versionId": "c9f8ff90-8730-46eb-b037-952d2a62dd9f"
+  "updatedAt": "2025-05-19T14:10:05.000Z",
+  "versionId": "9ea9ea63-13e1-415e-bc66-5628a52eb12c"
 }
