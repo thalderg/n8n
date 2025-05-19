@@ -1,0 +1,335 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "website scraper": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discord": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-05-15T12:38:26.927Z",
+  "id": "r4VezGvhXQDdUTX3",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Scraper Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -220,
+        0
+      ],
+      "id": "40c52063-09d2-4864-92cb-77b15591c21e",
+      "name": "When chat message received",
+      "webhookId": "b69c8d99-5224-4102-bb6e-e32f9dc9be45"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You will receive a URL. Your task is to:\nExamine your memory to see if the url in question was already sent to Notion. In case go to step 4 and skip all the rest of the system message.\n1. use the website_scraper to scrape the provided URL!\n2. analyse the entire article to understand what exactly is trying to accomplish and the most important and relevant information and conclusions\n3. use the save_to_notion tool to save the information to Notion.\n4.  use the discord_notification tool to send a notification that the research is available, along with the notion URL of the created page.\n\n## Tools\nThe save_to_notion tool expects the following parameters:\n* title: the original title of the article\n* url: the URL where this article resides.\n* description: short description of what the article is about\n* publication_date: The date this article was published if available on the page.\n* summary: 1-3 sentence summary capturing the absolute essence of this article\n* objective_title: short title for the section about the problem addressed / objective\n* concepts_title: title for the Key Concepts / Solution Overview section\n* technologies_list: A bulleted list of Technologies, Libraries, Techniques and Patterns Mentioned in the article along with a short description for each.\n* important_code_snippet_description: Description for The most important code snippet in the article. 1-2 sentences of context explaining what this snippet does or why it's important.\n* conclusions: A bulleted item list that summarizes the main conclusions, results, or actionable insights from the article.\n* icon: an emoji that represents this article best!\n\n\nRemember you always have to scrape the website using the website_scraper tool. Don't try to summarize without scraping!\nAlways save the results to notion, PROVIDING ALL REQUIRED FIELDS, using the save_to_notion tool. Only execute this tool once! the notion URL of the created page"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        140,
+        -40
+      ],
+      "id": "77a8b015-2b5b-4d26-8cfc-58005be59c6f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro-preview-03-25",
+        "options": {
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -60,
+        200
+      ],
+      "id": "ace08f39-a1e9-430d-8487-ff0debf997ba",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "mblGrYRvHPPZuvQO",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "website scraper. Scrape a website from its url",
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/content?token=2SJeHlU1Lwdk7565c55f8e5761af29a061185bf3ed98f20f9&stealth=true&blockAds=true",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"url\": \"{url}\",\n  \"gotoOptions\": {\n    \"waitUntil\": \"networkidle0\"\n  }\n}",
+        "placeholderDefinitions": {
+          "values": [
+            {
+              "name": "url",
+              "description": "the url of the website to scrape",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        520,
+        160
+      ],
+      "id": "318cfc34-d6ce-4248-b978-ed2ea903e14f",
+      "name": "website scraper"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "1f50a499-0b36-80af-98e1-cf144062e3cd",
+          "mode": "list",
+          "cachedResultName": "Knowledge List",
+          "cachedResultUrl": "https://www.notion.so/1f50a4990b3680af98e1cf144062e3cd"
+        },
+        "title": "={{ $fromAI('Title', ``, 'string') }}",
+        "simple": false,
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "URL|url",
+              "urlValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('URL', ``, 'string') }}"
+            },
+            {
+              "key": "Description|rich_text",
+              "textContent": "={{ $fromAI('description', 'short description of what the article is about', 'string') }}"
+            },
+            {
+              "key": "Publication Date|date",
+              "includeTime": false,
+              "date": "={{ $fromAI('publication_date', 'The date this article was published if available on the page', 'string') }}"
+            },
+            {
+              "key": "Summary|rich_text",
+              "textContent": "={{ $fromAI('summary', 'sentence summary capturing the absolute essence of this article', 'string') }}"
+            },
+            {
+              "key": "Objective Title|rich_text",
+              "textContent": "={{ $fromAI('objective_title', 'short title for the section about the problem addressed / objective', 'string') }}"
+            },
+            {
+              "key": "Concept Title|rich_text",
+              "textContent": "={{ $fromAI('concepts_title', 'title for the Key Concepts / Solution Overview section', 'string') }}"
+            },
+            {
+              "key": "Technology List|rich_text",
+              "textContent": "={{ $fromAI('technologies_list', 'A bulleted list of Technologies, Libraries, Techniques and Patterns Mentioned in the article along with a short description for each','string') }}"
+            },
+            {
+              "key": "Code Description|rich_text",
+              "textContent": "={{ $fromAI('important_code_snippet_description', 'Description for The most important code snippet in the article. 1 or 2 sentences of context explaining what this snippet does or why it is important.', 'string') }}"
+            },
+            {
+              "key": "Conclusions|rich_text",
+              "textContent": "={{ $fromAI('conclusions', 'A bulleted item list that summarizes the main conclusions, results, or actionable insights from the article!', 'string') }}"
+            },
+            {
+              "key": "Icon|rich_text",
+              "textContent": "={{ $fromAI('icon', 'an emoji that represents this article best!', 'string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 2.2,
+      "position": [
+        240,
+        200
+      ],
+      "id": "4a5ce054-6f9c-447d-8926-1c373a8799a2",
+      "name": "Notion",
+      "credentials": {
+        "notionApi": {
+          "id": "1eMAeENtcYg86x4v",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "={{ $fromAI('Message', 'Confirmation that the research was done along with the url of the notion page where the research is now avaialable', 'string') }}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discordTool",
+      "typeVersion": 2,
+      "position": [
+        380,
+        180
+      ],
+      "id": "e21c2942-27e9-4e28-a63f-5a727f5e4beb",
+      "name": "Discord",
+      "webhookId": "cb5d1d07-4c7a-4397-9daa-7dec44071155",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "E3NkyuvdPhet0GKF",
+          "name": "Discord personal webHook"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        80,
+        180
+      ],
+      "id": "b2cf4319-6764-4206-a1e9-89980a66e62b",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "createdAt": "2025-05-15T12:38:26.937Z",
+      "updatedAt": "2025-05-15T12:38:26.937Z",
+      "role": "workflow:owner",
+      "workflowId": "r4VezGvhXQDdUTX3",
+      "projectId": "rwZmgF8pMPgWdXwq",
+      "project": {
+        "createdAt": "2025-04-20T17:50:23.542Z",
+        "updatedAt": "2025-04-20T17:50:23.542Z",
+        "id": "rwZmgF8pMPgWdXwq",
+        "name": "My project",
+        "type": "team",
+        "icon": {
+          "type": "icon",
+          "value": "layer-group"
+        },
+        "projectRelations": [
+          {
+            "createdAt": "2025-04-20T17:50:23.573Z",
+            "updatedAt": "2025-04-20T17:50:23.573Z",
+            "role": "project:admin",
+            "userId": "5fa1a20a-3425-4556-b8ed-99bee3cedcfb",
+            "projectId": "rwZmgF8pMPgWdXwq",
+            "user": {
+              "createdAt": "2025-04-20T12:39:25.933Z",
+              "updatedAt": "2025-04-29T10:24:02.384Z",
+              "id": "5fa1a20a-3425-4556-b8ed-99bee3cedcfb",
+              "email": "gioben@protonmail.com",
+              "firstName": "Giovanni",
+              "lastName": " ",
+              "personalizationAnswers": null,
+              "settings": {
+                "userActivated": true,
+                "easyAIWorkflowOnboarded": true,
+                "firstSuccessfulWorkflowId": "uanKFNuKmptLq6Yo",
+                "userActivatedAt": 1745445655093,
+                "npsSurvey": {
+                  "responded": true,
+                  "lastShownAt": 1745922235286
+                }
+              },
+              "role": "global:owner",
+              "disabled": false,
+              "mfaEnabled": false,
+              "isPending": false,
+              "isOwner": true
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-05-19T13:26:48.000Z",
+  "versionId": "b77703f1-11dd-4886-898e-409cc629ae8e"
+}
