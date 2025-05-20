@@ -1,0 +1,70 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-05-13T10:18:51.942Z",
+  "id": "znSyg7GAI6MKG5TY",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Workflow 3 Level 2",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "da6119dd-14a4-43e1-b7ec-a49c4005e874",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=The workflow {{$json[\"workflow\"][\"name\"]}} failed, with the error message: {{ $json[\"execution\"][\"error\"][\"message\"] }}. Last node executed: {{ $json[\"execution\"][\"lastNodeExecuted\"] }}. Check this workflow execution here: {{ $json[\"execution\"][\"url\"] }} My Unique ID: 2faefd895b154f8d31b1b4d021e0dd72",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "56eed99d-28dc-4f55-b94c-67b78f9636fd",
+      "name": "Discord",
+      "webhookId": "4b85df73-17ac-4d1c-8a92-6710162c6065",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "VR7qsLnmCSk1uvHy",
+          "name": "Discord Webhook account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-05-13T11:15:55.000Z",
+  "versionId": "a6c349d7-aab6-43ea-acb1-b3adde93e22e"
+}
