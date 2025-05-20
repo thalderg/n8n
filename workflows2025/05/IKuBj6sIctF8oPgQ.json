@@ -1,0 +1,169 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Trisig Portfolio Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trisig Portfolio Scraper": {
+      "main": [
+        [
+          {
+            "node": "HTML portfolio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML portfolio": {
+      "main": [
+        [
+          {
+            "node": "Extract json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract json": {
+      "main": [
+        [
+          {
+            "node": "Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-05-20T10:24:18.665Z",
+  "id": "IKuBj6sIctF8oPgQ",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Trisig Updates Trigger",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        -60
+      ],
+      "id": "5b0a4ab5-f4f7-48af-a077-3292ab51e20b",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/content?token=2SJeHlU1Lwdk7565c55f8e5761af29a061185bf3ed98f20f9&stealth=true&blockAds=true",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"url\": \"https://trisigma.ai/portfolio\",\n  \"gotoOptions\": {\n    \"waitUntil\": \"networkidle0\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        60,
+        -60
+      ],
+      "id": "34af0f10-2591-4ac8-8816-626e5b927c01",
+      "name": "Trisig Portfolio Scraper"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "row",
+              "cssSelector": ".portfolio .table-container"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        -60
+      ],
+      "id": "43d8ab23-d0a0-4677-8ff2-6c58b2164b57",
+      "name": "HTML portfolio"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simple function to parse the row data in n8n\nfunction parseRowData(items) {\n  // This will hold our new items\n  const newItems = [];\n  \n  // Process each input item\n  for (const item of items) {\n    // Get the raw data from the item\n    const rowData = item.json.row;\n    \n    // Split the data by new lines\n    const lines = rowData.split('\\n');\n    \n    // Get the column names from the first line\n    const columns = lines[0].split(/\\s+/).filter(col => col.trim() !== '');\n    \n    // Create a string from all the data rows (all lines except the header)\n    const allDataText = lines.slice(1).join(' ');\n    \n    // Find all dates in DD.MM.YYYY format - these mark the start of each row\n    const dateRegex = /\\b(\\d{2}\\.\\d{2}\\.\\d{4})\\b/g;\n    let dateMatch;\n    let startPositions = [];\n    \n    // Find the position of each date in the text\n    while ((dateMatch = dateRegex.exec(allDataText)) !== null) {\n      startPositions.push(dateMatch.index);\n    }\n    \n    // Extract each row's text using the date positions\n    for (let i = 0; i < startPositions.length; i++) {\n      const start = startPositions[i];\n      // If this is the last date, go to the end of text, otherwise to the next date\n      const end = (i === startPositions.length - 1) ? \n                  allDataText.length : \n                  startPositions[i + 1];\n      \n      // Extract this row's text\n      const rowText = allDataText.substring(start, end).trim();\n      \n      // Create an object for this row\n      const rowObject = {};\n      \n      // Extract date (DD.MM.YYYY)\n      const date = rowText.match(/\\b(\\d{2}\\.\\d{2}\\.\\d{4})\\b/);\n      if (date) rowObject['Date'] = date[1];\n      \n      // Extract token (letters after the date)\n      const token = rowText.match(/\\d{2}\\.\\d{2}\\.\\d{4}\\s+([A-Za-z]+)/);\n      if (token) rowObject['Token'] = token[1];\n      \n      // Extract contract address (long string of letters and numbers)\n      const ca = rowText.match(/([0-9a-zA-Z]{40,}|[0-9a-zA-Z]+pump)/);\n      if (ca) rowObject['CA'] = ca[0];\n      \n      // Extract investment amount ($ followed by numbers)\n      const investment = rowText.match(/\\$(\\d+(?:\\.\\d+)?)/);\n      if (investment) rowObject['Investment Amount'] = '$' + investment[1];\n      \n      // Extract values ending with K or M (e.g., 477.00K, 13.72M)\n      const kAndMValues = rowText.match(/(\\d+(?:\\.\\d+)?[KM])/g) || [];\n      \n      // Map these values to columns in order\n      if (kAndMValues.length >= 1) rowObject['Investment Cap'] = kAndMValues[0];\n      if (kAndMValues.length >= 2) rowObject['ATH'] = kAndMValues[1];\n      if (kAndMValues.length >= 3) rowObject['Current MC'] = kAndMValues[2];\n      \n      // Extract ratio (format: xNN.NN)\n      const ratio = rowText.match(/x(\\d+(?:\\.\\d+)?)/);\n      if (ratio) rowObject['ATH/Investment Cap'] = 'x' + ratio[1];\n      \n      // Extract current balance ($ followed by number and K)\n      const balance = rowText.match(/\\$(\\d+(?:\\.\\d+)?K)/);\n      if (balance) rowObject['Current Balance'] = '$' + balance[1];\n      \n      // Add this row as a new item\n      newItems.push({ json: rowObject });\n    }\n  }\n  \n  return newItems;\n}\n\n// Run the function and return the results\nreturn parseRowData($input.all());\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        -60
+      ],
+      "id": "80450e6e-90d2-43a2-b5d9-6920de8bdccb",
+      "name": "Extract json"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "1f50a499-0b36-81da-abbc-d02a2ce427ff",
+          "mode": "list",
+          "cachedResultName": "Income (Monthly)",
+          "cachedResultUrl": "https://www.notion.so/1f50a4990b3681daabbcd02a2ce427ff"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        700,
+        -60
+      ],
+      "id": "459d1f0e-b7a4-4b3d-93b6-f11ef3c124e9",
+      "name": "Notion",
+      "credentials": {
+        "notionApi": {
+          "id": "1eMAeENtcYg86x4v",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-05-20T13:35:47.000Z",
+  "versionId": "6306e7c6-ee01-43ea-a981-58f3ba07217f"
+}
