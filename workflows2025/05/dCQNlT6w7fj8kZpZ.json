@@ -1,0 +1,288 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Airtable",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Airtable": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Airtable1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-05-13T08:35:05.034Z",
+  "id": "dCQNlT6w7fj8kZpZ",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Workflow 1 Level 2",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -380,
+        -40
+      ],
+      "id": "16525ca7-ecc9-430e-a2a5-eb66c9ae2a80",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appQcpmA5mU2pjsh9",
+          "mode": "list",
+          "cachedResultName": "n8n beginner course",
+          "cachedResultUrl": "https://airtable.com/appQcpmA5mU2pjsh9"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbliWokd7yZLP8uhv",
+          "mode": "list",
+          "cachedResultName": "customers",
+          "cachedResultUrl": "https://airtable.com/appQcpmA5mU2pjsh9/tbliWokd7yZLP8uhv"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        20,
+        -160
+      ],
+      "id": "93742c03-86e1-47ad-82e2-494ed2fb3309",
+      "name": "Airtable",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "aR2eRiONnse3ODUc",
+          "name": "Airtable Personal Access Token account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://restcountries.com/v3.1/all",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        60,
+        80
+      ],
+      "id": "0a617d7a-198c-4f05-aada-e0329971d4d9",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "advanced": true,
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "customerCountry",
+              "field2": "name.common"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        440,
+        -40
+      ],
+      "id": "b76cf8a8-540c-446c-bc8d-2d209f5ecd65",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appQcpmA5mU2pjsh9",
+          "mode": "list",
+          "cachedResultName": "n8n beginner course",
+          "cachedResultUrl": "https://airtable.com/appQcpmA5mU2pjsh9"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbliWokd7yZLP8uhv",
+          "mode": "list",
+          "cachedResultName": "customers",
+          "cachedResultUrl": "https://airtable.com/appQcpmA5mU2pjsh9/tbliWokd7yZLP8uhv"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "customerID": "={{ $json.customerID }}",
+            "id": "={{ $json.id }}",
+            "customerCountry": "={{ $json.customerCountry }}",
+            "region": "={{ $json.region }}",
+            "subregion": "={{ $json.subregion }}",
+            "customerEmail": "={{ $json.customerEmail }}",
+            "customerSince": "={{ $json.customerSince }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "customerID",
+              "displayName": "customerID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "customerCountry",
+              "displayName": "customerCountry",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "customerEmail",
+              "displayName": "customerEmail",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "customerSince",
+              "displayName": "customerSince",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "region",
+              "displayName": "region",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "subregion",
+              "displayName": "subregion",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        700,
+        -40
+      ],
+      "id": "d6927913-569f-44d0-8026-7073ab1700d3",
+      "name": "Airtable1",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "aR2eRiONnse3ODUc",
+          "name": "Airtable Personal Access Token account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-05-13T09:20:51.000Z",
+  "versionId": "27cb9bb6-c33f-437c-ae58-c7afce541fa5"
+}
