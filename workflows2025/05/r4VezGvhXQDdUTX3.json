@@ -274,59 +274,6 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "shared": [
-    {
-      "createdAt": "2025-05-15T12:38:26.937Z",
-      "updatedAt": "2025-05-15T12:38:26.937Z",
-      "role": "workflow:owner",
-      "workflowId": "r4VezGvhXQDdUTX3",
-      "projectId": "rwZmgF8pMPgWdXwq",
-      "project": {
-        "createdAt": "2025-04-20T17:50:23.542Z",
-        "updatedAt": "2025-04-20T17:50:23.542Z",
-        "id": "rwZmgF8pMPgWdXwq",
-        "name": "My project",
-        "type": "team",
-        "icon": {
-          "type": "icon",
-          "value": "layer-group"
-        },
-        "projectRelations": [
-          {
-            "createdAt": "2025-04-20T17:50:23.573Z",
-            "updatedAt": "2025-04-20T17:50:23.573Z",
-            "role": "project:admin",
-            "userId": "5fa1a20a-3425-4556-b8ed-99bee3cedcfb",
-            "projectId": "rwZmgF8pMPgWdXwq",
-            "user": {
-              "createdAt": "2025-04-20T12:39:25.933Z",
-              "updatedAt": "2025-04-29T10:24:02.384Z",
-              "id": "5fa1a20a-3425-4556-b8ed-99bee3cedcfb",
-              "email": "gioben@protonmail.com",
-              "firstName": "Giovanni",
-              "lastName": " ",
-              "personalizationAnswers": null,
-              "settings": {
-                "userActivated": true,
-                "easyAIWorkflowOnboarded": true,
-                "firstSuccessfulWorkflowId": "uanKFNuKmptLq6Yo",
-                "userActivatedAt": 1745445655093,
-                "npsSurvey": {
-                  "responded": true,
-                  "lastShownAt": 1745922235286
-                }
-              },
-              "role": "global:owner",
-              "disabled": false,
-              "mfaEnabled": false,
-              "isPending": false,
-              "isOwner": true
-            }
-          }
-        ]
-      }
-    }
-  ],
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
