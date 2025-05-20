@@ -1,0 +1,71 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-04-29T10:13:09.032Z",
+  "id": "grZqSy719R58QAs9",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Level2 Error Trigger",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "18895607-2228-40e2-a714-a68f12bc812a",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "sendTo": "gioben@protonmail.com",
+        "subject": "error",
+        "message": "=\nworkflow: {{$json[\"workflow\"][\"name\"]}}\nError Message: {{ $json[\"execution\"][\"error\"][\"message\"] }}\nNode: {{ $json[\"execution\"][\"lastNodeExecuted\"] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        220,
+        0
+      ],
+      "id": "91d155ea-e1db-4831-be12-f2acef55c0d5",
+      "name": "Gmail",
+      "webhookId": "eb3c7f7d-ad6d-48f7-8ee6-bed4b5fcedc8",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MBbsMTdx5QkzSA2Z",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-05-20T09:17:19.000Z",
+  "versionId": "9c3463df-ace9-4c4d-a924-7be1b994f3ef"
+}
