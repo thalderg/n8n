@@ -1,0 +1,125 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-04-20T13:17:59.376Z",
+  "id": "aryl2NIGjRnAsvgK",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Simple OpenAI agent",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "5eda8ca8-449f-469c-8929-1cab8515d83a",
+      "name": "When chat message received",
+      "webhookId": "d56d6648-00fd-4bd2-9990-e303e87e9c92"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a brilliant poet who always replies in rhyming couplets\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.8,
+      "position": [
+        220,
+        0
+      ],
+      "id": "aa9bce84-0f41-406c-9d38-f541da46653c",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {
+          "responseFormat": "text"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        180,
+        220
+      ],
+      "id": "84f80878-7a96-40b5-bcf1-005627fa7e14",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "LGtEZNhlH7HumV27",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        360,
+        220
+      ],
+      "id": "7a2ee97b-0044-48a9-b065-99b31e11764c",
+      "name": "Simple Memory"
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-05-20T09:19:08.000Z",
+  "versionId": "bd0c5771-e966-4071-ade0-60de5868fc19"
+}
