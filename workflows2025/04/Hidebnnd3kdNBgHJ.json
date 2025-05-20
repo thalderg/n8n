@@ -1,0 +1,122 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "XML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-04-28T08:32:24.006Z",
+  "id": "Hidebnnd3kdNBgHJ",
+  "meta": null,
+  "name": "Level2 Convert File",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -400,
+        -20
+      ],
+      "id": "2d1e8db8-e077-4795-9f4e-01483e0323de",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "var myContacts = [\n\t{\n\t\tjson: {\n\t\t\tname: 'Alice',\n\t\t\temail: {\n\t\t\t\tpersonal: 'alice@home.com',\n\t\t\t\twork: 'alice@wonderland.org'\n\t\t\t},\n\t\t}\n\t},\n\t{\n\t\tjson: {\n\t\t\tname: 'Bob',\n\t\t\temail: {\n\t\t\t\tpersonal: 'bob@mail.com',\n\t\t\t\twork: 'contact@thebuilder.com'\n\t\t\t\t},\n\t\t}\n\t},\n];\n\nreturn myContacts;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "id": "c522c3e0-2cad-46b5-95cd-4c7551ed537c",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nlet items = $input.all();\n//items.forEach((item, index) => {\n//  items[index].json.workEmail = item.json.email['work'];\n\n// });\n\nfor (const item of items) {\n  item.json.workEmail = item.json.email['work'];\n}\n\nreturn items;\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "id": "b8fa51e3-5bae-4b35-874f-e5e7780723d4",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "url": "https://pokeapi.co/api/v2/pokemon",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -260,
+        240
+      ],
+      "id": "09d3dfca-99e6-41b5-a492-a0a99ba03178",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "mode": "jsonToxml",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        80,
+        140
+      ],
+      "id": "0d691437-a7e4-45d6-899c-87befa3918ca",
+      "name": "XML"
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-05-20T09:18:33.000Z",
+  "versionId": "95336eec-5304-4305-9542-6763d16660e6"
+}
