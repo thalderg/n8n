@@ -102,7 +102,7 @@
       "main": [
         [
           {
-            "node": "Loop Over Items",
+            "node": "Has Error",
             "type": "main",
             "index": 0
           }
@@ -248,7 +248,14 @@
       "main": [
         [
           {
-            "node": "success",
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code",
             "type": "main",
             "index": 0
           }
@@ -266,18 +273,27 @@
         ]
       ]
     },
-    "success": {
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Failed Flows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Completed Notification": {
+      "main": [
+        []
+      ]
+    },
+    "Has Error": {
       "main": [
         [
           {
             "node": "Loop Over Items",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Failed Flows",
             "type": "main",
             "index": 0
           }
@@ -321,13 +337,7 @@
     },
     {
       "parameters": {
-        "operation": "get",
-        "workflowId": {
-          "__rl": true,
-          "value": "RZV2cUJb1XqJEXl4",
-          "mode": "list",
-          "cachedResultName": "GitHub (#RZV2cUJb1XqJEXl4)"
-        },
+        "filters": {},
         "requestOptions": {}
       },
       "id": "acb4887b-e718-45b1-bc94-7c97acfe5d20",
@@ -708,7 +718,7 @@
           "value": "#all-n8n",
           "mode": "name"
         },
-        "text": "=✅ Backup has completed - {{ $('n8n').all().length }} workflows have been processed.",
+        "text": "=={{ $json.hasError\n  ? \"⚠️ Backup completed with issues - \" + $('n8n').all().length + \" workflows processed, some encountered errors.\"\n  : \"✅ Backup has completed successfully - \" + $('n8n').all().length + \" workflows have been processed.\" }}",
         "otherOptions": {}
       },
       "id": "b5069d63-e792-480e-a509-1780105d8940",
@@ -737,7 +747,7 @@
           "value": "#all-n8n",
           "mode": "name"
         },
-        "text": "=:x: Failed to backup {{ $('Loop Over Items').item.json.id }}",
+        "text": "==:x: Failed to backup {{ $('Loop Over Items').item.json.id }} ({{ $('Loop Over Items').item.json.name }})\n\n*Error Details:*\n{{ $json.errorDetails.errorMessage }}\n\n*Last Node Executed:*\n{{ $json.errorDetails.lastNode }}\n\n*Links:*\n<{{ $json.errorDetails.workflowURL }}|View Workflow> | <{{ $json.errorDetails.executionURL }}|View Execution>",
         "otherOptions": {
           "includeLinkToWorkflow": false
         }
@@ -746,7 +756,7 @@
       "name": "Failed Flows",
       "type": "n8n-nodes-base.slack",
       "position": [
-        1740,
+        1660,
         200
       ],
       "webhookId": "2a092edb-de12-490f-931b-34d70e7d7696",
@@ -862,7 +872,9 @@
         180
       ],
       "id": "91ee001b-ace3-4244-8365-b26374f11e0f",
-      "name": "Execute Workflow1"
+      "name": "Execute Workflow1",
+      "onError": "continueErrorOutput",
+      "notes": "if there is an error, continues and pass it on slack"
     },
     {
       "parameters": {
@@ -879,37 +891,40 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "2b4daaac-0df3-4d57-9c5a-46ea49fccb44",
-              "leftValue": "={{ $json.Done }}",
-              "rightValue": "=\"true\"",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
+        "jsCode": "// Check if the input has error information\nif ($input.item.json.error || $input.item.json.lastNodeExecuted) {\n  // Create a rich error object\n  $input.item.json.errorDetails = {\n    lastNode: $input.item.json.lastNodeExecuted || \"Unknown\",\n    errorMessage: $input.item.json.error || \"Unknown error\",\n    workflowId: $workflow.id,\n    executionId: $execution.id,\n    workflowURL: `https://gioben.app.n8n.cloud/workflow/${$workflow.id}`,\n    executionURL:   `https://gioben.app.n8n.cloud/workflow/${$workflow.id}/executions/${$execution.id}`\n  };\n}\nreturn $input.item;"
       },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
       "position": [
         1480,
-        180
+        200
       ],
-      "id": "af0e05b0-ba8f-48b6-b4dc-acbc7102bb56",
-      "name": "success"
+      "id": "b67efe13-b17d-4d5d-955c-69aedcdace73",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e7043922-7293-4844-bd46-86b5043b22da",
+              "name": "hasError",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1840,
+        200
+      ],
+      "id": "3f644648-5cb4-4161-990e-3623deb31992",
+      "name": "Has Error"
     }
   ],
   "pinData": {},
@@ -919,62 +934,9 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "shared": [
-    {
-      "createdAt": "2025-05-19T10:24:27.749Z",
-      "updatedAt": "2025-05-19T10:24:27.749Z",
-      "role": "workflow:owner",
-      "workflowId": "RZV2cUJb1XqJEXl4",
-      "projectId": "rwZmgF8pMPgWdXwq",
-      "project": {
-        "createdAt": "2025-04-20T17:50:23.542Z",
-        "updatedAt": "2025-04-20T17:50:23.542Z",
-        "id": "rwZmgF8pMPgWdXwq",
-        "name": "My project",
-        "type": "team",
-        "icon": {
-          "type": "icon",
-          "value": "layer-group"
-        },
-        "projectRelations": [
-          {
-            "createdAt": "2025-04-20T17:50:23.573Z",
-            "updatedAt": "2025-04-20T17:50:23.573Z",
-            "role": "project:admin",
-            "userId": "5fa1a20a-3425-4556-b8ed-99bee3cedcfb",
-            "projectId": "rwZmgF8pMPgWdXwq",
-            "user": {
-              "createdAt": "2025-04-20T12:39:25.933Z",
-              "updatedAt": "2025-04-29T10:24:02.384Z",
-              "id": "5fa1a20a-3425-4556-b8ed-99bee3cedcfb",
-              "email": "gioben@protonmail.com",
-              "firstName": "Giovanni",
-              "lastName": " ",
-              "personalizationAnswers": null,
-              "settings": {
-                "userActivated": true,
-                "easyAIWorkflowOnboarded": true,
-                "firstSuccessfulWorkflowId": "uanKFNuKmptLq6Yo",
-                "userActivatedAt": 1745445655093,
-                "npsSurvey": {
-                  "responded": true,
-                  "lastShownAt": 1745922235286
-                }
-              },
-              "role": "global:owner",
-              "disabled": false,
-              "mfaEnabled": false,
-              "isPending": false,
-              "isOwner": true
-            }
-          }
-        ]
-      }
-    }
-  ],
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-05-19T14:10:05.000Z",
-  "versionId": "9ea9ea63-13e1-415e-bc66-5628a52eb12c"
+  "updatedAt": "2025-05-20T09:02:16.000Z",
+  "versionId": "ccfaffef-077d-482e-ae9a-dbfe3ad1a50a"
 }
