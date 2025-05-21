@@ -6,7 +6,7 @@
       "main": [
         [
           {
-            "node": "Trisig Portfolio Scraper",
+            "node": "Trigig Head Data",
             "type": "main",
             "index": 0
           }
@@ -28,18 +28,100 @@
       "main": [
         [
           {
-            "node": "Extract json",
+            "node": "Extract portfolio",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Extract json": {
+    "Updated etag?": {
       "main": [
         [
           {
-            "node": "Notion",
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Trisig Portfolio Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigig Head Data": {
+      "main": [
+        [
+          {
+            "node": "Updated etag?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Date & Time": {
+      "main": [
+        [
+          {
+            "node": "Notion1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Extract portfolio": {
+      "main": [
+        [
+          {
+            "node": "Date & Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
             "type": "main",
             "index": 0
           }
@@ -49,6 +131,7 @@
   },
   "createdAt": "2025-05-20T10:24:18.665Z",
   "id": "IKuBj6sIctF8oPgQ",
+  "isArchived": false,
   "meta": {
     "templateCredsSetupCompleted": true
   },
@@ -67,8 +150,8 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        -160,
-        -60
+        -400,
+        -400
       ],
       "id": "5b0a4ab5-f4f7-48af-a077-3292ab51e20b",
       "name": "Schedule Trigger"
@@ -115,34 +198,60 @@
     },
     {
       "parameters": {
-        "jsCode": "// Simple function to parse the row data in n8n\nfunction parseRowData(items) {\n  // This will hold our new items\n  const newItems = [];\n  \n  // Process each input item\n  for (const item of items) {\n    // Get the raw data from the item\n    const rowData = item.json.row;\n    \n    // Split the data by new lines\n    const lines = rowData.split('\\n');\n    \n    // Get the column names from the first line\n    const columns = lines[0].split(/\\s+/).filter(col => col.trim() !== '');\n    \n    // Create a string from all the data rows (all lines except the header)\n    const allDataText = lines.slice(1).join(' ');\n    \n    // Find all dates in DD.MM.YYYY format - these mark the start of each row\n    const dateRegex = /\\b(\\d{2}\\.\\d{2}\\.\\d{4})\\b/g;\n    let dateMatch;\n    let startPositions = [];\n    \n    // Find the position of each date in the text\n    while ((dateMatch = dateRegex.exec(allDataText)) !== null) {\n      startPositions.push(dateMatch.index);\n    }\n    \n    // Extract each row's text using the date positions\n    for (let i = 0; i < startPositions.length; i++) {\n      const start = startPositions[i];\n      // If this is the last date, go to the end of text, otherwise to the next date\n      const end = (i === startPositions.length - 1) ? \n                  allDataText.length : \n                  startPositions[i + 1];\n      \n      // Extract this row's text\n      const rowText = allDataText.substring(start, end).trim();\n      \n      // Create an object for this row\n      const rowObject = {};\n      \n      // Extract date (DD.MM.YYYY)\n      const date = rowText.match(/\\b(\\d{2}\\.\\d{2}\\.\\d{4})\\b/);\n      if (date) rowObject['Date'] = date[1];\n      \n      // Extract token (letters after the date)\n      const token = rowText.match(/\\d{2}\\.\\d{2}\\.\\d{4}\\s+([A-Za-z]+)/);\n      if (token) rowObject['Token'] = token[1];\n      \n      // Extract contract address (long string of letters and numbers)\n      const ca = rowText.match(/([0-9a-zA-Z]{40,}|[0-9a-zA-Z]+pump)/);\n      if (ca) rowObject['CA'] = ca[0];\n      \n      // Extract investment amount ($ followed by numbers)\n      const investment = rowText.match(/\\$(\\d+(?:\\.\\d+)?)/);\n      if (investment) rowObject['Investment Amount'] = '$' + investment[1];\n      \n      // Extract values ending with K or M (e.g., 477.00K, 13.72M)\n      const kAndMValues = rowText.match(/(\\d+(?:\\.\\d+)?[KM])/g) || [];\n      \n      // Map these values to columns in order\n      if (kAndMValues.length >= 1) rowObject['Investment Cap'] = kAndMValues[0];\n      if (kAndMValues.length >= 2) rowObject['ATH'] = kAndMValues[1];\n      if (kAndMValues.length >= 3) rowObject['Current MC'] = kAndMValues[2];\n      \n      // Extract ratio (format: xNN.NN)\n      const ratio = rowText.match(/x(\\d+(?:\\.\\d+)?)/);\n      if (ratio) rowObject['ATH/Investment Cap'] = 'x' + ratio[1];\n      \n      // Extract current balance ($ followed by number and K)\n      const balance = rowText.match(/\\$(\\d+(?:\\.\\d+)?K)/);\n      if (balance) rowObject['Current Balance'] = '$' + balance[1];\n      \n      // Add this row as a new item\n      newItems.push({ json: rowObject });\n    }\n  }\n  \n  return newItems;\n}\n\n// Run the function and return the results\nreturn parseRowData($input.all());\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        480,
-        -60
-      ],
-      "id": "80450e6e-90d2-43a2-b5d9-6920de8bdccb",
-      "name": "Extract json"
-    },
-    {
-      "parameters": {
         "resource": "databasePage",
         "databaseId": {
           "__rl": true,
-          "value": "1f50a499-0b36-81da-abbc-d02a2ce427ff",
+          "value": "1f90a499-0b36-800e-82d3-c246868f382a",
           "mode": "list",
-          "cachedResultName": "Income (Monthly)",
-          "cachedResultUrl": "https://www.notion.so/1f50a4990b3681daabbcd02a2ce427ff"
+          "cachedResultName": "Portfolio",
+          "cachedResultUrl": "https://www.notion.so/1f90a4990b36800e82d3c246868f382a"
+        },
+        "title": "={{ $json.Token }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Date|date",
+              "includeTime": false,
+              "date": "={{ $json.Date }}"
+            },
+            {
+              "key": "CA|rich_text",
+              "textContent": "={{ $json.CA }}"
+            },
+            {
+              "key": "Investment Amount|rich_text",
+              "richText": "={{ false }}",
+              "textContent": "={{ $json[\"Investment Amount\"] }}"
+            },
+            {
+              "key": "ATH|rich_text",
+              "textContent": "={{ $json.ATH }}"
+            },
+            {
+              "key": "Current MC|rich_text",
+              "textContent": "={{ $json[\"Current MC\"] }}"
+            },
+            {
+              "key": "Investment CAP|rich_text",
+              "textContent": "={{ $json[\"Investment Cap\"] }}"
+            },
+            {
+              "key": "Current Balance|rich_text",
+              "textContent": "={{ $json[\"Current Balance\"] }}"
+            },
+            {
+              "key": "ATH/Investment CAP|rich_text",
+              "textContent": "={{ $json[\"ATH/Investment Cap\"] }}"
+            }
+          ]
         },
         "options": {}
       },
       "type": "n8n-nodes-base.notion",
       "typeVersion": 2.2,
       "position": [
-        700,
-        -60
+        880,
+        -240
       ],
       "id": "459d1f0e-b7a4-4b3d-93b6-f11ef3c124e9",
       "name": "Notion",
@@ -152,6 +261,311 @@
           "name": "Notion account"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get static data for the workflow\nconst workflowStaticData = $getWorkflowStaticData('global');\n\n\n// Extract current ETag from HTTP response headers\nconst currentETag = $input.first().json.headers.etag;\n\n// Get previously stored ETag (will be undefined on first run)\nconst previousETag = workflowStaticData.previousETag;\n\n// Store current ETag for next run\nworkflowStaticData.previousETag = currentETag;\n\n// Return both ETags and comparison result for the IF node\nreturn {\n  json: {\n    currentETag,\n    previousETag,\n    isChanged: !previousETag || currentETag !== previousETag\n  }\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        80,
+        -320
+      ],
+      "id": "45eedd12-99c9-4ea6-b994-51c55d9274f0",
+      "name": "Updated etag?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a3ad8c42-88f9-4373-85c4-2b86dfdd1f16",
+              "leftValue": "={{ $json.isChanged }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        -300
+      ],
+      "id": "f3f10a05-6dc8-4610-b336-46b2aad3dd01",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "HEAD",
+        "url": "https://trisigma.ai/portfolio",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -160,
+        -360
+      ],
+      "id": "25014f3b-2191-4c5d-9fea-2a1e9f99e98a",
+      "name": "Trigig Head Data"
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $json.Date }}",
+        "outputFieldName": "=Date",
+        "options": {
+          "includeInputFields": true,
+          "fromFormat": "={{ \"dd.MM.yyyy\" }}"
+        }
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        680,
+        -60
+      ],
+      "id": "832eebf3-66f5-4cdc-ae2a-72c54ca3681c",
+      "name": "Date & Time"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simplified n8n node code for structured data extraction\nfunction extractData() {\n  const columns = [\"Date\", \"Token\", \"CA\", \"Investment Amount\", \"Investment CAP\", \"ATH\", \"ATH/Investment CAP\", \"Current MC\", \"Current Balance\"];\n  const result = [];\n  \n  // Get the raw text and normalize whitespace\n  const rawText = items[0].json.row;\n  \n  // Use date pattern (DD.MM.YYYY) to identify the start of new rows\n  const datePattern = /\\d{2}\\.\\d{2}\\.\\d{4}/g;\n  const dates = [...rawText.matchAll(datePattern)];\n  \n  for (let i = 0; i < dates.length; i++) {\n    const date = dates[i][0];\n    const startIndex = dates[i].index;\n    const endIndex = (i < dates.length - 1) ? dates[i + 1].index : rawText.length;\n    \n    // Extract the complete text for this row\n    let rowText = rawText.substring(startIndex, endIndex).trim();\n    \n    // Split the row by spaces and line breaks, and filter out empty elements\n    let rowElements = rowText.split(/[\\s\\n]+/).filter(element => element);\n    \n    // Create an object for this row\n    const rowData = {};\n    \n    // First element is always the date\n    rowData[columns[0]] = date;\n    \n    // Remove the date from the elements array\n    const dateIndex = rowElements.indexOf(date);\n    if (dateIndex !== -1) {\n      rowElements.splice(dateIndex, 1);\n    }\n    \n    // Assign the remaining elements to their respective columns\n    for (let j = 1; j < columns.length && j-1 < rowElements.length; j++) {\n      rowData[columns[j]] = rowElements[j-1];\n    }\n    \n    result.push(rowData);\n  }\n  return result;\n  // return [{ json: {data:result} }];\n}\n\n// Execute the function\nreturn extractData();\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        -60
+      ],
+      "id": "80450e6e-90d2-43a2-b5d9-6920de8bdccb",
+      "name": "Extract portfolio"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "1f90a499-0b36-800e-82d3-c246868f382a",
+          "mode": "list",
+          "cachedResultName": "Portfolio",
+          "cachedResultUrl": "https://www.notion.so/1f90a4990b36800e82d3c246868f382a"
+        },
+        "simple": false,
+        "filterType": "json",
+        "filterJson": "={\n  \"property\": \"CA\",\n  \"rich_text\": {\n    \"equals\": \"{{ $json.CA }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        900,
+        -60
+      ],
+      "id": "10a0137d-5471-46ab-9141-98cf8f986561",
+      "name": "Notion1",
+      "executeOnce": false,
+      "credentials": {
+        "notionApi": {
+          "id": "1eMAeENtcYg86x4v",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "4f97daeb-ad4b-4c6f-ac1a-c856a728662e",
+              "leftValue": "",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1080,
+        -320
+      ],
+      "id": "5be59f39-dc4a-4068-a3e6-e1a76abffaa7",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "resource": "database",
+        "operation": "search",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        520,
+        -240
+      ],
+      "id": "3511f942-c095-4b14-9b6f-a78580e1c874",
+      "name": "Notion2",
+      "credentials": {
+        "notionApi": {
+          "id": "1eMAeENtcYg86x4v",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "advanced": true,
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "={{ $json.Token }}",
+              "field2": "={{ $json.Token }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        1100,
+        240
+      ],
+      "id": "b4b5eb54-0c12-42f6-b289-b2c8974d70bb",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ae84d22e-f605-411c-a6d3-d56dec31e64d",
+              "name": "=CA",
+              "value": "={{ $json.properties.CA.rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "1d1758cc-8e20-414b-97c2-aa23865c5a4d",
+              "name": "Token",
+              "value": "={{ $json.properties.Token.title[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "7397d23b-d658-436e-9484-9701794d6360",
+              "name": "Investment CAP",
+              "value": "={{ $json.properties[\"Investment CAP\"].rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "5a5bfc20-4755-40d1-91ca-e5972b8cc947",
+              "name": "ATH/Investment CAP",
+              "value": "={{ $json.properties[\"ATH/Investment CAP\"].rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "43f3260e-b4dd-4d6a-80dc-62e484a791f3",
+              "name": "ATH",
+              "value": "={{ $json.properties.ATH.rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "1e3ef687-ae45-43d0-b9b5-003f968d6c9a",
+              "name": "Current MC",
+              "value": "={{ $json.properties[\"Current MC\"].rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "804dd039-baf5-4f55-9e30-f8c4263a610d",
+              "name": "Investment Amount",
+              "value": "={{ $json.properties[\"Investment Amount\"].rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "1c72ee46-c3e5-417d-9d2b-f27639a5413b",
+              "name": "Date",
+              "value": "={{ $json.properties.Date.date.start }}",
+              "type": "string"
+            },
+            {
+              "id": "5da7aa55-f022-48f1-ae5c-9b9e4641272e",
+              "name": "Current Balance",
+              "value": "={{ $json.properties[\"Current Balance\"].rich_text[0].text.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1120,
+        -60
+      ],
+      "id": "2a7fb9ee-3af7-4ed4-9357-6e0835f1e6f5",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8d5c220c-b35b-42b0-b234-cf762e640c3d",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1340,
+        -60
+      ],
+      "id": "c4f58302-9aab-4996-9d87-dd1dff69a7fb",
+      "name": "Edit Fields1"
     }
   ],
   "pinData": {},
@@ -164,6 +578,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-05-20T13:35:47.000Z",
-  "versionId": "6306e7c6-ee01-43ea-a981-58f3ba07217f"
+  "updatedAt": "2025-05-21T15:37:05.000Z",
+  "versionId": "7375e144-c661-484d-a95e-ee568ffbcf85"
 }
