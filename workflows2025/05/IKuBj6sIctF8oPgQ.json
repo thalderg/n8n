@@ -68,14 +68,53 @@
         ]
       ]
     },
-    "Date & Time": {
+    "Extract portfolio": {
       "main": [
         [
           {
-            "node": "Notion1",
+            "node": "Standard Date",
             "type": "main",
             "index": 0
-          },
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Notion3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Portofolio": {
+      "main": [
+        [
+          {
+            "node": "Transform",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform": {
+      "main": [
+        [
+          {
+            "node": "Transform Date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Date": {
+      "main": [
+        [
           {
             "node": "Merge",
             "type": "main",
@@ -84,42 +123,14 @@
         ]
       ]
     },
-    "Extract portfolio": {
+    "Standard Date": {
       "main": [
         [
           {
-            "node": "Date & Time",
+            "node": "Retrieve Portofolio",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Notion1": {
-      "main": [
-        [
-          {
-            "node": "Edit Fields",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Edit Fields": {
-      "main": [
-        [
-          {
-            "node": "Edit Fields1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Edit Fields1": {
-      "main": [
-        [
+          },
           {
             "node": "Merge",
             "type": "main",
@@ -332,25 +343,6 @@
     },
     {
       "parameters": {
-        "operation": "formatDate",
-        "date": "={{ $json.Date }}",
-        "outputFieldName": "=Date",
-        "options": {
-          "includeInputFields": true,
-          "fromFormat": "={{ \"dd.MM.yyyy\" }}"
-        }
-      },
-      "type": "n8n-nodes-base.dateTime",
-      "typeVersion": 2,
-      "position": [
-        680,
-        -60
-      ],
-      "id": "832eebf3-66f5-4cdc-ae2a-72c54ca3681c",
-      "name": "Date & Time"
-    },
-    {
-      "parameters": {
         "jsCode": "// Simplified n8n node code for structured data extraction\nfunction extractData() {\n  const columns = [\"Date\", \"Token\", \"CA\", \"Investment Amount\", \"Investment CAP\", \"ATH\", \"ATH/Investment CAP\", \"Current MC\", \"Current Balance\"];\n  const result = [];\n  \n  // Get the raw text and normalize whitespace\n  const rawText = items[0].json.row;\n  \n  // Use date pattern (DD.MM.YYYY) to identify the start of new rows\n  const datePattern = /\\d{2}\\.\\d{2}\\.\\d{4}/g;\n  const dates = [...rawText.matchAll(datePattern)];\n  \n  for (let i = 0; i < dates.length; i++) {\n    const date = dates[i][0];\n    const startIndex = dates[i].index;\n    const endIndex = (i < dates.length - 1) ? dates[i + 1].index : rawText.length;\n    \n    // Extract the complete text for this row\n    let rowText = rawText.substring(startIndex, endIndex).trim();\n    \n    // Split the row by spaces and line breaks, and filter out empty elements\n    let rowElements = rowText.split(/[\\s\\n]+/).filter(element => element);\n    \n    // Create an object for this row\n    const rowData = {};\n    \n    // First element is always the date\n    rowData[columns[0]] = date;\n    \n    // Remove the date from the elements array\n    const dateIndex = rowElements.indexOf(date);\n    if (dateIndex !== -1) {\n      rowElements.splice(dateIndex, 1);\n    }\n    \n    // Assign the remaining elements to their respective columns\n    for (let j = 1; j < columns.length && j-1 < rowElements.length; j++) {\n      rowData[columns[j]] = rowElements[j-1];\n    }\n    \n    result.push(rowData);\n  }\n  return result;\n  // return [{ json: {data:result} }];\n}\n\n// Execute the function\nreturn extractData();\n\n"
       },
       "type": "n8n-nodes-base.code",
@@ -361,38 +353,6 @@
       ],
       "id": "80450e6e-90d2-43a2-b5d9-6920de8bdccb",
       "name": "Extract portfolio"
-    },
-    {
-      "parameters": {
-        "resource": "databasePage",
-        "operation": "getAll",
-        "databaseId": {
-          "__rl": true,
-          "value": "1f90a499-0b36-800e-82d3-c246868f382a",
-          "mode": "list",
-          "cachedResultName": "Portfolio",
-          "cachedResultUrl": "https://www.notion.so/1f90a4990b36800e82d3c246868f382a"
-        },
-        "simple": false,
-        "filterType": "json",
-        "filterJson": "={\n  \"property\": \"CA\",\n  \"rich_text\": {\n    \"equals\": \"{{ $json.CA }}\"\n  }\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.notion",
-      "typeVersion": 2.2,
-      "position": [
-        900,
-        -60
-      ],
-      "id": "10a0137d-5471-46ab-9141-98cf8f986561",
-      "name": "Notion1",
-      "executeOnce": false,
-      "credentials": {
-        "notionApi": {
-          "id": "1eMAeENtcYg86x4v",
-          "name": "Notion account"
-        }
-      }
     },
     {
       "parameters": {
@@ -452,25 +412,83 @@
     {
       "parameters": {
         "mode": "combine",
-        "advanced": true,
-        "mergeByFields": {
-          "values": [
-            {
-              "field1": "={{ $json.Token }}",
-              "field2": "={{ $json.Token }}"
-            }
-          ]
-        },
+        "fieldsToMatchString": "CA",
+        "joinMode": "keepNonMatches",
         "options": {}
       },
       "type": "n8n-nodes-base.merge",
       "typeVersion": 3.1,
       "position": [
-        1100,
-        240
+        1740,
+        300
       ],
-      "id": "b4b5eb54-0c12-42f6-b289-b2c8974d70bb",
+      "id": "0a97e661-812d-49d5-9b9f-498577d4c94c",
       "name": "Merge"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "https://www.notion.so/Trisig-1f90a4990b36805da3fbd9fcacd555b6",
+          "mode": "url"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "={{ $json.Date }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        2040,
+        300
+      ],
+      "id": "0f9ba4c9-e2ad-4c04-bf1f-9eb618511573",
+      "name": "Notion3",
+      "credentials": {
+        "notionApi": {
+          "id": "1eMAeENtcYg86x4v",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "1f90a499-0b36-800e-82d3-c246868f382a",
+          "mode": "list",
+          "cachedResultName": "Portfolio",
+          "cachedResultUrl": "https://www.notion.so/1f90a4990b36800e82d3c246868f382a"
+        },
+        "simple": false,
+        "filterType": "json",
+        "filterJson": "={\n  \"property\": \"CA\",\n  \"rich_text\": {\n    \"equals\": \"{{ $json.CA }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1340,
+        -60
+      ],
+      "id": "10a0137d-5471-46ab-9141-98cf8f986561",
+      "name": "Retrieve Portofolio",
+      "executeOnce": false,
+      "credentials": {
+        "notionApi": {
+          "id": "1eMAeENtcYg86x4v",
+          "name": "Notion account"
+        }
+      }
     },
     {
       "parameters": {
@@ -529,43 +547,62 @@
               "name": "Current Balance",
               "value": "={{ $json.properties[\"Current Balance\"].rich_text[0].text.content }}",
               "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        1120,
-        -60
-      ],
-      "id": "2a7fb9ee-3af7-4ed4-9357-6e0835f1e6f5",
-      "name": "Edit Fields"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
+            },
             {
-              "id": "8d5c220c-b35b-42b0-b234-cf762e640c3d",
-              "name": "",
-              "value": "",
+              "id": "8bbca8c6-6bbc-425a-bff6-db7afdffdf86",
+              "name": "URL ID",
+              "value": "={{ $json.url }}",
               "type": "string"
             }
           ]
         },
-        "includeOtherFields": true,
         "options": {}
       },
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1340,
+        1560,
         -60
       ],
-      "id": "c4f58302-9aab-4996-9d87-dd1dff69a7fb",
-      "name": "Edit Fields1"
+      "id": "2a7fb9ee-3af7-4ed4-9357-6e0835f1e6f5",
+      "name": "Transform"
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $json.Date }}",
+        "outputFieldName": "Date",
+        "options": {
+          "includeInputFields": true
+        }
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        1780,
+        -60
+      ],
+      "id": "db1791ae-7d7a-45a7-bb03-907ca1bf7c53",
+      "name": "Transform Date"
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $json.Date }}",
+        "outputFieldName": "=Date",
+        "options": {
+          "includeInputFields": true,
+          "fromFormat": "={{ \"dd.MM.yyyy\" }}"
+        }
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        680,
+        -60
+      ],
+      "id": "832eebf3-66f5-4cdc-ae2a-72c54ca3681c",
+      "name": "Standard Date"
     }
   ],
   "pinData": {},
@@ -578,6 +615,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-05-21T15:37:05.000Z",
-  "versionId": "7375e144-c661-484d-a95e-ee568ffbcf85"
+  "updatedAt": "2025-05-22T16:07:22.000Z",
+  "versionId": "88b6a77b-30a2-4ea3-87ce-efb7863a03c8"
 }
