@@ -1,6 +1,6 @@
 {
   "": "",
-  "active": false,
+  "active": true,
   "connections": {
     "Schedule Trigger": {
       "main": [
@@ -22,18 +22,7 @@
       "main": [
         [
           {
-            "node": "HTML portfolio",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "HTML portfolio": {
-      "main": [
-        [
-          {
-            "node": "Extract portfolio",
+            "node": "Extract Portfolio",
             "type": "main",
             "index": 0
           }
@@ -44,25 +33,7 @@
       "main": [
         [
           {
-            "node": "If",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If": {
-      "main": [
-        [
-          {
-            "node": "Trisig Portfolio Scraper",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "No Portfolio Updates Stop",
+            "node": "No Updates?",
             "type": "main",
             "index": 0
           }
@@ -80,57 +51,13 @@
         ]
       ]
     },
-    "Extract portfolio": {
-      "main": [
-        [
-          {
-            "node": "Standard Date",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge": {
-      "main": [
-        [
-          {
-            "node": "Compare and Update",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Transform": {
       "main": [
         [
           {
-            "node": "Transform Date",
+            "node": "Format Date1",
             "type": "main",
             "index": 0
-          }
-        ]
-      ]
-    },
-    "Transform Date": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Standard Date": {
-      "main": [
-        [
-          {
-            "node": "Merge",
-            "type": "main",
-            "index": 1
           }
         ]
       ]
@@ -150,14 +77,14 @@
       "main": [
         [
           {
-            "node": "Add or Update",
+            "node": "Add?",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Remove or Update",
+            "node": "Remove?",
             "type": "main",
             "index": 0
           }
@@ -196,7 +123,80 @@
         ]
       ]
     },
-    "Remove or Update": {
+    "Append Inputs": {
+      "main": [
+        [
+          {
+            "node": "Compare and Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Portfolio": {
+      "main": [
+        [
+          {
+            "node": "Transform Portfolio into Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Portfolio into Items": {
+      "main": [
+        [
+          {
+            "node": "Format Date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Date": {
+      "main": [
+        [
+          {
+            "node": "Append Inputs",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Format Date1": {
+      "main": [
+        [
+          {
+            "node": "Append Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add?": {
+      "main": [
+        [
+          {
+            "node": "Add",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove?": {
       "main": [
         [
           {
@@ -214,22 +214,65 @@
         ]
       ]
     },
-    "Add or Update": {
+    "No Updates?": {
       "main": [
         [
           {
-            "node": "Add",
+            "node": "No Portfolio Updates!!!",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Notion",
+            "node": "Trisig Portfolio Scraper",
             "type": "main",
             "index": 0
           }
         ]
+      ]
+    },
+    "Notion": {
+      "main": [
+        [
+          {
+            "node": "Updates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add": {
+      "main": [
+        [
+          {
+            "node": "Adds",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove": {
+      "main": [
+        [
+          {
+            "node": "Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Updates": {
+      "main": [
+        []
       ]
     }
   },
@@ -239,14 +282,15 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "name": "Trisig Updates Trigger",
+  "name": "Trisig Portfolio",
   "nodes": [
     {
       "parameters": {
         "rule": {
           "interval": [
             {
-              "field": "hours"
+              "field": "hours",
+              "hoursInterval": 2
             }
           ]
         }
@@ -272,33 +316,11 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        60,
+        -100,
         -60
       ],
       "id": "34af0f10-2591-4ac8-8816-626e5b927c01",
       "name": "Trisig Portfolio Scraper"
-    },
-    {
-      "parameters": {
-        "operation": "extractHtmlContent",
-        "extractionValues": {
-          "values": [
-            {
-              "key": "row",
-              "cssSelector": ".portfolio .table-container"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.html",
-      "typeVersion": 1.2,
-      "position": [
-        260,
-        -60
-      ],
-      "id": "43d8ab23-d0a0-4677-8ff2-6c58b2164b57",
-      "name": "HTML portfolio"
     },
     {
       "parameters": {
@@ -307,45 +329,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        80,
-        -320
+        140,
+        -360
       ],
       "id": "45eedd12-99c9-4ea6-b994-51c55d9274f0",
       "name": "Updated etag?"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "a3ad8c42-88f9-4373-85c4-2b86dfdd1f16",
-              "leftValue": "={{ $json.isChanged }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        280,
-        -300
-      ],
-      "id": "f3f10a05-6dc8-4610-b336-46b2aad3dd01",
-      "name": "If"
     },
     {
       "parameters": {
@@ -362,35 +350,11 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -160,
+        -100,
         -360
       ],
       "id": "25014f3b-2191-4c5d-9fea-2a1e9f99e98a",
       "name": "Trigig Head Data"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Simplified n8n node code for structured data extraction\nfunction extractData() {\n  const columns = [\"Date\", \"Token\", \"CA\", \"Investment Amount\", \"Investment CAP\", \"ATH\", \"ATH/Investment CAP\", \"Current MC\", \"Current Balance\"];\n  const result = [];\n  \n  // Get the raw text and normalize whitespace\n  const rawText = items[0].json.row;\n  \n  // Use date pattern (DD.MM.YYYY) to identify the start of new rows\n  const datePattern = /\\d{2}\\.\\d{2}\\.\\d{4}/g;\n  const dates = [...rawText.matchAll(datePattern)];\n  \n  for (let i = 0; i < dates.length; i++) {\n    const date = dates[i][0];\n    const startIndex = dates[i].index;\n    const endIndex = (i < dates.length - 1) ? dates[i + 1].index : rawText.length;\n    \n    // Extract the complete text for this row\n    let rowText = rawText.substring(startIndex, endIndex).trim();\n    \n    // Split the row by spaces and line breaks, and filter out empty elements\n    let rowElements = rowText.split(/[\\s\\n]+/).filter(element => element);\n    \n    // Create an object for this row\n    const rowData = {};\n    \n    // First element is always the date\n    rowData[columns[0]] = date;\n    \n    // Remove the date from the elements array\n    const dateIndex = rowElements.indexOf(date);\n    if (dateIndex !== -1) {\n      rowElements.splice(dateIndex, 1);\n    }\n    \n    // Assign the remaining elements to their respective columns\n    for (let j = 1; j < columns.length && j-1 < rowElements.length; j++) {\n      rowData[columns[j]] = rowElements[j-1];\n    }\n    \n    result.push(rowData);\n  }\n  return result;\n  // return [{ json: {data:result} }];\n}\n\n// Execute the function\nreturn extractData();\n\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        480,
-        -60
-      ],
-      "id": "80450e6e-90d2-43a2-b5d9-6920de8bdccb",
-      "name": "Extract portfolio"
-    },
-    {
-      "parameters": {},
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.1,
-      "position": [
-        1360,
-        180
-      ],
-      "id": "0a97e661-812d-49d5-9b9f-498577d4c94c",
-      "name": "Merge"
     },
     {
       "parameters": {
@@ -463,48 +427,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        740,
-        -400
+        380,
+        -620
       ],
       "id": "2a7fb9ee-3af7-4ed4-9357-6e0835f1e6f5",
       "name": "Transform"
-    },
-    {
-      "parameters": {
-        "operation": "formatDate",
-        "date": "={{ $json.Date }}",
-        "outputFieldName": "Date",
-        "options": {
-          "includeInputFields": true
-        }
-      },
-      "type": "n8n-nodes-base.dateTime",
-      "typeVersion": 2,
-      "position": [
-        1160,
-        -160
-      ],
-      "id": "db1791ae-7d7a-45a7-bb03-907ca1bf7c53",
-      "name": "Transform Date"
-    },
-    {
-      "parameters": {
-        "operation": "formatDate",
-        "date": "={{ $json.Date }}",
-        "outputFieldName": "=Date",
-        "options": {
-          "includeInputFields": true,
-          "fromFormat": "={{ \"dd.MM.yyyy\" }}"
-        }
-      },
-      "type": "n8n-nodes-base.dateTime",
-      "typeVersion": 2,
-      "position": [
-        680,
-        -60
-      ],
-      "id": "832eebf3-66f5-4cdc-ae2a-72c54ca3681c",
-      "name": "Standard Date"
     },
     {
       "parameters": {
@@ -513,8 +440,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1880,
-        220
+        1420,
+        -300
       ],
       "id": "5bc23f9b-cf72-4e39-9f22-3b1343dad575",
       "name": "Compare and Update"
@@ -655,8 +582,8 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        2200,
-        200
+        1720,
+        -340
       ],
       "id": "cb57682b-4bbc-446e-b1a8-68f31b685db9",
       "name": "Switch"
@@ -678,8 +605,8 @@
       "type": "n8n-nodes-base.notion",
       "typeVersion": 2.2,
       "position": [
-        120,
-        -580
+        0,
+        -620
       ],
       "id": "404325c7-ae4b-4f48-98fc-cbaad8d69f23",
       "name": "Retrieve Previous Portofolio",
@@ -693,50 +620,6 @@
     },
     {
       "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "b1072a6f-30b1-42c5-a256-8d9c548cb5d4",
-              "leftValue": "={{ $json[\"Investment CAP\"] }}",
-              "rightValue": "",
-              "operator": {
-                "type": "object",
-                "operation": "exists",
-                "singleValue": true
-              }
-            },
-            {
-              "id": "837f0e8a-57fd-48ae-abeb-d6d3b5f4e5da",
-              "leftValue": "={{ $json[\"ATH/Investment CAP\"] }}",
-              "rightValue": "",
-              "operator": {
-                "type": "object",
-                "operation": "exists",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        2700,
-        700
-      ],
-      "id": "8aa2f3bf-5ae5-4c32-a81c-6a5f7d381e46",
-      "name": "Remove or Update"
-    },
-    {
-      "parameters": {
         "operation": "archive",
         "pageId": {
           "__rl": true,
@@ -747,8 +630,8 @@
       "type": "n8n-nodes-base.notion",
       "typeVersion": 2.2,
       "position": [
-        3180,
-        320
+        2380,
+        -60
       ],
       "id": "25b4cf9f-084d-4801-84d6-45e640ed6869",
       "name": "Remove",
@@ -813,8 +696,8 @@
       "type": "n8n-nodes-base.notion",
       "typeVersion": 2.2,
       "position": [
-        3160,
-        -120
+        2360,
+        -560
       ],
       "id": "459d1f0e-b7a4-4b3d-93b6-f11ef3c124e9",
       "name": "Add",
@@ -824,40 +707,6 @@
           "name": "Notion account"
         }
       }
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "a0fe9069-dd95-4aca-865d-6e7e0d5cb5b2",
-              "leftValue": "={{ $json[\"URL ID\"] }}",
-              "rightValue": "",
-              "operator": {
-                "type": "string",
-                "operation": "notExists",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        2720,
-        -260
-      ],
-      "id": "80d4d58f-855d-47c1-99f7-a4577aac04ad",
-      "name": "Add or Update"
     },
     {
       "parameters": {
@@ -897,8 +746,8 @@
       "type": "n8n-nodes-base.notion",
       "typeVersion": 2.2,
       "position": [
-        3180,
-        100
+        2380,
+        -320
       ],
       "id": "87223ca5-a745-43de-b418-d17e63a6622b",
       "name": "Notion",
@@ -916,11 +765,295 @@
       "type": "n8n-nodes-base.stopAndError",
       "typeVersion": 1,
       "position": [
-        520,
-        -260
+        660,
+        -380
       ],
       "id": "b715f0d9-db41-453c-adc1-ffcc7cd38a12",
-      "name": "No Portfolio Updates Stop"
+      "name": "No Portfolio Updates!!!"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        1120,
+        -300
+      ],
+      "id": "0a97e661-812d-49d5-9b9f-498577d4c94c",
+      "name": "Append Inputs"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "row",
+              "cssSelector": ".portfolio .table-container"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        140,
+        -60
+      ],
+      "id": "43d8ab23-d0a0-4677-8ff2-6c58b2164b57",
+      "name": "Extract Portfolio"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simplified n8n node code for structured data extraction\nfunction extractData() {\n  const columns = [\"Date\", \"Token\", \"CA\", \"Investment Amount\", \"Investment CAP\", \"ATH\", \"ATH/Investment CAP\", \"Current MC\", \"Current Balance\"];\n  const result = [];\n  \n  // Get the raw text and normalize whitespace\n  const rawText = items[0].json.row;\n  \n  // Use date pattern (DD.MM.YYYY) to identify the start of new rows\n  const datePattern = /\\d{2}\\.\\d{2}\\.\\d{4}/g;\n  const dates = [...rawText.matchAll(datePattern)];\n  \n  for (let i = 0; i < dates.length; i++) {\n    const date = dates[i][0];\n    const startIndex = dates[i].index;\n    const endIndex = (i < dates.length - 1) ? dates[i + 1].index : rawText.length;\n    \n    // Extract the complete text for this row\n    let rowText = rawText.substring(startIndex, endIndex).trim();\n    \n    // Split the row by spaces and line breaks, and filter out empty elements\n    let rowElements = rowText.split(/[\\s\\n]+/).filter(element => element);\n    \n    // Create an object for this row\n    const rowData = {};\n    \n    // First element is always the date\n    rowData[columns[0]] = date;\n    \n    // Remove the date from the elements array\n    const dateIndex = rowElements.indexOf(date);\n    if (dateIndex !== -1) {\n      rowElements.splice(dateIndex, 1);\n    }\n    \n    // Assign the remaining elements to their respective columns\n    for (let j = 1; j < columns.length && j-1 < rowElements.length; j++) {\n      rowData[columns[j]] = rowElements[j-1];\n    }\n    \n    result.push(rowData);\n  }\n  return result;\n  // return [{ json: {data:result} }];\n}\n\n// Execute the function\nreturn extractData();\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        -60
+      ],
+      "id": "80450e6e-90d2-43a2-b5d9-6920de8bdccb",
+      "name": "Transform Portfolio into Items"
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $json.Date }}",
+        "outputFieldName": "=Date",
+        "options": {
+          "includeInputFields": true,
+          "fromFormat": "={{ \"dd.MM.yyyy\" }}"
+        }
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        760,
+        -60
+      ],
+      "id": "832eebf3-66f5-4cdc-ae2a-72c54ca3681c",
+      "name": "Format Date"
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $json.Date }}",
+        "outputFieldName": "Date",
+        "options": {
+          "includeInputFields": true
+        }
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        740,
+        -620
+      ],
+      "id": "db1791ae-7d7a-45a7-bb03-907ca1bf7c53",
+      "name": "Format Date1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a0fe9069-dd95-4aca-865d-6e7e0d5cb5b2",
+              "leftValue": "={{ $json[\"URL ID\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1980,
+        -660
+      ],
+      "id": "80d4d58f-855d-47c1-99f7-a4577aac04ad",
+      "name": "Add?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b1072a6f-30b1-42c5-a256-8d9c548cb5d4",
+              "leftValue": "={{ $json[\"Investment CAP\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "837f0e8a-57fd-48ae-abeb-d6d3b5f4e5da",
+              "leftValue": "={{ $json[\"ATH/Investment CAP\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2000,
+        -20
+      ],
+      "id": "8aa2f3bf-5ae5-4c32-a81c-6a5f7d381e46",
+      "name": "Remove?"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a3ad8c42-88f9-4373-85c4-2b86dfdd1f16",
+              "leftValue": "={{ $json.isChanged }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        360,
+        -360
+      ],
+      "id": "f3f10a05-6dc8-4610-b336-46b2aad3dd01",
+      "name": "No Updates?"
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "Updates are available in Notion Trisig Portfolio:\nhttps://www.notion.so/Trisig-1f90a4990b36805da3fbd9fcacd555b6",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        -280
+      ],
+      "id": "3d1fd971-fdd6-43e1-9e3a-90307c2f8086",
+      "name": "Updates",
+      "webhookId": "dda28789-cdbd-49fe-8869-f8135c334186",
+      "executeOnce": true,
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "E3NkyuvdPhet0GKF",
+          "name": "Portfolio Updates"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=A new token has been added in Trisig Portfolio.\nDate: {{ $json.property_date.start }}\nToken name:  {{ $json.name }}\nToken CA: {{ $json.property_ca }}\nInvestment Amount: {{ $json.property_investment_amount }}\nCurrent Balance: {{ $json.property_current_balance }}\nNotion URL ID: {{ $json.url }}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        2600,
+        -500
+      ],
+      "id": "79656214-cff6-4687-8b34-64af9fe94e17",
+      "name": "Adds",
+      "webhookId": "95bf2a53-836e-4f81-88df-75dbae0a3a8e",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "VR7qsLnmCSk1uvHy",
+          "name": "Portfolio Add"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        2600,
+        -60
+      ],
+      "id": "e8678ce0-7f9f-4256-8484-58d620c352a0",
+      "name": "Discord",
+      "webhookId": "d2d3c147-5963-4d99-993a-3ddd1d157425",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "E3NkyuvdPhet0GKF",
+          "name": "Portfolio Updates"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "gioben@protonmail.com",
+        "subject": "Trisig Portfolio Addition",
+        "message": "=A new token has been added in Trisig Portfolio. \nDate: {{ $json.property_date.start }} \nToken name:  {{ $json.name }} \nToken CA: {{ $json.property_ca }} \nInvestment Amount: {{ $json.property_investment_amount }} \nCurrent Balance: {{ $json.property_current_balance }} \nNotion URL ID: {{ $json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2600,
+        -740
+      ],
+      "id": "369f354f-a3c8-402d-b34c-8973b4898952",
+      "name": "Gmail",
+      "webhookId": "d7aa1e3b-b808-49fd-acea-251d6e2b0418",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "EdToD3kB7ULzhVZc",
+          "name": "Gmail account 2"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -930,9 +1063,18 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "staticData": null,
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": [
+        0
+      ]
+    },
+    "global": {
+      "previousETag": "W/\"7836ae2089e31ceb9aeb02d86a6c28c4\""
+    }
+  },
   "tags": [],
-  "triggerCount": 0,
-  "updatedAt": "2025-05-23T17:42:27.000Z",
-  "versionId": "976f6bb9-35e1-451c-b454-c58a75ef990f"
+  "triggerCount": 1,
+  "updatedAt": "2025-05-24T09:37:25.000Z",
+  "versionId": "aa51d583-730d-49c3-88ea-35081db13fe7"
 }
