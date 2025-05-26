@@ -51,17 +51,6 @@
         ]
       ]
     },
-    "Transform": {
-      "main": [
-        [
-          {
-            "node": "Format Date1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Compare and Update": {
       "main": [
         [
@@ -116,7 +105,7 @@
       "main": [
         [
           {
-            "node": "Transform",
+            "node": "Convert To Portfolio json",
             "type": "main",
             "index": 0
           }
@@ -274,6 +263,17 @@
       "main": [
         []
       ]
+    },
+    "Convert To Portfolio json": {
+      "main": [
+        [
+          {
+            "node": "Format Date1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "createdAt": "2025-05-20T10:24:18.665Z",
@@ -307,7 +307,22 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://production-sfo.browserless.io/content?token=2SJeHlU1Lwdk7565c55f8e5761af29a061185bf3ed98f20f9&stealth=true&blockAds=true",
+        "url": "https://production-sfo.browserless.io/content",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "blockAds",
+              "value": "true"
+            },
+            {
+              "name": "stealth",
+              "value": "true"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "{\n  \"url\": \"https://trisigma.ai/portfolio\",\n  \"gotoOptions\": {\n    \"waitUntil\": \"networkidle0\"\n  }\n}",
@@ -320,7 +335,17 @@
         -60
       ],
       "id": "34af0f10-2591-4ac8-8816-626e5b927c01",
-      "name": "Trisig Portfolio Scraper"
+      "name": "Trisig Portfolio Scraper",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "L2msUDZsWDkE7k48",
+          "name": "Header Auth account 3"
+        },
+        "httpQueryAuth": {
+          "id": "Fak4Qg8o38A75E24",
+          "name": "browsless"
+        }
+      }
     },
     {
       "parameters": {
@@ -355,83 +380,6 @@
       ],
       "id": "25014f3b-2191-4c5d-9fea-2a1e9f99e98a",
       "name": "Trigig Head Data"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "ae84d22e-f605-411c-a6d3-d56dec31e64d",
-              "name": "=CA",
-              "value": "={{ $json.properties.CA.rich_text[0].text.content }}",
-              "type": "string"
-            },
-            {
-              "id": "1d1758cc-8e20-414b-97c2-aa23865c5a4d",
-              "name": "Token",
-              "value": "={{ $json.properties.Token.title[0].text.content }}",
-              "type": "string"
-            },
-            {
-              "id": "7397d23b-d658-436e-9484-9701794d6360",
-              "name": "Investment CAP",
-              "value": "={{ $json.properties[\"Investment CAP\"].rich_text[0].text.content }}",
-              "type": "string"
-            },
-            {
-              "id": "5a5bfc20-4755-40d1-91ca-e5972b8cc947",
-              "name": "ATH/Investment CAP",
-              "value": "={{ $json.properties[\"ATH/Investment CAP\"].rich_text[0].text.content }}",
-              "type": "string"
-            },
-            {
-              "id": "43f3260e-b4dd-4d6a-80dc-62e484a791f3",
-              "name": "ATH",
-              "value": "={{ $json.properties.ATH.rich_text[0].text.content }}",
-              "type": "string"
-            },
-            {
-              "id": "1e3ef687-ae45-43d0-b9b5-003f968d6c9a",
-              "name": "Current MC",
-              "value": "={{ $json.properties[\"Current MC\"].rich_text[0].text.content }}",
-              "type": "string"
-            },
-            {
-              "id": "804dd039-baf5-4f55-9e30-f8c4263a610d",
-              "name": "Investment Amount",
-              "value": "={{ $json.properties[\"Investment Amount\"].rich_text[0].text.content }}",
-              "type": "string"
-            },
-            {
-              "id": "1c72ee46-c3e5-417d-9d2b-f27639a5413b",
-              "name": "Date",
-              "value": "={{ $json.properties.Date.date.start }}",
-              "type": "string"
-            },
-            {
-              "id": "5da7aa55-f022-48f1-ae5c-9b9e4641272e",
-              "name": "Current Balance",
-              "value": "={{ $json.properties[\"Current Balance\"].rich_text[0].text.content }}",
-              "type": "string"
-            },
-            {
-              "id": "8bbca8c6-6bbc-425a-bff6-db7afdffdf86",
-              "name": "URL ID",
-              "value": "={{ $json.url }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        380,
-        -620
-      ],
-      "id": "2a7fb9ee-3af7-4ed4-9357-6e0835f1e6f5",
-      "name": "Transform"
     },
     {
       "parameters": {
@@ -1054,6 +1002,83 @@
           "name": "Gmail account 2"
         }
       }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ae84d22e-f605-411c-a6d3-d56dec31e64d",
+              "name": "=CA",
+              "value": "={{ $json.properties.CA.rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "1d1758cc-8e20-414b-97c2-aa23865c5a4d",
+              "name": "Token",
+              "value": "={{ $json.properties.Token.title[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "7397d23b-d658-436e-9484-9701794d6360",
+              "name": "Investment CAP",
+              "value": "={{ $json.properties[\"Investment CAP\"].rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "5a5bfc20-4755-40d1-91ca-e5972b8cc947",
+              "name": "ATH/Investment CAP",
+              "value": "={{ $json.properties[\"ATH/Investment CAP\"].rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "43f3260e-b4dd-4d6a-80dc-62e484a791f3",
+              "name": "ATH",
+              "value": "={{ $json.properties.ATH.rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "1e3ef687-ae45-43d0-b9b5-003f968d6c9a",
+              "name": "Current MC",
+              "value": "={{ $json.properties[\"Current MC\"].rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "804dd039-baf5-4f55-9e30-f8c4263a610d",
+              "name": "Investment Amount",
+              "value": "={{ $json.properties[\"Investment Amount\"].rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "1c72ee46-c3e5-417d-9d2b-f27639a5413b",
+              "name": "Date",
+              "value": "={{ $json.properties.Date.date.start }}",
+              "type": "string"
+            },
+            {
+              "id": "5da7aa55-f022-48f1-ae5c-9b9e4641272e",
+              "name": "Current Balance",
+              "value": "={{ $json.properties[\"Current Balance\"].rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "8bbca8c6-6bbc-425a-bff6-db7afdffdf86",
+              "name": "URL ID",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        380,
+        -620
+      ],
+      "id": "2a7fb9ee-3af7-4ed4-9357-6e0835f1e6f5",
+      "name": "Convert To Portfolio json"
     }
   ],
   "pinData": {},
@@ -1066,7 +1091,7 @@
   "staticData": {
     "node:Schedule Trigger": {
       "recurrenceRules": [
-        0
+        12
       ]
     },
     "global": {
@@ -1075,6 +1100,6 @@
   },
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2025-05-24T09:37:25.000Z",
-  "versionId": "aa51d583-730d-49c3-88ea-35081db13fe7"
+  "updatedAt": "2025-05-26T10:22:23.000Z",
+  "versionId": "205fe230-e347-4370-8242-673c468dd7d7"
 }
