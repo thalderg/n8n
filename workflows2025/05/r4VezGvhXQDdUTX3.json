@@ -137,7 +137,24 @@
       "parameters": {
         "toolDescription": "website scraper. Scrape a website from its url",
         "method": "POST",
-        "url": "https://production-sfo.browserless.io/content?token=2SJeHlU1Lwdk7565c55f8e5761af29a061185bf3ed98f20f9&stealth=true&blockAds=true",
+        "url": "https://production-sfo.browserless.io/content",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "parametersQuery": {
+          "values": [
+            {
+              "name": "blockAds",
+              "valueProvider": "fieldValue",
+              "value": "true"
+            },
+            {
+              "name": "stealth",
+              "valueProvider": "fieldValue",
+              "value": "true"
+            }
+          ]
+        },
         "sendBody": true,
         "specifyBody": "json",
         "jsonBody": "={\n  \"url\": \"{url}\",\n  \"gotoOptions\": {\n    \"waitUntil\": \"networkidle0\"\n  }\n}",
@@ -158,7 +175,13 @@
         160
       ],
       "id": "318cfc34-d6ce-4248-b978-ed2ea903e14f",
-      "name": "website scraper"
+      "name": "website scraper",
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "Fak4Qg8o38A75E24",
+          "name": "browsless"
+        }
+      }
     },
     {
       "parameters": {
@@ -252,7 +275,7 @@
       "credentials": {
         "discordWebhookApi": {
           "id": "E3NkyuvdPhet0GKF",
-          "name": "Discord personal webHook"
+          "name": "Portfolio Updates"
         }
       }
     },
@@ -278,6 +301,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-05-19T13:26:48.000Z",
-  "versionId": "b77703f1-11dd-4886-898e-409cc629ae8e"
+  "updatedAt": "2025-05-26T10:25:30.000Z",
+  "versionId": "b8c60210-2594-421e-8b30-2f784006a855"
 }
