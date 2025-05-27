@@ -1,0 +1,35 @@
+{
+  "": "",
+  "active": false,
+  "connections": {},
+  "createdAt": "2025-05-27T09:51:33.012Z",
+  "id": "O1MPCtzaXV3trqtC",
+  "isArchived": false,
+  "meta": null,
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b3c2521b-f1af-4cc6-9bdb-2a4945b1cdc5",
+      "name": "When clicking ‘Test workflow’"
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-05-27T09:51:33.012Z",
+  "versionId": "6162f0f2-45ee-4be0-9558-ecf951a3c1dc"
+}
