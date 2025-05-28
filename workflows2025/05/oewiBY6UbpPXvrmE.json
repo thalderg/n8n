@@ -1,0 +1,146 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare countries": {
+      "main": [
+        [
+          {
+            "node": "uProc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On clicking 'execute'": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Prepare countries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-05-28T14:25:59.287Z",
+  "id": "oewiBY6UbpPXvrmE",
+  "isArchived": false,
+  "meta": null,
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "On clicking 'execute'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "position": [
+        -3040,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "7250a66c-3c9f-4b94-bc53-01737d08be15"
+    },
+    {
+      "parameters": {
+        "url": "https://www.theswiftcodes.com/browse-by-country/",
+        "responseFormat": "string",
+        "options": {}
+      },
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -2740,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "23170ee1-8a3a-495e-bdd3-14f912a875d5"
+    },
+    {
+      "parameters": {
+        "functionCode": "return items[0].json.countries.map(function(country) {\n  return {\n  json: {country: country}\n  }\n});"
+      },
+      "name": "Prepare countries",
+      "type": "n8n-nodes-base.function",
+      "position": [
+        -2240,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "8440332a-f656-4a88-b2c1-5aacdabfa929"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "countries",
+              "cssSelector": "ol > li > a",
+              "returnValue": "attribute",
+              "attribute": "href",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        -2520,
+        0
+      ],
+      "id": "70c5c5be-28aa-45a5-8862-063e1cc8de4f",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "additionalOptions": {}
+      },
+      "type": "n8n-nodes-base.uproc",
+      "typeVersion": 1,
+      "position": [
+        -2800,
+        320
+      ],
+      "id": "2a489a16-38e2-4827-a913-693231e527d4",
+      "name": "uProc"
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-05-28T14:33:52.000Z",
+  "versionId": "aecfe90e-ae25-4133-930c-3812f5438965"
+}
