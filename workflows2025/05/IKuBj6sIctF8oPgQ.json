@@ -94,7 +94,7 @@
         ],
         [
           {
-            "node": "Notion",
+            "node": "Notion Manual Updates",
             "type": "main",
             "index": 0
           }
@@ -178,7 +178,7 @@
         ],
         [
           {
-            "node": "Notion",
+            "node": "Notion Manual Updates",
             "type": "main",
             "index": 0
           }
@@ -189,7 +189,7 @@
       "main": [
         [
           {
-            "node": "Notion",
+            "node": "Notion Manual Updates",
             "type": "main",
             "index": 0
           }
@@ -207,7 +207,7 @@
       "main": [
         [
           {
-            "node": "No Portfolio Updates!!!",
+            "node": "Stop",
             "type": "main",
             "index": 0
           }
@@ -215,17 +215,6 @@
         [
           {
             "node": "Trisig Portfolio Scraper",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Notion": {
-      "main": [
-        [
-          {
-            "node": "Updates",
             "type": "main",
             "index": 0
           }
@@ -274,6 +263,17 @@
           }
         ]
       ]
+    },
+    "Notion Manual Updates": {
+      "main": [
+        [
+          {
+            "node": "Updates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "createdAt": "2025-05-20T10:24:18.665Z",
@@ -289,8 +289,8 @@
         "rule": {
           "interval": [
             {
-              "field": "hours",
-              "hoursInterval": 2
+              "field": "minutes",
+              "minutesInterval": 30
             }
           ]
         }
@@ -349,12 +349,12 @@
     },
     {
       "parameters": {
-        "jsCode": "// Get static data for the workflow\nconst workflowStaticData = $getWorkflowStaticData('global');\n\n\n// Extract current ETag from HTTP response headers\nconst currentETag = $input.first().json.headers.etag;\n\n// Get previously stored ETag (will be undefined on first run)\nconst previousETag = workflowStaticData.previousETag;\n\n// Store current ETag for next run\nworkflowStaticData.previousETag = currentETag;\n\n// Return both ETags and comparison result for the IF node\nreturn {\n  json: {\n    currentETag,\n    previousETag,\n    isChanged: !previousETag || currentETag !== previousETag\n  }\n};\n"
+        "jsCode": "// Get workflow static data storage\nconst staticData = $getWorkflowStaticData('node');\n\n// Extract current ETag from HTTP response\nconst currentETag = $input.first().json.headers.etag;\n\n// Get previous ETag (or empty string if first run)\nconst previousETag = staticData.previousETag || '';\n\nconsole.log('Current ETag:', currentETag);\nconsole.log('Previous ETag:', previousETag || '(first run - no previous ETag)');\n\n// Determine if content has changed\nconst isChanged = !previousETag || currentETag !== previousETag;\n\nconsole.log('Content changed?', isChanged);\nconsole.log('Reason:', previousETag === '' ? 'First run' : (currentETag !== previousETag ? 'ETag changed' : 'No change'));\n\n// IMPORTANT: Store current ETag for next run\nstaticData.previousETag = currentETag;\n\n// Return comparison results\nreturn {\n  json: {\n    currentETag,\n    previousETag: previousETag || '(first run)',\n    isFirstRun: previousETag === '',\n    isChanged,\n    timestamp: new Date().toISOString()\n  }\n};\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        140,
+        200,
         -360
       ],
       "id": "45eedd12-99c9-4ea6-b994-51c55d9274f0",
@@ -383,7 +383,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Function to process the portfolio data in n8n format\nfunction processPortfolio(inputItems) {\n  // Extract all items from the json property as required by n8n\n  const items = inputItems.map(item => item.json);\n  \n  // Separate items into two groups: Notion (with URL ID) and Portfolio (without URL ID)\n  const notionItems = items.filter(item => item[\"URL ID\"]);\n  const portfolioItems = items.filter(item => !item[\"URL ID\"]);\n  \n  console.log(`Found ${notionItems.length} Notion items and ${portfolioItems.length} Portfolio items`);\n  \n  // Create maps for easier lookup by CA\n  const notionMap = new Map();\n  notionItems.forEach(item => notionMap.set(item.CA, item));\n  \n  const portfolioMap = new Map();\n  portfolioItems.forEach(item => portfolioMap.set(item.CA, item));\n  \n  // Create a set of all unique CAs\n  const allCAs = new Set([...notionMap.keys(), ...portfolioMap.keys()]);\n  console.log(`Total unique CAs: ${allCAs.size}`);\n  \n  // Initialize flags\n  const flags = {\n    added: false,\n    removed: false,\n    updated: false\n  };\n  \n  // Create an array to hold the result items\n  const resultItems = [];\n  \n  // Process all CAs in a single loop to better manage the combined effects\n  // of updates, additions, and removals\n  for (const ca of allCAs) {\n    const notionItem = notionMap.get(ca);\n    const portfolioItem = portfolioMap.get(ca);\n    \n    // CASE 1: Update check - both items exist, potential update scenario\n    if (notionItem && portfolioItem) {\n      const updatedItem = {...notionItem}; // Start with Notion item to preserve URL ID\n      let itemWasUpdated = false;\n      \n      // Compare each field except URL ID\n      for (const key in portfolioItem) {\n        if (key !== \"URL ID\" && notionItem[key] !== portfolioItem[key]) {\n          // Field has changed - format as {value, new_value}\n          updatedItem[key] = {\n            value: notionItem[key],\n            new_value: portfolioItem[key]\n          };\n          itemWasUpdated = true;\n        }\n      }\n      \n      // For specified fields without new_value, copy value into new_value\n      const fieldsToAddNewValue = [\"Investment CAP\", \"ATH/Investment CAP\", \"ATH\", \"Investment Amount\", \"Current MC\"];\n      for (const field of fieldsToAddNewValue) {\n        if (updatedItem[field] && !updatedItem[field].new_value) {\n          // If it's a regular field (not an object with value/new_value)\n          if (typeof updatedItem[field] !== 'object' || updatedItem[field] === null) {\n            updatedItem[field] = {\n              value: updatedItem[field],\n              new_value: updatedItem[field]\n            };\n          }\n        }\n      }\n      \n      if (itemWasUpdated) {\n        console.log(`Updated item: ${portfolioItem.Token} (${ca})`);\n        flags.updated = true;\n      } else {\n        console.log(`No changes for: ${portfolioItem.Token} (${ca})`);\n      }\n      \n      resultItems.push(updatedItem);\n    }\n    \n    // CASE 2: Addition check - exists in portfolio but not in Notion\n    else if (!notionItem && portfolioItem) {\n      console.log(`Adding new item: ${portfolioItem.Token} (${ca})`);\n      const newItem = {...portfolioItem, \"URL ID\": null};\n      resultItems.push(newItem);\n      flags.added = true;\n    }\n    \n    // CASE 3: Removal check - exists in Notion but not in portfolio\n    else if (notionItem && !portfolioItem) {\n      console.log(`Removed item: ${notionItem.Token} (${ca})`);\n      \n      // Create a minimal version of the item with only URL ID, CA, and Token\n      const removedItem = {\n        \"URL ID\": notionItem[\"URL ID\"],\n        \"CA\": notionItem.CA,\n        \"Token\": notionItem.Token\n      };\n      \n      // Set all other fields to null\n      // Get all keys from the original item\n      const allKeys = Object.keys(notionItem);\n      \n      // For each key that isn't URL ID, CA, or Token, add it with null value\n      for (const key of allKeys) {\n        if (key !== \"URL ID\" && key !== \"CA\" && key !== \"Token\") {\n          removedItem[key] = null;\n        }\n      }\n      \n      // Add to the result\n      resultItems.push(removedItem);\n      flags.removed = true;\n    }\n  }\n  \n  // === MODIFIED PART STARTS HERE ===\n  // Rename flags to global_state_flags\n  const global_state_flags = flags;\n  \n  // Add global_state_flags to each result item\n  resultItems.forEach(item => {\n    item.global_state_flags = {...global_state_flags};\n  });\n  \n  // Convert each result item to n8n format\n  const n8nResultItems = resultItems.map(item => ({ json: item }));\n  \n  // Return the array of items\n  return n8nResultItems;\n  // === MODIFIED PART ENDS HERE ===\n}\n\n// Process the input data using n8n's $input.all()\nconst result = processPortfolio($input.all());\nreturn result;\n\n\n\n"
+        "jsCode": "// Function to process the portfolio data in n8n format\nfunction processPortfolio(inputItems) {\n  // Extract all items from the json property as required by n8n\n  const items = inputItems.map(item => item.json);\n  \n  // Separate items into two groups: Notion (with URL ID) and Portfolio (without URL ID)\n  const notionItems = items.filter(item => item[\"URL ID\"]);\n  const portfolioItems = items.filter(item => !item[\"URL ID\"]);\n  \n  console.log(`Found ${notionItems.length} Notion items and ${portfolioItems.length} Portfolio items`);\n  \n  // Create maps for easier lookup by CA\n  const notionMap = new Map();\n  notionItems.forEach(item => notionMap.set(item.CA, item));\n  \n  const portfolioMap = new Map();\n  portfolioItems.forEach(item => portfolioMap.set(item.CA, item));\n  \n  // Create a set of all unique CAs\n  const allCAs = new Set([...notionMap.keys(), ...portfolioMap.keys()]);\n  console.log(`Total unique CAs: ${allCAs.size}`);\n  \n  // Initialize flags\n  const flags = {\n    added: false,\n    removed: false,\n    updated: false\n  };\n  \n  // Create an array to hold the result items\n  const resultItems = [];\n  \n  // Process all CAs in a single loop to better manage the combined effects\n  // of updates, additions, and removals\n  for (const ca of allCAs) {\n    const notionItem = notionMap.get(ca);\n    const portfolioItem = portfolioMap.get(ca);\n    \n    // CASE 1: Update check - both items exist, potential update scenario\n    if (notionItem && portfolioItem) {\n      const updatedItem = {...notionItem}; // Start with Notion item to preserve URL ID\n      let itemWasUpdated = false;\n      \n      // Compare each field except URL ID\n      // key !== \"URL ID\" && key !== \"CA\" && key !== \"Token\"\n      // notionItem[key] !== portfolioItem[key])\n      for (const key in portfolioItem) {\n        if (key !== \"URL ID\" && key !== \"URL ID\" && key !== \"CA\" && key !== \"Token\") {\n          // Field has changed - format as {value, new_value}\n          updatedItem[key] = {\n            value: notionItem[key],\n            new_value: portfolioItem[key]\n          };\n          itemWasUpdated = true;\n        }\n      }\n      \n      // For specified fields without new_value, copy value into new_value\n      const fieldsToAddNewValue = [\"Investment CAP\", \"ATH/Investment CAP\", \"ATH\", \"Investment Amount\", \"Current MC\"];\n      for (const field of fieldsToAddNewValue) {\n        if (updatedItem[field] && !updatedItem[field].new_value) {\n          // If it's a regular field (not an object with value/new_value)\n          if (typeof updatedItem[field] !== 'object' || updatedItem[field] === null) {\n            updatedItem[field] = {\n              value: updatedItem[field],\n              new_value: updatedItem[field]\n            };\n          }\n        }\n      }\n      \n      if (itemWasUpdated) {\n        console.log(`Updated item: ${portfolioItem.Token} (${ca})`);\n        flags.updated = true;\n      } else {\n        console.log(`No changes for: ${portfolioItem.Token} (${ca})`);\n      }\n      \n      resultItems.push(updatedItem);\n    }\n    \n    // CASE 2: Addition check - exists in portfolio but not in Notion\n    else if (!notionItem && portfolioItem) {\n      console.log(`Adding new item: ${portfolioItem.Token} (${ca})`);\n      const newItem = {...portfolioItem, \"URL ID\": null};\n      resultItems.push(newItem);\n      flags.added = true;\n    }\n    \n    // CASE 3: Removal check - exists in Notion but not in portfolio\n    else if (notionItem && !portfolioItem) {\n      console.log(`Removed item: ${notionItem.Token} (${ca})`);\n      \n      // Create a minimal version of the item with only URL ID, CA, and Token\n      const removedItem = {\n        \"URL ID\": notionItem[\"URL ID\"],\n        \"CA\": notionItem.CA,\n        \"Token\": notionItem.Token\n      };\n      \n      // Set all other fields to null\n      // Get all keys from the original item\n      const allKeys = Object.keys(notionItem);\n      \n      // For each key that isn't URL ID, CA, or Token, add it with null value\n      for (const key of allKeys) {\n        if (key !== \"URL ID\" && key !== \"CA\" && key !== \"Token\") {\n          removedItem[key] = null;\n        }\n      }\n      \n      // Add to the result\n      resultItems.push(removedItem);\n      flags.removed = true;\n    }\n  }\n  \n  // === MODIFIED PART STARTS HERE ===\n  // Rename flags to global_state_flags\n  const global_state_flags = flags;\n  \n  // Add global_state_flags to each result item\n  resultItems.forEach(item => {\n    item.global_state_flags = {...global_state_flags};\n  });\n  \n  // Convert each result item to n8n format\n  const n8nResultItems = resultItems.map(item => ({ json: item }));\n  \n  // Return the array of items\n  return n8nResultItems;\n  // === MODIFIED PART ENDS HERE ===\n}\n\n// Process the input data using n8n's $input.all()\nconst result = processPortfolio($input.all());\nreturn result;\n\n\n\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -571,7 +571,7 @@
         "operation": "archive",
         "pageId": {
           "__rl": true,
-          "value": "=https://www.notion.so/Cazzo-1fc0a4990b3680739541cde896880ecb",
+          "value": "={{ $json[\"URL ID\"] }}",
           "mode": "url"
         }
       },
@@ -579,7 +579,7 @@
       "typeVersion": 2.2,
       "position": [
         2380,
-        -60
+        -100
       ],
       "id": "25b4cf9f-084d-4801-84d6-45e640ed6869",
       "name": "Remove",
@@ -655,69 +655,6 @@
           "name": "Notion account"
         }
       }
-    },
-    {
-      "parameters": {
-        "resource": "databasePage",
-        "operation": "update",
-        "pageId": {
-          "__rl": true,
-          "value": "={{ $json[\"URL ID\"] }}",
-          "mode": "url"
-        },
-        "propertiesUi": {
-          "propertyValues": [
-            {
-              "key": "Investment Amount|rich_text",
-              "textContent": "={{ $json[\"Investment CAP\"].new_value }}"
-            },
-            {
-              "key": "ATH/Investment CAP|rich_text",
-              "textContent": "={{ $json[\"ATH/Investment CAP\"].new_value }}"
-            },
-            {
-              "key": "ATH|rich_text",
-              "textContent": "={{ $json.ATH.new_value }}"
-            },
-            {
-              "key": "Current MC|rich_text",
-              "textContent": "={{ $json[\"Current MC\"].new_value }}"
-            },
-            {
-              "key": "Investment Amount|rich_text",
-              "textContent": "={{ $json[\"Investment Amount\"].new_value }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.notion",
-      "typeVersion": 2.2,
-      "position": [
-        2380,
-        -320
-      ],
-      "id": "87223ca5-a745-43de-b418-d17e63a6622b",
-      "name": "Notion",
-      "credentials": {
-        "notionApi": {
-          "id": "1eMAeENtcYg86x4v",
-          "name": "Notion account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "errorMessage": "There are no updates in portfolio"
-      },
-      "type": "n8n-nodes-base.stopAndError",
-      "typeVersion": 1,
-      "position": [
-        660,
-        -380
-      ],
-      "id": "b715f0d9-db41-453c-adc1-ffcc7cd38a12",
-      "name": "No Portfolio Updates!!!"
     },
     {
       "parameters": {},
@@ -908,7 +845,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        360,
+        480,
         -360
       ],
       "id": "f3f10a05-6dc8-4610-b336-46b2aad3dd01",
@@ -923,8 +860,8 @@
       "type": "n8n-nodes-base.discord",
       "typeVersion": 2,
       "position": [
-        2640,
-        -280
+        2600,
+        -300
       ],
       "id": "3d1fd971-fdd6-43e1-9e3a-90307c2f8086",
       "name": "Updates",
@@ -1079,6 +1016,60 @@
       ],
       "id": "2a7fb9ee-3af7-4ed4-9357-6e0835f1e6f5",
       "name": "Convert To Portfolio json"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ \"https://api.notion.com/v1/pages/\" + $json[\"URL ID\"].split('/').pop().split('-').pop() }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"properties\": {\n    \"Investment CAP\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{$json['Investment CAP'].new_value}}\"\n          }\n        }\n      ]\n    },\n    \"ATH/Investment CAP\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{$json['ATH/Investment CAP'].new_value}}\"\n          }\n        }\n      ]\n    },\n    \"ATH\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{$json['ATH'].new_value}}\"\n          }\n        }\n      ]\n    },\n    \"Current MC\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{$json['Current MC'].new_value}}\"\n          }\n        }\n      ]\n    },\n    \"Investment Amount\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{$json['Investment Amount'].new_value}}\"\n          }\n        }\n      ]\n    },\n    \"Current Balance\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{$json['Current Balance'].new_value}}\"\n          }\n        }\n      ]\n    },\n    \"URL ID\": {\n      \"url\": \"{{$json['URL ID']}}\"\n    }\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2360,
+        -340
+      ],
+      "id": "29641247-33b4-4c28-a91b-bfe892d06123",
+      "name": "Notion Manual Updates",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "L2msUDZsWDkE7k48",
+          "name": "Header Auth account 3"
+        },
+        "notionApi": {
+          "id": "1eMAeENtcYg86x4v",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        720,
+        -380
+      ],
+      "id": "89cbc98c-3108-4bae-929c-8406ba6b9ae1",
+      "name": "Stop"
     }
   ],
   "pinData": {},
@@ -1086,20 +1077,25 @@
   "repo_owner": "thalderg",
   "repo_path": "workflows",
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner"
   },
   "staticData": {
     "node:Schedule Trigger": {
       "recurrenceRules": [
-        0
+        14
       ]
     },
     "global": {
+      "previousETag": "W/\"7836ae2089e31ceb9aeb02d86a6c28c4\""
+    },
+    "node:Updated etag?": {
       "previousETag": "W/\"7836ae2089e31ceb9aeb02d86a6c28c4\""
     }
   },
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2025-05-26T10:22:23.000Z",
-  "versionId": "205fe230-e347-4370-8242-673c468dd7d7"
+  "updatedAt": "2025-05-28T14:11:34.000Z",
+  "versionId": "9782dce0-cbad-47a5-b990-513deeef6568"
 }
