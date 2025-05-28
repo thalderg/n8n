@@ -1,26 +1,157 @@
 {
   "": "",
   "active": false,
-  "connections": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
   "createdAt": "2025-05-27T09:51:33.012Z",
   "id": "O1MPCtzaXV3trqtC",
   "isArchived": false,
   "meta": null,
-  "name": "My workflow",
+  "name": "PoC Advanced",
   "nodes": [
     {
-      "parameters": {},
-      "type": "n8n-nodes-base.manualTrigger",
+      "parameters": {
+        "formTitle": "Submit URL Form",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "URL"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -500,
+        -20
+      ],
+      "id": "6d533297-e376-4829-961b-55a50310a323",
+      "name": "On form submission",
+      "webhookId": "51105cff-eb7e-447a-b9b0-a212a9616a5c"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7f4d73ce-f1f0-40f9-992d-cbf889d5ed60",
+              "name": "URL_list",
+              "value": "={{ $json.URL.split(',') }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -120,
+        -20
+      ],
+      "id": "6dc195cf-370f-491e-bcdf-a4a7c33c0f91",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "URL_list",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        0,
-        0
+        240,
+        -20
       ],
-      "id": "b3c2521b-f1af-4cc6-9bdb-2a4945b1cdc5",
-      "name": "When clicking ‘Test workflow’"
+      "id": "e23eabaa-89a8-43c8-9426-f3e1738c344a",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        500,
+        -20
+      ],
+      "id": "153c2648-e63c-4ad7-a668-fc6e8159a3cd",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "url": "https://api.peopledatalabs.com/v5/company/search",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        80
+      ],
+      "id": "83b3a47c-c738-40d0-b74d-d9882a79cf00",
+      "name": "HTTP Request"
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "On form submission": [
+      {
+        "json": {
+          "URL": "google.com, n8n.com, facebook.com",
+          "submittedAt": "2025-05-28T14:28:52.737+02:00",
+          "formMode": "test"
+        }
+      }
+    ]
+  },
   "repo_name": "n8n",
   "repo_owner": "thalderg",
   "repo_path": "workflows",
@@ -30,6 +161,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-05-27T09:51:33.012Z",
-  "versionId": "6162f0f2-45ee-4be0-9558-ecf951a3c1dc"
+  "updatedAt": "2025-05-28T13:54:50.000Z",
+  "versionId": "8468b2b9-db0b-415e-86d7-ffe3251f61fb"
 }
