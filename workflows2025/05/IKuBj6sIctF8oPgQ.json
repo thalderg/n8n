@@ -9,11 +9,6 @@
             "node": "Trigig Head Data",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Retrieve Previous Portofolio",
-            "type": "main",
-            "index": 0
           }
         ]
       ]
@@ -207,7 +202,7 @@
       "main": [
         [
           {
-            "node": "Stop",
+            "node": "No Updates Then Stop",
             "type": "main",
             "index": 0
           }
@@ -215,6 +210,11 @@
         [
           {
             "node": "Trisig Portfolio Scraper",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Retrieve Previous Portofolio",
             "type": "main",
             "index": 0
           }
@@ -289,8 +289,8 @@
         "rule": {
           "interval": [
             {
-              "field": "minutes",
-              "minutesInterval": 30
+              "field": "hours",
+              "hoursInterval": 2
             }
           ]
         }
@@ -299,7 +299,7 @@
       "typeVersion": 1.2,
       "position": [
         -400,
-        -400
+        -660
       ],
       "id": "5b0a4ab5-f4f7-48af-a077-3292ab51e20b",
       "name": "Schedule Trigger"
@@ -332,7 +332,7 @@
       "typeVersion": 4.2,
       "position": [
         -100,
-        -60
+        -180
       ],
       "id": "34af0f10-2591-4ac8-8816-626e5b927c01",
       "name": "Trisig Portfolio Scraper",
@@ -349,13 +349,13 @@
     },
     {
       "parameters": {
-        "jsCode": "// Get workflow static data storage\nconst staticData = $getWorkflowStaticData('node');\n\n// Extract current ETag from HTTP response\nconst currentETag = $input.first().json.headers.etag;\n\n// Get previous ETag (or empty string if first run)\nconst previousETag = staticData.previousETag || '';\n\nconsole.log('Current ETag:', currentETag);\nconsole.log('Previous ETag:', previousETag || '(first run - no previous ETag)');\n\n// Determine if content has changed\nconst isChanged = !previousETag || currentETag !== previousETag;\n\nconsole.log('Content changed?', isChanged);\nconsole.log('Reason:', previousETag === '' ? 'First run' : (currentETag !== previousETag ? 'ETag changed' : 'No change'));\n\n// IMPORTANT: Store current ETag for next run\nstaticData.previousETag = currentETag;\n\n// Return comparison results\nreturn {\n  json: {\n    currentETag,\n    previousETag: previousETag || '(first run)',\n    isFirstRun: previousETag === '',\n    isChanged,\n    timestamp: new Date().toISOString()\n  }\n};\n"
+        "jsCode": "// Get workflow static data storage\nconst staticData = $getWorkflowStaticData('node');\n\n// Extract Date field\nconst updatedDate = $input.first().json.headers.date;\n\n// Get previous Date (or empty string if first run)\nconst previousDate = staticData.previousDate|| '';\n\nconsole.log('Updated Date:', updatedDate);\nconsole.log('Previous Date:', previousDate || '(first run - no previous Date');\n\n// Determine if content has changed\nconst isChanged = !previousDate|| updatedDate !== previousDate;\n\nconsole.log('Content changed?', isChanged);\nconsole.log('Reason:', previousDate === '' ? 'First run' : (updatedDate  !== previousDate ? 'ETag changed' : 'No change'));\n\n// IMPORTANT: Store updated Date for next run\nstaticData.previousDate = updatedDate;\n\n// Return comparison results\nreturn {\n  json: {\n    updatedDate,\n    previousDate: previousDate || '(first run)',\n    isFirstRun: previousDate === '',\n    isChanged,\n    timestamp: new Date().toISOString()\n  }\n};\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        200,
-        -360
+        240,
+        -880
       ],
       "id": "45eedd12-99c9-4ea6-b994-51c55d9274f0",
       "name": "Updated etag?"
@@ -375,8 +375,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        -100,
-        -360
+        -60,
+        -880
       ],
       "id": "25014f3b-2191-4c5d-9fea-2a1e9f99e98a",
       "name": "Trigig Head Data"
@@ -553,8 +553,8 @@
       "type": "n8n-nodes-base.notion",
       "typeVersion": 2.2,
       "position": [
-        0,
-        -620
+        100,
+        -520
       ],
       "id": "404325c7-ae4b-4f48-98fc-cbaad8d69f23",
       "name": "Retrieve Previous Portofolio",
@@ -683,8 +683,8 @@
       "type": "n8n-nodes-base.html",
       "typeVersion": 1.2,
       "position": [
-        140,
-        -60
+        180,
+        -180
       ],
       "id": "43d8ab23-d0a0-4677-8ff2-6c58b2164b57",
       "name": "Extract Portfolio"
@@ -696,8 +696,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        440,
-        -60
+        480,
+        -180
       ],
       "id": "80450e6e-90d2-43a2-b5d9-6920de8bdccb",
       "name": "Transform Portfolio into Items"
@@ -715,8 +715,8 @@
       "type": "n8n-nodes-base.dateTime",
       "typeVersion": 2,
       "position": [
-        760,
-        -60
+        800,
+        -180
       ],
       "id": "832eebf3-66f5-4cdc-ae2a-72c54ca3681c",
       "name": "Format Date"
@@ -733,8 +733,8 @@
       "type": "n8n-nodes-base.dateTime",
       "typeVersion": 2,
       "position": [
-        740,
-        -620
+        860,
+        -520
       ],
       "id": "db1791ae-7d7a-45a7-bb03-907ca1bf7c53",
       "name": "Format Date1"
@@ -845,8 +845,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        480,
-        -360
+        500,
+        -880
       ],
       "id": "f3f10a05-6dc8-4610-b336-46b2aad3dd01",
       "name": "No Updates?"
@@ -1011,8 +1011,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        380,
-        -620
+        460,
+        -520
       ],
       "id": "2a7fb9ee-3af7-4ed4-9357-6e0835f1e6f5",
       "name": "Convert To Portfolio json"
@@ -1065,11 +1065,11 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        720,
-        -380
+        840,
+        -900
       ],
       "id": "89cbc98c-3108-4bae-929c-8406ba6b9ae1",
-      "name": "Stop"
+      "name": "No Updates Then Stop"
     }
   ],
   "pinData": {},
@@ -1084,18 +1084,26 @@
   "staticData": {
     "node:Schedule Trigger": {
       "recurrenceRules": [
-        14
+        0
       ]
     },
     "global": {
       "previousETag": "W/\"7836ae2089e31ceb9aeb02d86a6c28c4\""
     },
     "node:Updated etag?": {
-      "previousETag": "W/\"7836ae2089e31ceb9aeb02d86a6c28c4\""
+      "previousETag": "W/\"7836ae2089e31ceb9aeb02d86a6c28c4\"",
+      "previousDate": "Thu, 29 May 2025 04:30:29 GMT"
     }
   },
-  "tags": [],
+  "tags": [
+    {
+      "createdAt": "2025-05-29T09:20:50.795Z",
+      "updatedAt": "2025-05-29T09:20:50.795Z",
+      "id": "42Nq7KsSNnhDSFu9",
+      "name": "Scraper"
+    }
+  ],
   "triggerCount": 1,
-  "updatedAt": "2025-05-28T14:11:34.000Z",
-  "versionId": "9782dce0-cbad-47a5-b990-513deeef6568"
+  "updatedAt": "2025-05-29T13:36:06.000Z",
+  "versionId": "63a0eb6e-1501-4753-97b1-113c9ee9512a"
 }
