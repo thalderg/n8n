@@ -1,0 +1,760 @@
+{
+  "": "",
+  "active": true,
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Trisig Portfolio Scraper",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Retrieve Previous Portofolio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trisig Portfolio Scraper": {
+      "main": [
+        [
+          {
+            "node": "Extract Portfolio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Previous Portofolio": {
+      "main": [
+        [
+          {
+            "node": "Convert To Portfolio json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Portfolio": {
+      "main": [
+        [
+          {
+            "node": "Transform Portfolio into Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transform Portfolio into Items": {
+      "main": [
+        [
+          {
+            "node": "Format Date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Date": {
+      "main": [
+        [
+          {
+            "node": "Append",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Format Date1": {
+      "main": [
+        [
+          {
+            "node": "Compare Notion to Portfolio",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert To Portfolio json": {
+      "main": [
+        [
+          {
+            "node": "Format Date1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Notion to Portfolio": {
+      "main": [
+        [
+          {
+            "node": "Remove",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Do Nothing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notion Manual Updates",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append": {
+      "main": [
+        [
+          {
+            "node": "Add URL ID to Portflio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add URL ID to Portflio": {
+      "main": [
+        [
+          {
+            "node": "Compare Notion to Portfolio",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Add": {
+      "main": [
+        [
+          {
+            "node": "Gmail1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Adds1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove": {
+      "main": [
+        [
+          {
+            "node": "Discord1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion Manual Updates": {
+      "main": [
+        [
+          {
+            "node": "Updates1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-05-30T09:48:48.069Z",
+  "id": "06aNEZNinhgcaNZe",
+  "isArchived": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Trisig Portfolio 2.0",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 2
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -460,
+        -460
+      ],
+      "id": "caa60d71-f4c4-45ba-8864-8dd9a8ed1972",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://production-sfo.browserless.io/content",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "blockAds",
+              "value": "true"
+            },
+            {
+              "name": "stealth",
+              "value": "true"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"url\": \"https://trisigma.ai/portfolio\",\n  \"gotoOptions\": {\n    \"waitUntil\": \"networkidle0\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -20,
+        -220
+      ],
+      "id": "5e0c66a9-cb6d-4177-82b7-304775337209",
+      "name": "Trisig Portfolio Scraper",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "L2msUDZsWDkE7k48",
+          "name": "Header Auth account 3"
+        },
+        "httpQueryAuth": {
+          "id": "Fak4Qg8o38A75E24",
+          "name": "browsless"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "1f90a499-0b36-800e-82d3-c246868f382a",
+          "mode": "list",
+          "cachedResultName": "Portfolio",
+          "cachedResultUrl": "https://www.notion.so/1f90a4990b36800e82d3c246868f382a"
+        },
+        "simple": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        60,
+        -660
+      ],
+      "id": "60608750-1680-438c-a731-837db07edbe2",
+      "name": "Retrieve Previous Portofolio",
+      "executeOnce": false,
+      "credentials": {
+        "notionApi": {
+          "id": "1eMAeENtcYg86x4v",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "row",
+              "cssSelector": ".portfolio .table-container"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        -220
+      ],
+      "id": "2dd17da2-8692-4b91-aea2-766e9ecdd16a",
+      "name": "Extract Portfolio"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simplified n8n node code for structured data extraction\nfunction extractData() {\n  const columns = [\"Date\", \"Token\", \"CA\", \"Investment Amount\", \"Investment CAP\", \"ATH\", \"ATH/Investment CAP\", \"Current MC\", \"Current Balance\"];\n  const result = [];\n  \n  // Get the raw text and normalize whitespace\n  const rawText = items[0].json.row;\n  \n  // Use date pattern (DD.MM.YYYY) to identify the start of new rows\n  const datePattern = /\\d{2}\\.\\d{2}\\.\\d{4}/g;\n  const dates = [...rawText.matchAll(datePattern)];\n  \n  for (let i = 0; i < dates.length; i++) {\n    const date = dates[i][0];\n    const startIndex = dates[i].index;\n    const endIndex = (i < dates.length - 1) ? dates[i + 1].index : rawText.length;\n    \n    // Extract the complete text for this row\n    let rowText = rawText.substring(startIndex, endIndex).trim();\n    \n    // Split the row by spaces and line breaks, and filter out empty elements\n    let rowElements = rowText.split(/[\\s\\n]+/).filter(element => element);\n    \n    // Create an object for this row\n    const rowData = {};\n    \n    // First element is always the date\n    rowData[columns[0]] = date;\n    \n    // Remove the date from the elements array\n    const dateIndex = rowElements.indexOf(date);\n    if (dateIndex !== -1) {\n      rowElements.splice(dateIndex, 1);\n    }\n    \n    // Assign the remaining elements to their respective columns\n    for (let j = 1; j < columns.length && j-1 < rowElements.length; j++) {\n      rowData[columns[j]] = rowElements[j-1];\n    }\n    \n    result.push(rowData);\n  }\n  return result;\n  // return [{ json: {data:result} }];\n}\n\n// Execute the function\nreturn extractData();\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        -220
+      ],
+      "id": "404b02f2-dd95-4e68-8987-2d4a71f3d4af",
+      "name": "Transform Portfolio into Items"
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $json.Date }}",
+        "outputFieldName": "=Date",
+        "options": {
+          "includeInputFields": true,
+          "fromFormat": "={{ \"dd.MM.yyyy\" }}"
+        }
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        860,
+        -220
+      ],
+      "id": "cb46f064-67af-4937-bb8a-390339ff51e8",
+      "name": "Format Date"
+    },
+    {
+      "parameters": {
+        "operation": "formatDate",
+        "date": "={{ $json.Date }}",
+        "outputFieldName": "Date",
+        "options": {
+          "includeInputFields": true
+        }
+      },
+      "type": "n8n-nodes-base.dateTime",
+      "typeVersion": 2,
+      "position": [
+        760,
+        -660
+      ],
+      "id": "87ebc65b-6e5f-40a0-8fd7-0d68352394db",
+      "name": "Format Date1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ae84d22e-f605-411c-a6d3-d56dec31e64d",
+              "name": "=CA",
+              "value": "={{ $json.properties.CA.rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "1d1758cc-8e20-414b-97c2-aa23865c5a4d",
+              "name": "Token",
+              "value": "={{ $json.properties.Token.title[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "7397d23b-d658-436e-9484-9701794d6360",
+              "name": "Investment CAP",
+              "value": "={{ $json.properties[\"Investment CAP\"].rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "5a5bfc20-4755-40d1-91ca-e5972b8cc947",
+              "name": "ATH/Investment CAP",
+              "value": "={{ $json.properties[\"ATH/Investment CAP\"].rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "43f3260e-b4dd-4d6a-80dc-62e484a791f3",
+              "name": "ATH",
+              "value": "={{ $json.properties.ATH.rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "1e3ef687-ae45-43d0-b9b5-003f968d6c9a",
+              "name": "Current MC",
+              "value": "={{ $json.properties[\"Current MC\"].rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "804dd039-baf5-4f55-9e30-f8c4263a610d",
+              "name": "Investment Amount",
+              "value": "={{ $json.properties[\"Investment Amount\"].rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "1c72ee46-c3e5-417d-9d2b-f27639a5413b",
+              "name": "Date",
+              "value": "={{ $json.properties.Date.date.start }}",
+              "type": "string"
+            },
+            {
+              "id": "5da7aa55-f022-48f1-ae5c-9b9e4641272e",
+              "name": "Current Balance",
+              "value": "={{ $json.properties[\"Current Balance\"].rich_text[0].text.content }}",
+              "type": "string"
+            },
+            {
+              "id": "e5f2c9a2-ec60-4bd4-9758-adedcae133e8",
+              "name": "URL ID",
+              "value": "={{ $json.url }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        420,
+        -660
+      ],
+      "id": "98644fb6-8516-4b04-ae36-e31eb272111a",
+      "name": "Convert To Portfolio json"
+    },
+    {
+      "parameters": {
+        "sendTo": "gioben@protonmail.com",
+        "subject": "Trisig Portfolio Addition",
+        "message": "=A new token has been added in Trisig Portfolio. \nDate: {{ $json.property_date.start }} \nToken name:  {{ $json.name }} \nToken CA: {{ $json.property_ca }} \nInvestment Amount: {{ $json.property_investment_amount }} \nCurrent Balance: {{ $json.property_current_balance }} \nNotion URL ID: {{ $json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2440,
+        -20
+      ],
+      "id": "91bc226d-8cf1-4830-b02f-b4b47cb452a8",
+      "name": "Gmail1",
+      "webhookId": "628f0f0a-2e3d-440f-a8e3-fc921d7f8c16",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "EdToD3kB7ULzhVZc",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=A new token has been added in Trisig Portfolio.\nDate: {{ $json.property_date.start }}\nToken name:  {{ $json.name }}\nToken CA: {{ $json.property_ca }}\nInvestment Amount: {{ $json.property_investment_amount }}\nCurrent Balance: {{ $json.property_current_balance }}\nNotion URL ID: {{ $json.url }}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        2440,
+        280
+      ],
+      "id": "eee6aaf1-d0cc-4498-94aa-f1562c44ad7e",
+      "name": "Adds1",
+      "webhookId": "12d88b99-10d9-4d04-a268-041eee31e51c",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "VR7qsLnmCSk1uvHy",
+          "name": "Portfolio Add"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "Updates are available in Notion Trisig Portfolio:\nhttps://www.notion.so/Trisig-1f90a4990b36805da3fbd9fcacd555b6",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        -300
+      ],
+      "id": "bcc0ad24-9f62-470a-aa4a-63ab3b4efd56",
+      "name": "Updates1",
+      "webhookId": "6578184d-e0f5-4b03-9311-506ea57e3efc",
+      "executeOnce": true,
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "E3NkyuvdPhet0GKF",
+          "name": "Portfolio Updates"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        -920
+      ],
+      "id": "a8c311b7-b569-433c-b5bd-5f564fdb381d",
+      "name": "Discord1",
+      "webhookId": "96479e31-1b34-4059-8d2a-d4f0f3c290dc",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "E3NkyuvdPhet0GKF",
+          "name": "Portfolio Updates"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2040,
+        -600
+      ],
+      "id": "887147f3-8d54-47f8-b0eb-7dc790844dbe",
+      "name": "Do Nothing"
+    },
+    {
+      "parameters": {
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "CA",
+              "field2": "CA"
+            }
+          ]
+        },
+        "resolve": "preferInput2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.compareDatasets",
+      "typeVersion": 2.3,
+      "position": [
+        1520,
+        -480
+      ],
+      "id": "e8e5e926-8213-4065-9551-6c93cebd1d73",
+      "name": "Compare Notion to Portfolio"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        1120,
+        -420
+      ],
+      "id": "070e378a-f4bb-4361-9491-0be8fdad61c2",
+      "name": "Append"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\n// Build a lookup map of CA -> URL ID from items that have one\nconst urlIdMap = {};\nfor (const item of items) {\n  if (item.json['URL ID'] && item.json['CA']) {\n    // Only populate the first found URL ID for a CA\n    if (!urlIdMap[item.json['CA']]) {\n      urlIdMap[item.json['CA']] = item.json['URL ID'];\n    }\n  }\n}\n\nconst output = [];\n\nfor (const item of items) {\n  // Select items missing 'URL ID'\n  if (!item.json['URL ID']) {\n    let enrichedItem = { ...item };\n    const ca = item.json['CA'];\n    const urlId = urlIdMap[ca] || '';\n    enrichedItem.json['URL ID'] = urlId;\n    output.push(enrichedItem);\n  }\n}\n\nreturn output;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        -420
+      ],
+      "id": "b3d8f794-d7ee-4a80-8022-417338792857",
+      "name": "Add URL ID to Portflio"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "1f90a499-0b36-800e-82d3-c246868f382a",
+          "mode": "list",
+          "cachedResultName": "Portfolio",
+          "cachedResultUrl": "https://www.notion.so/1f90a4990b36800e82d3c246868f382a"
+        },
+        "title": "={{ $json.Token }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Date|date",
+              "includeTime": false,
+              "date": "={{ $json.Date }}"
+            },
+            {
+              "key": "CA|rich_text",
+              "textContent": "={{ $json.CA }}"
+            },
+            {
+              "key": "Investment Amount|rich_text",
+              "richText": "={{ false }}",
+              "textContent": "={{ $json[\"Investment Amount\"] }}"
+            },
+            {
+              "key": "ATH|rich_text",
+              "textContent": "={{ $json.ATH }}"
+            },
+            {
+              "key": "Current MC|rich_text",
+              "textContent": "={{ $json[\"Current MC\"] }}"
+            },
+            {
+              "key": "Investment CAP|rich_text",
+              "textContent": "={{ $json[\"Investment CAP\"] }}"
+            },
+            {
+              "key": "Current Balance|rich_text",
+              "textContent": "={{ $json[\"Current Balance\"] }}"
+            },
+            {
+              "key": "ATH/Investment CAP|rich_text",
+              "textContent": "={{ $json[\"ATH/Investment CAP\"] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        2020,
+        100
+      ],
+      "id": "b6a92a03-bd5a-40f7-a98f-74d727290f5f",
+      "name": "Add",
+      "credentials": {
+        "notionApi": {
+          "id": "1eMAeENtcYg86x4v",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "archive",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $json[\"URL ID\"] }}",
+          "mode": "url"
+        }
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        2060,
+        -920
+      ],
+      "id": "1332c9a6-7d43-49de-a80f-ea42745bc027",
+      "name": "Remove",
+      "credentials": {
+        "notionApi": {
+          "id": "1eMAeENtcYg86x4v",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ \"https://api.notion.com/v1/pages/\" + $json[\"URL ID\"].split('/').pop().split('-').pop() }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"properties\": {\n    \"Investment CAP\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{ $json[\"Investment CAP\"] }}\"\n          }\n        }\n      ]\n    },\n    \"ATH/Investment CAP\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{ $json[\"ATH/Investment CAP\"] }}\"\n          }\n        }\n      ]\n    },\n    \"ATH\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{ $json.ATH }}\"\n          }\n        }\n      ]\n    },\n    \"Current MC\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{ $json[\"Current MC\"] }}\"\n          }\n        }\n      ]\n    },\n    \"Investment Amount\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{ $json[\"Investment Amount\"] }}\"\n          }\n        }\n      ]\n    },\n    \"Current Balance\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{ $json[\"Current Balance\"] }}\"\n          }\n        }\n      ]\n    }\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2040,
+        -320
+      ],
+      "id": "e08efbb1-9e2f-4b83-9c9d-741d460848b4",
+      "name": "Notion Manual Updates",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "L2msUDZsWDkE7k48",
+          "name": "Header Auth account 3"
+        },
+        "notionApi": {
+          "id": "1eMAeENtcYg86x4v",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "staticData": {
+    "node:Schedule Trigger": {
+      "recurrenceRules": [
+        10
+      ]
+    },
+    "global": {
+      "previousETag": "W/\"7836ae2089e31ceb9aeb02d86a6c28c4\""
+    },
+    "node:Updated etag?": {
+      "previousETag": "W/\"7836ae2089e31ceb9aeb02d86a6c28c4\"",
+      "previousDate": "Fri, 30 May 2025 06:00:03 GMT"
+    }
+  },
+  "tags": [
+    {
+      "createdAt": "2025-05-29T09:20:50.795Z",
+      "updatedAt": "2025-05-29T09:20:50.795Z",
+      "id": "42Nq7KsSNnhDSFu9",
+      "name": "Scraper"
+    }
+  ],
+  "triggerCount": 1,
+  "updatedAt": "2025-05-30T15:30:08.000Z",
+  "versionId": "b23bdf8b-385a-4d00-8bb1-372be401c20e"
+}
