@@ -1,6 +1,6 @@
 {
   "": "",
-  "active": true,
+  "active": false,
   "connections": {
     "Schedule Trigger": {
       "main": [
@@ -274,6 +274,76 @@
           }
         ]
       ]
+    },
+    "Compare Datasets1": {
+      "main": [
+        [
+          {
+            "node": "Remove1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Updates Then Stop1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notion Manual Updates1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add1": {
+      "main": [
+        [
+          {
+            "node": "Gmail1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Adds1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion Manual Updates1": {
+      "main": [
+        [
+          {
+            "node": "Updates1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove1": {
+      "main": [
+        [
+          {
+            "node": "Discord1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "createdAt": "2025-05-20T10:24:18.665Z",
@@ -349,7 +419,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Get workflow static data storage\nconst staticData = $getWorkflowStaticData('node');\n\n// Extract Date field\nconst updatedDate = $input.first().json.headers.date;\n\n// Get previous Date (or empty string if first run)\nconst previousDate = staticData.previousDate|| '';\n\nconsole.log('Updated Date:', updatedDate);\nconsole.log('Previous Date:', previousDate || '(first run - no previous Date');\n\n// Determine if content has changed\nconst isChanged = !previousDate|| updatedDate !== previousDate;\n\nconsole.log('Content changed?', isChanged);\nconsole.log('Reason:', previousDate === '' ? 'First run' : (updatedDate  !== previousDate ? 'ETag changed' : 'No change'));\n\n// IMPORTANT: Store updated Date for next run\nstaticData.previousDate = updatedDate;\n\n// Return comparison results\nreturn {\n  json: {\n    updatedDate,\n    previousDate: previousDate || '(first run)',\n    isFirstRun: previousDate === '',\n    isChanged,\n    timestamp: new Date().toISOString()\n  }\n};\n"
+        "jsCode": "// Get workflow static data storage\nconst staticData = $getWorkflowStaticData('global');\n\n// Extract Date field\nconst updatedDate = $input.first().json.headers.date;\n\n// Get previous Date (or empty string if first run)\nconst previousDate = staticData.previousDate|| '';\n\nconsole.log('Updated Date:', updatedDate);\nconsole.log('Previous Date:', previousDate || '(first run - no previous Date');\n\n// Determine if content has changed\nconst isChanged = !previousDate|| updatedDate !== previousDate;\n\nconsole.log('Content changed?', isChanged);\nconsole.log('Reason:', previousDate === '' ? 'First run' : (updatedDate  !== previousDate ? 'ETag changed' : 'No change'));\n\n// IMPORTANT: Store updated Date for next run\nstaticData.previousDate = updatedDate;\n\n// Return comparison results\nreturn {\n  json: {\n    updatedDate,\n    previousDate: previousDate || '(first run)',\n    isFirstRun: previousDate === '',\n    isChanged,\n    timestamp: new Date().toISOString()\n  }\n};\n"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -997,12 +1067,6 @@
               "name": "Current Balance",
               "value": "={{ $json.properties[\"Current Balance\"].rich_text[0].text.content }}",
               "type": "string"
-            },
-            {
-              "id": "8bbca8c6-6bbc-425a-bff6-db7afdffdf86",
-              "name": "URL ID",
-              "value": "={{ $json.url }}",
-              "type": "string"
             }
           ]
         },
@@ -1070,6 +1134,261 @@
       ],
       "id": "89cbc98c-3108-4bae-929c-8406ba6b9ae1",
       "name": "No Updates Then Stop"
+    },
+    {
+      "parameters": {
+        "mergeByFields": {
+          "values": [
+            {
+              "field1": "CA",
+              "field2": "CA"
+            }
+          ]
+        },
+        "resolve": "preferInput2",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.compareDatasets",
+      "typeVersion": 2.3,
+      "position": [
+        1180,
+        280
+      ],
+      "id": "6e18baeb-c3a7-4e1d-b06f-f79a23600f54",
+      "name": "Compare Datasets1"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "1f90a499-0b36-800e-82d3-c246868f382a",
+          "mode": "list",
+          "cachedResultName": "Portfolio",
+          "cachedResultUrl": "https://www.notion.so/1f90a4990b36800e82d3c246868f382a"
+        },
+        "title": "={{ $json.Token }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Date|date",
+              "includeTime": false,
+              "date": "={{ $json.Date }}"
+            },
+            {
+              "key": "CA|rich_text",
+              "textContent": "={{ $json.CA }}"
+            },
+            {
+              "key": "Investment Amount|rich_text",
+              "richText": "={{ false }}",
+              "textContent": "={{ $json[\"Investment Amount\"] }}"
+            },
+            {
+              "key": "ATH|rich_text",
+              "textContent": "={{ $json.ATH }}"
+            },
+            {
+              "key": "Current MC|rich_text",
+              "textContent": "={{ $json[\"Current MC\"] }}"
+            },
+            {
+              "key": "Investment CAP|rich_text",
+              "textContent": "={{ $json[\"Investment CAP\"] }}"
+            },
+            {
+              "key": "Current Balance|rich_text",
+              "textContent": "={{ $json[\"Current Balance\"] }}"
+            },
+            {
+              "key": "ATH/Investment CAP|rich_text",
+              "textContent": "={{ $json[\"ATH/Investment CAP\"] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        2120,
+        660
+      ],
+      "id": "aaacd493-66bf-4650-a43a-dbaf4ed53331",
+      "name": "Add1",
+      "credentials": {
+        "notionApi": {
+          "id": "1eMAeENtcYg86x4v",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "gioben@protonmail.com",
+        "subject": "Trisig Portfolio Addition",
+        "message": "=A new token has been added in Trisig Portfolio. \nDate: {{ $json.property_date.start }} \nToken name:  {{ $json.name }} \nToken CA: {{ $json.property_ca }} \nInvestment Amount: {{ $json.property_investment_amount }} \nCurrent Balance: {{ $json.property_current_balance }} \nNotion URL ID: {{ $json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2360,
+        560
+      ],
+      "id": "588c5960-486c-46ad-a35e-ecdb2b1ee857",
+      "name": "Gmail1",
+      "webhookId": "d7aa1e3b-b808-49fd-acea-251d6e2b0418",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "EdToD3kB7ULzhVZc",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=A new token has been added in Trisig Portfolio.\nDate: {{ $json.property_date.start }}\nToken name:  {{ $json.name }}\nToken CA: {{ $json.property_ca }}\nInvestment Amount: {{ $json.property_investment_amount }}\nCurrent Balance: {{ $json.property_current_balance }}\nNotion URL ID: {{ $json.url }}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        2340,
+        800
+      ],
+      "id": "e51ada39-59fe-40cc-b969-169f83ae6684",
+      "name": "Adds1",
+      "webhookId": "95bf2a53-836e-4f81-88df-75dbae0a3a8e",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "VR7qsLnmCSk1uvHy",
+          "name": "Portfolio Add"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ \"https://api.notion.com/v1/pages/\" + $json[\"URL ID\"].split('/').pop().split('-').pop() }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"properties\": {\n    \"Investment CAP\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{$json['Investment CAP'].new_value}}\"\n          }\n        }\n      ]\n    },\n    \"ATH/Investment CAP\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{$json['ATH/Investment CAP'].new_value}}\"\n          }\n        }\n      ]\n    },\n    \"ATH\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{$json['ATH'].new_value}}\"\n          }\n        }\n      ]\n    },\n    \"Current MC\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{$json['Current MC'].new_value}}\"\n          }\n        }\n      ]\n    },\n    \"Investment Amount\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{$json['Investment Amount'].new_value}}\"\n          }\n        }\n      ]\n    },\n    \"Current Balance\": {\n      \"rich_text\": [\n        {\n          \"text\": {\n            \"content\": \"{{$json['Current Balance'].new_value}}\"\n          }\n        }\n      ]\n    },\n    \"URL ID\": {\n      \"url\": \"{{$json['URL ID']}}\"\n    }\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2060,
+        400
+      ],
+      "id": "fb739e49-4d6c-46e1-bba3-34e7b75c4d29",
+      "name": "Notion Manual Updates1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "L2msUDZsWDkE7k48",
+          "name": "Header Auth account 3"
+        },
+        "notionApi": {
+          "id": "1eMAeENtcYg86x4v",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "Updates are available in Notion Trisig Portfolio:\nhttps://www.notion.so/Trisig-1f90a4990b36805da3fbd9fcacd555b6",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        2380,
+        400
+      ],
+      "id": "9fefa638-e811-4cec-b410-eb05da223756",
+      "name": "Updates1",
+      "webhookId": "dda28789-cdbd-49fe-8869-f8135c334186",
+      "executeOnce": true,
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "E3NkyuvdPhet0GKF",
+          "name": "Portfolio Updates"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2060,
+        240
+      ],
+      "id": "ee3e7ce6-4a84-4225-9b8b-6a1935e4544e",
+      "name": "No Updates Then Stop1"
+    },
+    {
+      "parameters": {
+        "operation": "archive",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $json[\"URL ID\"] }}",
+          "mode": "url"
+        }
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1860,
+        140
+      ],
+      "id": "433b8267-f7cf-4e0a-bab7-4d51e817da5f",
+      "name": "Remove1",
+      "credentials": {
+        "notionApi": {
+          "id": "1eMAeENtcYg86x4v",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        2280,
+        120
+      ],
+      "id": "661efae1-1168-4daa-8832-ccee2a81f8e8",
+      "name": "Discord1",
+      "webhookId": "d2d3c147-5963-4d99-993a-3ddd1d157425",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "E3NkyuvdPhet0GKF",
+          "name": "Portfolio Updates"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -1084,15 +1403,16 @@
   "staticData": {
     "node:Schedule Trigger": {
       "recurrenceRules": [
-        0
+        12
       ]
     },
     "global": {
-      "previousETag": "W/\"7836ae2089e31ceb9aeb02d86a6c28c4\""
+      "previousETag": "W/\"7836ae2089e31ceb9aeb02d86a6c28c4\"",
+      "previousDate": "Fri, 30 May 2025 06:00:03 GMT"
     },
     "node:Updated etag?": {
       "previousETag": "W/\"7836ae2089e31ceb9aeb02d86a6c28c4\"",
-      "previousDate": "Thu, 29 May 2025 04:30:29 GMT"
+      "previousDate": "Fri, 30 May 2025 06:00:03 GMT"
     }
   },
   "tags": [
@@ -1104,6 +1424,6 @@
     }
   ],
   "triggerCount": 1,
-  "updatedAt": "2025-05-29T13:36:06.000Z",
-  "versionId": "63a0eb6e-1501-4753-97b1-113c9ee9512a"
+  "updatedAt": "2025-05-30T11:02:32.000Z",
+  "versionId": "0fc3d551-3576-44b2-8e1f-a182d3fbbedf"
 }
