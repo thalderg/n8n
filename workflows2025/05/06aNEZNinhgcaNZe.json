@@ -2,22 +2,6 @@
   "": "",
   "active": true,
   "connections": {
-    "Schedule Trigger": {
-      "main": [
-        [
-          {
-            "node": "Trisig Portfolio Scraper",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Retrieve Previous Portofolio",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Trisig Portfolio Scraper": {
       "main": [
         [
@@ -191,6 +175,22 @@
           }
         ]
       ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Retrieve Previous Portofolio",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Trisig Portfolio Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "createdAt": "2025-05-30T09:48:48.069Z",
@@ -201,26 +201,6 @@
   },
   "name": "Trisig Portfolio 2.0",
   "nodes": [
-    {
-      "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "field": "hours",
-              "hoursInterval": 2
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        -460,
-        -460
-      ],
-      "id": "caa60d71-f4c4-45ba-8864-8dd9a8ed1972",
-      "name": "Schedule Trigger"
-    },
     {
       "parameters": {
         "method": "POST",
@@ -721,6 +701,26 @@
           "name": "Notion account"
         }
       }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -360,
+        -460
+      ],
+      "id": "bee539ac-08cf-4964-a92e-a6ff58baf0ee",
+      "name": "Schedule Trigger"
     }
   ],
   "pinData": {},
@@ -735,7 +735,7 @@
   "staticData": {
     "node:Schedule Trigger": {
       "recurrenceRules": [
-        10
+        20
       ]
     },
     "global": {
@@ -755,6 +755,6 @@
     }
   ],
   "triggerCount": 1,
-  "updatedAt": "2025-05-30T15:30:08.000Z",
-  "versionId": "b23bdf8b-385a-4d00-8bb1-372be401c20e"
+  "updatedAt": "2025-05-31T09:25:09.000Z",
+  "versionId": "873f3fb6-a7f2-4d9d-8294-df5939bca11c"
 }
