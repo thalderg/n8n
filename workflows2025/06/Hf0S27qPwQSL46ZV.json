@@ -1,0 +1,110 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Set Topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-06-03T12:41:27.079Z",
+  "id": "Hf0S27qPwQSL46ZV",
+  "isArchived": false,
+  "meta": null,
+  "name": "My workflow 3",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        0
+      ],
+      "id": "e3bc90ab-7dd2-4793-921c-d06247ac0395",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "url": "https://api.twitterapi.io/api/v1/tweets/conversation",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        180,
+        -140
+      ],
+      "id": "1ae78aa3-438e-4ed6-85db-257b77fe07d8",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Y9mqglloyte4NEfz",
+          "name": "Twitter API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4eaf4662-206e-4273-9ba8-52dbdf715b80",
+              "name": "topic",
+              "value": "n8n",
+              "type": "string"
+            },
+            {
+              "id": "ab8ffcc4-da23-4be6-a748-d8a50d7526a4",
+              "name": "max_results",
+              "value": 15,
+              "type": "string"
+            },
+            {
+              "id": "e6ff7033-95d5-4812-8df1-7d0bccc20b00",
+              "name": "search_type",
+              "value": "popular",
+              "type": "string"
+            },
+            {
+              "id": "f0aa3de3-3e48-444f-ad42-1904b1a5bf4d",
+              "name": "date",
+              "value": "Date().toISOString().split('T')[0]}} (today's date in YYYY-MM-DD format)",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -40,
+        0
+      ],
+      "id": "c59e493e-46cb-4321-a6a7-653703187b29",
+      "name": "Set Topic"
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-06-03T12:41:27.000Z",
+  "versionId": "692e6b51-9031-4173-ad9a-fc3dc42d8853"
+}
