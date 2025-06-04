@@ -12,12 +12,19 @@
           }
         ]
       ]
+    },
+    "Set Topic": {
+      "main": [
+        []
+      ]
     }
   },
   "createdAt": "2025-06-03T12:41:27.079Z",
   "id": "Hf0S27qPwQSL46ZV",
   "isArchived": false,
-  "meta": null,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
   "name": "My workflow 3",
   "nodes": [
     {
@@ -36,13 +43,15 @@
         "url": "https://api.twitterapi.io/api/v1/tweets/conversation",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "specifyQuery": "json",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        180,
-        -140
+        260,
+        -240
       ],
       "id": "1ae78aa3-438e-4ed6-85db-257b77fe07d8",
       "name": "HTTP Request",
@@ -66,19 +75,19 @@
             {
               "id": "ab8ffcc4-da23-4be6-a748-d8a50d7526a4",
               "name": "max_results",
-              "value": 15,
+              "value": "10",
               "type": "string"
             },
             {
               "id": "e6ff7033-95d5-4812-8df1-7d0bccc20b00",
               "name": "search_type",
-              "value": "popular",
+              "value": "Top",
               "type": "string"
             },
             {
               "id": "f0aa3de3-3e48-444f-ad42-1904b1a5bf4d",
               "name": "date",
-              "value": "Date().toISOString().split('T')[0]}} (today's date in YYYY-MM-DD format)",
+              "value": "={{ new Date().toISOString().split('T')[0] }}",
               "type": "string"
             }
           ]
@@ -88,7 +97,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -40,
+        -20,
         0
       ],
       "id": "c59e493e-46cb-4321-a6a7-653703187b29",
@@ -105,6 +114,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-06-03T12:41:27.000Z",
-  "versionId": "692e6b51-9031-4173-ad9a-fc3dc42d8853"
+  "updatedAt": "2025-06-04T12:36:39.000Z",
+  "versionId": "8e2f2b77-3064-4369-af76-e33d72b87e1d"
 }
