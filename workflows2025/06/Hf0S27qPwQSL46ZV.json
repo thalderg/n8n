@@ -62,7 +62,7 @@
       "main": [
         [
           {
-            "node": "Loop Over Items",
+            "node": "Add Score",
             "type": "main",
             "index": 0
           }
@@ -74,6 +74,17 @@
         [
           {
             "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Score": {
+      "main": [
+        [
+          {
+            "node": "Set X API Parameters",
             "type": "main",
             "index": 0
           }
@@ -322,7 +333,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1320,
+        1240,
         -60
       ],
       "id": "4abab152-91a6-4783-81e8-f59e04d0f27d",
@@ -342,6 +353,19 @@
       ],
       "id": "addf66a7-a847-49bc-82b7-02ed4c2a28f3",
       "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Engagement Score Calculator with Freshness Factor (0-100 scale)\nconst tweets = $input.all();\nconst scoredTweets = [];\n\n// Get all tweets for normalization\nconst allTweets = tweets.map(item => item.json);\nconst viewCounts = allTweets.map(t => parseInt(t.view_count) || 1);\nconst followerCounts = allTweets.map(t => parseInt(t.author_followers) || 1);\n\nconst maxViews = Math.max(...viewCounts);\nconst maxFollowers = Math.max(...followerCounts);\n\nfor (const item of tweets) {\n    const tweet = item.json;\n    \n    // Parse numeric values\n    const likes = parseInt(tweet.like_count) || 0;\n    const retweets = parseInt(tweet.retweet_count) || 0;\n    const bookmarks = parseInt(tweet.bookmark_count) || 0;\n    const views = parseInt(tweet.view_count) || 1;\n    const quotes = parseInt(tweet.quote_count) || 0;\n    const followers = parseInt(tweet.author_followers) || 1;\n    \n    // FRESHNESS CALCULATION\n    const now = new Date();\n    const tweetDate = new Date(tweet.created_at);\n    const hoursOld = (now - tweetDate) / (1000 * 60 * 60);\n    const daysOld = hoursOld / 24;\n    \n    // Freshness multiplier (decays over time)\n    let freshnessMultiplier = 1.0;\n    \n    if (daysOld <= 1) {\n        freshnessMultiplier = 1.2;      // 20% boost for content < 1 day\n    } else if (daysOld <= 3) {\n        freshnessMultiplier = 1.1;      // 10% boost for content < 3 days\n    } else if (daysOld <= 7) {\n        freshnessMultiplier = 1.0;      // No change for content < 1 week\n    } else if (daysOld <= 14) {\n        freshnessMultiplier = 0.9;      // 10% penalty for content < 2 weeks\n    } else if (daysOld <= 30) {\n        freshnessMultiplier = 0.8;      // 20% penalty for content < 1 month\n    } else if (daysOld <= 90) {\n        freshnessMultiplier = 0.7;      // 30% penalty for content < 3 months\n    } else {\n        freshnessMultiplier = 0.6;      // 40% penalty for content > 3 months\n    }\n    \n    // Core engagement calculation\n    const totalEngagements = likes + retweets + bookmarks + quotes;\n    const engagementRate = (totalEngagements / views) * 100;\n    \n    // Base scoring (before freshness)\n    const engagementScore = Math.min(engagementRate * 10, 40);\n    \n    const bookmarkRate = (bookmarks / views) * 100;\n    const bookmarkScore = Math.min(bookmarkRate * 12.5, 25);\n    \n    const amplificationRate = ((retweets + quotes) / views) * 100;\n    const amplificationScore = Math.min(amplificationRate * 10, 20);\n    \n    const authorityScore = (followers / maxFollowers) * 10;\n    \n    let mediaBonus = 0;\n    if (tweet.has_media === \"true\") {\n        mediaBonus = tweet.media_type === \"video\" ? 5 : 3;\n    }\n    \n    // Viral bonuses\n    let viralBonus = 0;\n    if (likes > 1000) viralBonus = 10;\n    if (likes > 5000) viralBonus = 20;\n    if (likes > 10000) viralBonus = 30;\n    \n    // Base score (before freshness)\n    const baseScore = engagementScore + bookmarkScore + amplificationScore + authorityScore + mediaBonus + viralBonus;\n    \n    // Apply freshness multiplier\n    const finalScore = Math.min(Math.round(baseScore * freshnessMultiplier), 100);\n    \n    scoredTweets.push({\n        json: {\n            ...tweet,\n            engagement_score: finalScore,\n            days_old: Math.round(daysOld * 10) / 10,  // Round to 1 decimal\n            freshness_multiplier: Math.round(freshnessMultiplier * 100) / 100,  // Round to 2 decimals\n            base_score: Math.round(baseScore)  // Score before freshness\n        }\n    });\n}\n\n// Sort by engagement score (highest first)\nscoredTweets.sort((a, b) => b.json.engagement_score - a.json.engagement_score);\n\nreturn scoredTweets;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        -60
+      ],
+      "id": "690c282b-78fc-4c64-84be-b6b040845fa3",
+      "name": "Add Score"
     }
   ],
   "pinData": {
@@ -2809,6 +2833,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-06-09T14:34:59.000Z",
-  "versionId": "3f2bd813-2436-48fc-b897-b58ad8cb56b6"
+  "updatedAt": "2025-07-10T15:16:04.000Z",
+  "versionId": "4ab249ad-e9e3-4f54-a2cb-18c244575ab6"
 }
