@@ -1,6 +1,6 @@
 {
   "": "",
-  "active": true,
+  "active": false,
   "connections": {
     "Trisig Portfolio Scraper": {
       "main": [
@@ -755,6 +755,6 @@
     }
   ],
   "triggerCount": 1,
-  "updatedAt": "2025-05-31T09:25:09.000Z",
+  "updatedAt": "2025-07-10T15:09:03.000Z",
   "versionId": "873f3fb6-a7f2-4d9d-8294-df5939bca11c"
 }
