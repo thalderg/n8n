@@ -104,13 +104,7 @@
     },
     "If Thread": {
       "main": [
-        [
-          {
-            "node": "Get Thread Reply",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Code": {
@@ -126,13 +120,7 @@
     },
     "Get Thread Reply": {
       "main": [
-        [
-          {
-            "node": "Code",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "If": {
@@ -498,10 +486,6 @@
             {
               "name": "=tweetId",
               "value": "={{ $json.tweet_id }}"
-            },
-            {
-              "name": "cursor",
-              "value": "={{ $json.next_cursor || \"\" }} "
             }
           ]
         },
@@ -558,6 +542,48 @@
       ],
       "id": "f2dea46d-bee8-44ba-87f4-ed478605a6ca",
       "name": "If"
+    },
+    {
+      "parameters": {
+        "url": "https://api.twitterapi.io/twitter/tweet/advanced_search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "n8n (conversation_id:1943682338250194983)"
+            },
+            {
+              "name": "limit",
+              "value": "=20"
+            },
+            {
+              "name": "result_type",
+              "value": "top"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Accept\": \"application/json\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2160,
+        -400
+      ],
+      "id": "f34760b2-54db-43e0-a1f9-3207703490fb",
+      "name": "Get Tweets1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Y9mqglloyte4NEfz",
+          "name": "Twitter API"
+        }
+      }
     }
   ],
   "pinData": {
@@ -947,6 +973,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-07-13T10:56:48.000Z",
-  "versionId": "c7ab706f-f60f-407c-ac66-1b2721efa173"
+  "updatedAt": "2025-07-14T12:56:24.000Z",
+  "versionId": "2b25cf0a-e2d5-4f86-a1a2-3c207edd9c62"
 }
