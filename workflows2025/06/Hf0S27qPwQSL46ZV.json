@@ -17,19 +17,7 @@
       "main": [
         [
           {
-            "node": "Loop Over Items",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Loop Over Items": {
-      "main": [
-        [],
-        [
-          {
-            "node": "Set API Query",
+            "node": "Loop Over Topic",
             "type": "main",
             "index": 0
           }
@@ -73,7 +61,7 @@
       "main": [
         [
           {
-            "node": "If Thread",
+            "node": "If Threads",
             "type": "main",
             "index": 0
           }
@@ -102,32 +90,86 @@
         ]
       ]
     },
-    "If Thread": {
-      "main": [
-        []
-      ]
-    },
-    "Code": {
+    "If Threads": {
       "main": [
         [
           {
-            "node": "If",
+            "node": "Loop Over Threads",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Loop Over Threads": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Construct Thread Query",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Get Thread Reply": {
+    "Loop Over Topic": {
       "main": [
-        []
+        [],
+        [
+          {
+            "node": "Set API Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "If": {
+    "Get Thread": {
       "main": [
         [
           {
-            "node": "Get Thread Reply",
+            "node": "Construct Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construct Thread": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construct Thread Query": {
+      "main": [
+        [
+          {
+            "node": "Get Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Threads",
             "type": "main",
             "index": 0
           }
@@ -166,19 +208,6 @@
       ],
       "id": "e82e8c21-c075-4181-878d-26ec36498f6a",
       "name": "Topic Generator"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        120,
-        -180
-      ],
-      "id": "92586035-bd29-47cd-8db2-2278d8316412",
-      "name": "Loop Over Items"
     },
     {
       "parameters": {
@@ -340,44 +369,11 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1680,
+        1620,
         -60
       ],
       "id": "fca7e9da-ec7d-4a1d-b784-a2bbcd5ad4a0",
       "name": "Add Rates & Indicators"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "e8d17d4e-345b-4428-90ee-ecaa6f0c35f6",
-              "leftValue": "={{ $json.thread_indicator }}",
-              "rightValue": "thread",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1840,
-        -60
-      ],
-      "id": "694dd4b0-862f-4807-ac52-d3b333ed9724",
-      "name": "If Thread"
     },
     {
       "parameters": {
@@ -464,53 +460,6 @@
     },
     {
       "parameters": {
-        "jsCode": "// Ultra Simple Thread Builder\nconst data = $input.first().json;\nconst tweets = data.tweets || [];\n\n// Get author from first tweet\nconst author = tweets[0]?.author?.userName;\n\n// Filter author's tweets and sort\nconst authorTweets = tweets\n    .filter(t => t.author.userName === author)\n    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));\n\n// Build text\nlet text = '';\nauthorTweets.forEach((tweet, i) => {\n    if (i === 0 && !tweet.isReply) {\n        text = tweet.text;\n    } else {\n        const num = i + 1;\n        text += text ? `\\n\\n(${num}) ${tweet.text}` : `(${num}) ${tweet.text}`;\n    }\n});\n\n// Use first tweet's data as template\nconst firstTweet = authorTweets[0];\n\nreturn [{\n    json: {\n        tweet_text: text,\n        tweet_id: firstTweet.id,\n        author_username: author,\n        like_count: firstTweet.likeCount.toString(),\n        retweet_count: firstTweet.retweetCount.toString(),\n        bookmark_count: firstTweet.bookmarkCount.toString(),\n        view_count: firstTweet.viewCount.toString(),\n        has_next_page: data.has_next_page,\n        next_cursor: data.next_cursor\n    }\n}];\n\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2860,
-        -160
-      ],
-      "id": "12c2c3fb-04d6-4145-bf94-e9a167dd6d70",
-      "name": "Code"
-    },
-    {
-      "parameters": {
-        "url": "https://api.twitterapi.io/twitter/tweet/thread_context",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendQuery": true,
-        "queryParameters": {
-          "parameters": [
-            {
-              "name": "=tweetId",
-              "value": "={{ $json.tweet_id }}"
-            }
-          ]
-        },
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Accept\": \"application/json\"\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        2520,
-        -140
-      ],
-      "id": "65e020c3-e8cb-4fc3-a8d7-c6eb51432119",
-      "name": "Get Thread Reply",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "Y9mqglloyte4NEfz",
-          "name": "Twitter API"
-        }
-      }
-    },
-    {
-      "parameters": {
         "conditions": {
           "options": {
             "caseSensitive": true,
@@ -520,13 +469,12 @@
           },
           "conditions": [
             {
-              "id": "0c9eb8b1-0862-4694-9984-a02fa323ab38",
-              "leftValue": "={{ $json.has_next_page }}",
-              "rightValue": "",
+              "id": "e8d17d4e-345b-4428-90ee-ecaa6f0c35f6",
+              "leftValue": "={{ $json.thread_indicator }}",
+              "rightValue": "thread",
               "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
+                "type": "string",
+                "operation": "equals"
               }
             }
           ],
@@ -537,11 +485,48 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        3140,
-        20
+        1820,
+        -60
       ],
-      "id": "f2dea46d-bee8-44ba-87f4-ed478605a6ca",
-      "name": "If"
+      "id": "694dd4b0-862f-4807-ac52-d3b333ed9724",
+      "name": "If Threads"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2120,
+        -340
+      ],
+      "id": "f61cf4e3-6c12-4863-8122-1da5084193a7",
+      "name": "Loop Over Threads"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        120,
+        -180
+      ],
+      "id": "92586035-bd29-47cd-8db2-2278d8316412",
+      "name": "Loop Over Topic"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2680,
+        -40
+      ],
+      "id": "36e66035-617b-4f25-81c4-1c1b711d6c28",
+      "name": "Merge"
     },
     {
       "parameters": {
@@ -553,7 +538,7 @@
           "parameters": [
             {
               "name": "query",
-              "value": "n8n (conversation_id:1943682338250194983)"
+              "value": "={{ $json.query }}"
             },
             {
               "name": "limit",
@@ -561,7 +546,7 @@
             },
             {
               "name": "result_type",
-              "value": "top"
+              "value": "latest"
             }
           ]
         },
@@ -573,17 +558,43 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2160,
-        -400
+        2700,
+        -600
       ],
       "id": "f34760b2-54db-43e0-a1f9-3207703490fb",
-      "name": "Get Tweets1",
+      "name": "Get Thread",
       "credentials": {
         "httpHeaderAuth": {
           "id": "Y9mqglloyte4NEfz",
           "name": "Twitter API"
         }
       }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the main tweet from \"Loop Over Threads\" node\nconst mainTweet = $('Loop Over Threads').first().json;\n\n// Get the input data which contains the tweets array\nconst inputData = $input.first().json;\n\n// Extract the tweets array from the nested structure\nconst threadTweets = inputData.tweets || [];\n\n// Reverse to get chronological order (oldest to newest)\nconst orderedThreadTweets = threadTweets.reverse();\n\n// Extract just the text from each thread tweet\nconst threadTexts = orderedThreadTweets.map(tweet => tweet.text);\n\n// Build the combined text starting with main tweet\nlet combinedText = mainTweet.tweet_text;\n\n// Add each thread part with numbering starting from (2)\nthreadTexts.forEach((text, index) => {\n  combinedText += `\\n\\n(${index + 2}) ${text}`;\n});\n\n// Create the result maintaining the exact JSON structure from \"Loop Over Threads\"\nconst result = {\n  ...mainTweet, // Keep all original fields exactly as they were\n  tweet_text: combinedText // Update only the tweet_text field\n};\n\nreturn [result];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        -520
+      ],
+      "id": "6fac71ef-b616-48fa-a66d-e748be4c6ff4",
+      "name": "Construct Thread"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the input data\nconst inputData = $input.all();\nconst results = [];\n\ninputData.forEach(item => {\n  const data = item.json;\n  \n  // Parse the created_at date\n  const createdAt = new Date(data.created_at);\n  \n  // Format the since time (set seconds to 00)\n  const sinceYear = createdAt.getUTCFullYear();\n  const sinceMonth = String(createdAt.getUTCMonth() + 1).padStart(2, '0');\n  const sinceDay = String(createdAt.getUTCDate()).padStart(2, '0');\n  const sinceHour = String(createdAt.getUTCHours()).padStart(2, '0');\n  const sinceMinute = String(createdAt.getUTCMinutes()).padStart(2, '0');\n  \n  const sinceTime = `${sinceYear}-${sinceMonth}-${sinceDay}_${sinceHour}:${sinceMinute}:00_UTC`;\n  \n  // Calculate until time (10 minutes later)\n  const untilDate = new Date(createdAt.getTime() + 10 * 60 * 1000); // Add 10 minutes\n  const untilYear = untilDate.getUTCFullYear();\n  const untilMonth = String(untilDate.getUTCMonth() + 1).padStart(2, '0');\n  const untilDay = String(untilDate.getUTCDate()).padStart(2, '0');\n  const untilHour = String(untilDate.getUTCHours()).padStart(2, '0');\n  const untilMinute = String(untilDate.getUTCMinutes()).padStart(2, '0');\n  \n  const untilTime = `${untilYear}-${untilMonth}-${untilDay}_${untilHour}:${untilMinute}:00_UTC`;\n  \n  // Construct the query\n  const query = `since:${sinceTime} until:${untilTime} from:${data.author_username} filter:self_threads`;\n  \n  // Return the result\n  results.push({\n    query: query,\n    original_tweet_id: data.tweet_id,\n    author_username: data.author_username,\n    created_at: data.created_at,\n    since_time: sinceTime,\n    until_time: untilTime\n  });\n});\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        -580
+      ],
+      "id": "9fed0c13-d10c-4d55-b68c-ddd8653e4cb0",
+      "name": "Construct Thread Query"
     }
   ],
   "pinData": {
@@ -962,6 +973,1307 @@
           "topic": "n8n"
         }
       }
+    ],
+    "Add Rates & Indicators": [
+      {
+        "json": {
+          "tweet_text": "n8n Complete Beginners Guide\n\nAgents, Webhooks, Integrations, HTTP Requests...\n\nAnd more.\n\n00:00 Introduction\n01:44 The Rise of n8n and agent builders\n04:21 The basics of n8n Workflows\n08:14 Your First Workflow\n10:11 Advanced Workflow Techniques\n13:00 Integrating External APIs and Webhooks\n23:53 Testing and Troubleshooting Workflows\n32:55 n8n Templates and Initial Setup\n33:16 Publishing and Automating with Dropbox\n33:30 Introducing AI Agents\n34:39 Setting Up AI Agent Prompts\n38:07 Integrating Notion with AI Agents\n44:53 Creating and Testing AI Workflows\n54:13 Advanced AI Agent Integrations",
+          "tweet_id": "1943744716954382610",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 18:50:28 +0000 2025",
+          "tweet_url": "https://x.com/rileybrown_ai/status/1943744716954382610",
+          "author_username": "rileybrown_ai",
+          "author_followers": "80447",
+          "like_count": "3082",
+          "retweet_count": "526",
+          "bookmark_count": "6306",
+          "view_count": "152561",
+          "quote_count": "6",
+          "conversation_id": "1943744716954382610",
+          "has_media": "true",
+          "media_type": "video",
+          "media_urls": "https://t.co/ZzuIPrwCIE",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 86,
+          "days_old": 3.6,
+          "freshness_multiplier": 1,
+          "base_score": 86,
+          "engagement_rate": 6.5,
+          "bookmark_rate": 4.13,
+          "amplification_rate": 0.35,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": false,
+          "viral_status": "viral",
+          "engagement_class": "excellent",
+          "bookmark_class": "excellent",
+          "amplification_class": "good",
+          "overall_performance": "excellent"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "I just scraped 50 local dentists in 60 seconds.\n\nNo coding, no expensive tools—completely FREE 🎯\n\nTHE EXACT PROCESS:\n\n1️⃣ Set up N8N HTTP request (POST method)\n2️⃣ Connect Apify's Google Maps scraper\n3️⃣ Configure search terms + location filters\n4️⃣ Auto-map data to Google Sheets\n5️⃣ Generate AI-powered outreach emails\n\nResults: Complete lead database with phone numbers, emails, and addresses in minutes.\n\nSave this post, it will save you thousands on lead gen tools 💡\n\nWant the full guide? DM me. 📥",
+          "tweet_id": "1943777320600289560",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 21:00:01 +0000 2025",
+          "tweet_url": "https://x.com/JulianGoldieSEO/status/1943777320600289560",
+          "author_username": "JulianGoldieSEO",
+          "author_followers": "85585",
+          "like_count": "521",
+          "retweet_count": "63",
+          "bookmark_count": "1127",
+          "view_count": "35023",
+          "quote_count": "0",
+          "conversation_id": "1943777320600289560",
+          "has_media": "true",
+          "media_type": "video",
+          "media_urls": "https://t.co/mFobS5LC8L",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 75,
+          "days_old": 3.5,
+          "freshness_multiplier": 1,
+          "base_score": 75,
+          "engagement_rate": 4.89,
+          "bookmark_rate": 3.22,
+          "amplification_rate": 0.18,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": true,
+          "viral_status": "high",
+          "engagement_class": "good",
+          "bookmark_class": "excellent",
+          "amplification_class": "average",
+          "overall_performance": "good"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "For the next 24 hours you can STEAL my n8n swipe file containing 12+ automation's.\n\nAll of these can be setup within 60 MINS and SAVE you 10+ HOURS per week.\n\nEasily worth $997+\nToday It's yours for FREE\n\n👉RT + Like &amp; Comment “n8n” and I’ll DM you the file\n(Must be following) https://t.co/JEZp1QRA6r",
+          "tweet_id": "1943681286062965180",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 14:38:25 +0000 2025",
+          "tweet_url": "https://x.com/marryevan999/status/1943681286062965180",
+          "author_username": "marryevan999",
+          "author_followers": "2567",
+          "like_count": "44",
+          "retweet_count": "25",
+          "bookmark_count": "5",
+          "view_count": "815",
+          "quote_count": "0",
+          "conversation_id": "1943681286062965180",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/JEZp1QRA6r",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 71,
+          "days_old": 3.8,
+          "freshness_multiplier": 1,
+          "base_score": 71,
+          "engagement_rate": 9.08,
+          "bookmark_rate": 0.61,
+          "amplification_rate": 3.07,
+          "thread_indicator": "single",
+          "content_type": "engagement_bait",
+          "call_to_action": true,
+          "viral_status": "high",
+          "engagement_class": "excellent",
+          "bookmark_class": "poor",
+          "amplification_class": "excellent",
+          "overall_performance": "good"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "🔥 Automate Your Entire Social Media in 1 Click with AI + N8N\n\nNo more posting manually across platforms.\n\nThis AI-powered workflow writes, designs, and schedules viral content for LinkedIn, Instagram, X, Facebook & more — all from one dashboard.\n\n✅ GPT-4o generates platform-specific posts\n✅ Auto-scheduling across all social channels\n✅ Custom hooks, captions & hashtags\n✅ Google Sheets integration for tracking\n✅ Fully automated – just plug & run\n\nPerfect for creators, agencies, and brands scaling fast.\n\nRetweet + Like+ Comment “Agent”. Must Follow so I’ll DM you.",
+          "tweet_id": "1943856974262940009",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Sat Jul 12 02:16:32 +0000 2025",
+          "tweet_url": "https://x.com/Sitara_AI7/status/1943856974262940009",
+          "author_username": "Sitara_AI7",
+          "author_followers": "2137",
+          "like_count": "128",
+          "retweet_count": "68",
+          "bookmark_count": "70",
+          "view_count": "5985",
+          "quote_count": "0",
+          "conversation_id": "1943856974262940009",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/Yfe9Fl2Rgh",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 69,
+          "days_old": 3.3,
+          "freshness_multiplier": 1,
+          "base_score": 69,
+          "engagement_rate": 4.44,
+          "bookmark_rate": 1.17,
+          "amplification_rate": 1.14,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": true,
+          "viral_status": "high",
+          "engagement_class": "good",
+          "bookmark_class": "poor",
+          "amplification_class": "excellent",
+          "overall_performance": "good"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "🚨 BREAKING: I just cracked the code on FREE leads! 🔥\n\nThis N8N + AI combo is INSANE! 😱\n\n500 leads in seconds? ✅ \nCosts 41 cents? ✅ \nAI writes emails? ✅\n\nGoogle Maps, LinkedIn, Instagram - it scrapes EVERYTHING! 🤖\n\nMy exact template? Link below! 👇 https://t.co/qY4ZGiB1lz",
+          "tweet_id": "1943797820643062259",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 22:21:29 +0000 2025",
+          "tweet_url": "https://x.com/JulianGoldieSEO/status/1943797820643062259",
+          "author_username": "JulianGoldieSEO",
+          "author_followers": "85585",
+          "like_count": "56",
+          "retweet_count": "6",
+          "bookmark_count": "94",
+          "view_count": "4657",
+          "quote_count": "0",
+          "conversation_id": "1943797820643062259",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/qY4ZGiB1lz",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 66,
+          "days_old": 3.4,
+          "freshness_multiplier": 1,
+          "base_score": 66,
+          "engagement_rate": 3.35,
+          "bookmark_rate": 2.02,
+          "amplification_rate": 0.13,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": false,
+          "viral_status": "high",
+          "engagement_class": "average",
+          "bookmark_class": "good",
+          "amplification_class": "poor",
+          "overall_performance": "average"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "I just finished setting up an AI Agent that processes 100+ client documents daily for agencies, SaaS and ecom businesses (in n8n)\n\nIt extracts data, sends emails, and handles document workflows without the need to do it manually\n\nComplete AI automation that saves 35+ hours/week on client paperwork\n\nYou can also use it for reporting of any type\n\n- Auto-extracts text from PDFs\n- Processes multiple file formats\n- Sends automated email responses\n- Routes documents intelligently\n\nThis AI workflow saves $80K+/year in processing costs\n\nWant it FREE?\n\n👉 RT + Like & Comment \"WORKFLOW\" and I'll DM the JSON file + doc to you ASAP\n\nNo opt-in, no BS\n\n(Must follow)",
+          "tweet_id": "1943656052311876013",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 12:58:08 +0000 2025",
+          "tweet_url": "https://x.com/dashboardlim/status/1943656052311876013",
+          "author_username": "dashboardlim",
+          "author_followers": "11216",
+          "like_count": "255",
+          "retweet_count": "109",
+          "bookmark_count": "232",
+          "view_count": "17289",
+          "quote_count": "1",
+          "conversation_id": "1943656052311876013",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/dSrQCOHD7y",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 61,
+          "days_old": 3.8,
+          "freshness_multiplier": 1,
+          "base_score": 61,
+          "engagement_rate": 3.45,
+          "bookmark_rate": 1.34,
+          "amplification_rate": 0.64,
+          "thread_indicator": "single",
+          "content_type": "engagement_bait",
+          "call_to_action": true,
+          "viral_status": "high",
+          "engagement_class": "average",
+          "bookmark_class": "average",
+          "amplification_class": "good",
+          "overall_performance": "average"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "If I were launching a services business today, here are the 9 tools I'd use to hit $1M in year one:\n\n1/ @n8n_io - Build an AI workforce. Automate proposals, client onboarding, reporting. We saved 20 hours/week on repetitive tasks within month one.\n\n2/ @SpaceChenst - Your outsourced finance department. Real-time P&L by client, cash flow forecasting, and fractional CFO guidance. Know your margins before they know you.\n\n3/ @NotionHQ - Operating system for everything. Client wiki, project tracking, SOPs, team knowledge base. Start with templates, customize as you scale.\n\n4/ @WisprFlow - Dictate proposals/emails/anything 3x faster than typing. Perfect for busy founders.\n\n5/ @useMotion - Calendar that thinks. Auto-schedules tasks around client meetings, ensures nothing drops. Like having an EA before you can afford one.\n\n6/ @TallyForms - Beautiful forms with conditional logic, payment collection, and Notion integration. Goodbye, Google Forms.\n\n7/ @Loom - Async communication superpower. Record SOPs once, use forever. Client updates in 2 minutes vs 30-minute calls.\n\n8/ @Mixpanel - Track what matters. Which services drive retention? What's your client LTV? Data-driven decisions from day one.\n\n9/ @Mercury - Banking that scales. Virtual cards for each client project, expense management built-in. Clean books from the start.\n\nWhat should I add to this list?",
+          "tweet_id": "1943641900973748596",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 12:01:54 +0000 2025",
+          "tweet_url": "https://x.com/jspujji/status/1943641900973748596",
+          "author_username": "jspujji",
+          "author_followers": "178958",
+          "like_count": "154",
+          "retweet_count": "19",
+          "bookmark_count": "608",
+          "view_count": "28121",
+          "quote_count": "2",
+          "conversation_id": "1943641900973748596",
+          "has_media": "false",
+          "media_type": null,
+          "media_urls": null,
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 60,
+          "days_old": 3.9,
+          "freshness_multiplier": 1,
+          "base_score": 60,
+          "engagement_rate": 2.78,
+          "bookmark_rate": 2.16,
+          "amplification_rate": 0.07,
+          "thread_indicator": "single",
+          "content_type": "monetization",
+          "call_to_action": false,
+          "viral_status": "high",
+          "engagement_class": "average",
+          "bookmark_class": "good",
+          "amplification_class": "poor",
+          "overall_performance": "average"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "the n8n automation ecosystem if FULL of fake gurus...\n\nthey can't show you how to build workflows because most of them are STOLEN, and they certainly can't teach you how to find clients\n\nhere's a blueprint to go from $0 to $10k/mo selling n8n workflows:\n\na thread 🧵",
+          "tweet_id": "1943682338250194983",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 14:42:35 +0000 2025",
+          "tweet_url": "https://x.com/EXM7777/status/1943682338250194983",
+          "author_username": "EXM7777",
+          "author_followers": "11187",
+          "like_count": "449",
+          "retweet_count": "31",
+          "bookmark_count": "1040",
+          "view_count": "46120",
+          "quote_count": "3",
+          "conversation_id": "1943682338250194983",
+          "has_media": "false",
+          "media_type": null,
+          "media_urls": null,
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 59,
+          "days_old": 3.8,
+          "freshness_multiplier": 1,
+          "base_score": 59,
+          "engagement_rate": 3.3,
+          "bookmark_rate": 2.25,
+          "amplification_rate": 0.07,
+          "thread_indicator": "thread",
+          "content_type": "monetization",
+          "call_to_action": false,
+          "viral_status": "medium",
+          "engagement_class": "average",
+          "bookmark_class": "good",
+          "amplification_class": "poor",
+          "overall_performance": "average"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "🚀 AUTOMATE Your Socials — FREE GUIDE🚀\n\nPost to LinkedIn, X, IG, FB &amp; more — hands-free with AI + n8n ⚙️\n\n🎁 Get the full workflow + setup visual FREE!\n\nTo claim:👇\n\n1️⃣ Like ❤️\n2️⃣ Retweet 🔁\n3️⃣ Comment “AUTO”\n4️⃣ Follow (for DM)\n\n⏳ First 100 only — act fast! https://t.co/ETShc437gn",
+          "tweet_id": "1943907452392530198",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Sat Jul 12 05:37:07 +0000 2025",
+          "tweet_url": "https://x.com/mamuncoder/status/1943907452392530198",
+          "author_username": "mamuncoder",
+          "author_followers": "2146",
+          "like_count": "54",
+          "retweet_count": "24",
+          "bookmark_count": "5",
+          "view_count": "2119",
+          "quote_count": "0",
+          "conversation_id": "1943907452392530198",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/ETShc437gn",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 57,
+          "days_old": 3.1,
+          "freshness_multiplier": 1,
+          "base_score": 57,
+          "engagement_rate": 3.92,
+          "bookmark_rate": 0.24,
+          "amplification_rate": 1.13,
+          "thread_indicator": "single",
+          "content_type": "tutorial",
+          "call_to_action": true,
+          "viral_status": "medium",
+          "engagement_class": "good",
+          "bookmark_class": "poor",
+          "amplification_class": "good",
+          "overall_performance": "average"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "Software engineers are F%$#&D\n\nI just made this FULLY working app in 30 minutes and closing in on $10K MRR using Vibecode and n8n.\n\nThis simple landscaping app tracks customer appointments, billing, and support for both the owner and clients. I've closed on 4 clients so far.\n\nLet me know if you guys want to see a tutorial!\n\nSWE ngmi",
+          "tweet_id": "1943747466350014957",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 19:01:23 +0000 2025",
+          "tweet_url": "https://x.com/muhammad_zulali/status/1943747466350014957",
+          "author_username": "muhammad_zulali",
+          "author_followers": "391",
+          "like_count": "107",
+          "retweet_count": "9",
+          "bookmark_count": "202",
+          "view_count": "11892",
+          "quote_count": "1",
+          "conversation_id": "1943747466350014957",
+          "has_media": "true",
+          "media_type": "video",
+          "media_urls": "https://t.co/qT23ewYuLa",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 54,
+          "days_old": 3.6,
+          "freshness_multiplier": 1,
+          "base_score": 54,
+          "engagement_rate": 2.68,
+          "bookmark_rate": 1.7,
+          "amplification_rate": 0.08,
+          "thread_indicator": "single",
+          "content_type": "monetization",
+          "call_to_action": false,
+          "viral_status": "medium",
+          "engagement_class": "poor",
+          "bookmark_class": "average",
+          "amplification_class": "poor",
+          "overall_performance": "poor"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "The 12 Rules for n8n\n\nAgents, Webhooks, Integrations, HTTP Requests\n\nAnd More https://t.co/ugvToHlWjL",
+          "tweet_id": "1943783878952677466",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 21:26:05 +0000 2025",
+          "tweet_url": "https://x.com/muhammad_zulali/status/1943783878952677466",
+          "author_username": "muhammad_zulali",
+          "author_followers": "391",
+          "like_count": "60",
+          "retweet_count": "10",
+          "bookmark_count": "109",
+          "view_count": "6501",
+          "quote_count": "0",
+          "conversation_id": "1943783878952677466",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/ugvToHlWjL, https://t.co/ugvToHlWjL, https://t.co/ugvToHlWjL",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 53,
+          "days_old": 3.5,
+          "freshness_multiplier": 1,
+          "base_score": 53,
+          "engagement_rate": 2.75,
+          "bookmark_rate": 1.68,
+          "amplification_rate": 0.15,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": false,
+          "viral_status": "medium",
+          "engagement_class": "poor",
+          "bookmark_class": "average",
+          "amplification_class": "poor",
+          "overall_performance": "poor"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "I just merged all top n8n automations that help creators earn $10K/month on autopilot.\n\nCan’t believe I’m about to reveal this to everyone.\n\nCheck this out:\n\n→ Auto-generates high-converting hooks & captions with ChatGPT\n→ Dynamically creates AI images based on your posts (yes, like memes... but juiced)\n→ Logs everything — prompts, captions, images, platform info — into a clean Google Sheet (so you look smart)\n→ Prepares ready-to-approve HTML email previews for clients or team\n→ Routes final posts straight to TikTok, Instagram, LinkedIn, YouTube Shorts, X, Threads (it’s like a content octopus 🐙)\n→ Archives every post to Google Drive for future use (hello, content repurposing heaven)\n\nNo Zapier. No VA burnout. \n\nNo duct-tape spaghetti mess.\n\nLike + reply “YES” & I’ll send you the FULL workflow + setup FREE!",
+          "tweet_id": "1943621446317871425",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 10:40:38 +0000 2025",
+          "tweet_url": "https://x.com/JulianGoldieSEO/status/1943621446317871425",
+          "author_username": "JulianGoldieSEO",
+          "author_followers": "85585",
+          "like_count": "570",
+          "retweet_count": "71",
+          "bookmark_count": "519",
+          "view_count": "44065",
+          "quote_count": "3",
+          "conversation_id": "1943621446317871425",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/Gg7wCOq0iI",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 49,
+          "days_old": 3.9,
+          "freshness_multiplier": 1,
+          "base_score": 49,
+          "engagement_rate": 2.64,
+          "bookmark_rate": 1.18,
+          "amplification_rate": 0.17,
+          "thread_indicator": "single",
+          "content_type": "monetization",
+          "call_to_action": false,
+          "viral_status": "medium",
+          "engagement_class": "poor",
+          "bookmark_class": "average",
+          "amplification_class": "average",
+          "overall_performance": "average"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "💰 $153K in 60 Days from WhatsApp!\nNo team. No calls. Just 1 N8N workflow.\nIt scrapes leads → Writes AI DMs → Sends 10K msgs/day.\n\n🔥 Solo founders &amp; agencies are scaling FAST.\n\n👇 Comment “SALES” + Like\nI'll DM the full workflow (must follow) https://t.co/b80A24dQCv",
+          "tweet_id": "1943660282191991012",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 13:14:57 +0000 2025",
+          "tweet_url": "https://x.com/AsifAli_51/status/1943660282191991012",
+          "author_username": "AsifAli_51",
+          "author_followers": "105",
+          "like_count": "136",
+          "retweet_count": "31",
+          "bookmark_count": "73",
+          "view_count": "9088",
+          "quote_count": "1",
+          "conversation_id": "1943660282191991012",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/b80A24dQCv",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 43,
+          "days_old": 3.8,
+          "freshness_multiplier": 1,
+          "base_score": 43,
+          "engagement_rate": 2.65,
+          "bookmark_rate": 0.8,
+          "amplification_rate": 0.35,
+          "thread_indicator": "single",
+          "content_type": "engagement_bait",
+          "call_to_action": true,
+          "viral_status": "medium",
+          "engagement_class": "poor",
+          "bookmark_class": "poor",
+          "amplification_class": "good",
+          "overall_performance": "average"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "I just sent out this week's \"5 freeCodeCamp resources worth your time\" 🏗️. Some heaters in here including a 2-hour course on agentic \"vibe coding\" with n8n and a soil moisture Arduino project.\n\n1. freeCodeCamp just published this comprehensive course that will teach you how to build apps using the LAMP Stack – Linux, Apache, MySQL, PHP. This is a classic toolchain that a huge number of websites still use to this day. You can code along at home and build your own clone of Google Calendar – complete with multi-appointment support and booking conflict logic. Then you'll use JavaScript to add a dynamic user interface. This project will help you expand your horizons and get in some serious reps. (3 hour YouTube course): https://t.co/jnnOwXDWTh\n\n2. You may have heard the term “vibe coding”, where you write the specifications for your app, then hand it over to code generation agents who write the code for you. This approach has been a bit polarizing in the developer community, with vocal critics and vocal advocates. My advice is don't listen to any of them. Think for yourself. freeCodeCamp just published this course that will introduce you to vibe coding tools like n8n – an open source workflow automation tool – so you can wire together APIs and services without needing to write a ton of code manually. (2 hour YouTube course): https://t.co/13mWijnYmg\n\n3. On this week's podcast I interview Joe Hill. He's a software engineer who works on a data platform for NASA. Joe taught himself programming for 4 years while working as a janitor. As the single father of two Autistic boys, he first used his programming skills to build an iPad app to help them learn how to talk. He shares tons of practical tips for learning new skills and for getting things done inside big orgs. (1 hour watch or listen in your favorite podcast app): https://t.co/oxl8ZItGZV\n\n4. Learn how to write Python tests so you can make your codebase more robust. This tutorial will teach you the basics of pytest and show you tons of examples. You'll learn about Markers, Fixtures, Parameterization, and more. (20 minute read): https://t.co/a3yi9SY3zJ\n\n5. Tell your gardener friends: freeCodeCamp just published a tutorial on how to monitor the moisture of your soil using an Arduino microcontroller. This tutorial will show you what hardware to get and how to wire it up. Then it'll walk you through the code you'll run, and explain how everything works. (30 minute read): https://t.co/QLWSxd6a9N\n\nThe freeCodeCamp community is working hard to bring you new courses each week on pretty much everything. If you want to help our charity create even more open source learning resources, you should support our mission directly: https://t.co/PJXlqTfPxH\n\nQuote of the Week: \n“Becoming tool agnostic is one of the biggest strengths you will ever have as a programmer. If you walk into a place and they say “we use XYZ”, you can go “Great. I'll learn it.” That is so powerful.” — Software Engineer Joe Hill on this week's freeCodeCamp podcast",
+          "tweet_id": "1943698737882386434",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 15:47:45 +0000 2025",
+          "tweet_url": "https://x.com/ossia/status/1943698737882386434",
+          "author_username": "ossia",
+          "author_followers": "291446",
+          "like_count": "90",
+          "retweet_count": "12",
+          "bookmark_count": "44",
+          "view_count": "8380",
+          "quote_count": "0",
+          "conversation_id": "1943698737882386434",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/uWYsKAj49x",
+          "external_links": "https://www.freecodecamp.org/news/build-a-google-calendar-clone-with-php-mysql-and-javascript/, https://www.freecodecamp.org/news/how-to-vibe-code-with-help-from-n8n/, https://www.freecodecamp.org/news/from-freecodecamp-to-nasa-with-data-engineer-joe-hill-podcast-178/, https://www.freecodecamp.org/news/how-to-use-pytest-a-guide-to-testing-in-python/, https://www.freecodecamp.org/news/how-to-use-a-resistive-soil-moisture-sensor/, https://www.freecodecamp.org/donate",
+          "topic": "n8n",
+          "engagement_score": 38,
+          "days_old": 3.7,
+          "freshness_multiplier": 1,
+          "base_score": 38,
+          "engagement_rate": 1.74,
+          "bookmark_rate": 0.53,
+          "amplification_rate": 0.14,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": true,
+          "viral_status": "low",
+          "engagement_class": "poor",
+          "bookmark_class": "poor",
+          "amplification_class": "poor",
+          "overall_performance": "poor"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "N8N: AI Agent Creation Guide\nCreate intelligent, memory-driven AI agents using N8N, and connect them with tools like Gmail, Google Calendar, and more\n\nCoupon code is 11JULY2025\n\nhttps://t.co/bYLi2iTrJT",
+          "tweet_id": "1943647691055005770",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 12:24:55 +0000 2025",
+          "tweet_url": "https://x.com/omoalhajaabiola/status/1943647691055005770",
+          "author_username": "omoalhajaabiola",
+          "author_followers": "140129",
+          "like_count": "91",
+          "retweet_count": "15",
+          "bookmark_count": "80",
+          "view_count": "9353",
+          "quote_count": "0",
+          "conversation_id": "1943647691055005770",
+          "has_media": "false",
+          "media_type": null,
+          "media_urls": null,
+          "external_links": "https://www.udemy.com/course/n8n-ai-agent-creation-guide/?couponCode=11JULY2025",
+          "topic": "n8n",
+          "engagement_score": 37,
+          "days_old": 3.9,
+          "freshness_multiplier": 1,
+          "base_score": 37,
+          "engagement_rate": 1.99,
+          "bookmark_rate": 0.86,
+          "amplification_rate": 0.16,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": false,
+          "viral_status": "low",
+          "engagement_class": "poor",
+          "bookmark_class": "poor",
+          "amplification_class": "poor",
+          "overall_performance": "poor"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "There’s no single course that combines Notion, Zapier, Airtable, n8n, and https://t.co/hqZ3gkdiqQ into one practical learning experience, except @skill_afrika_ \nbootcamp\n\nAfter 9 weeks of intense learning, hands-on teaching, and real-world practice, Skill Afrika’s Workflow Automation Bootcamp wraps up today.\n\nWhat a journey. What an experience. On to the next.",
+          "tweet_id": "1943660305092919490",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 13:15:02 +0000 2025",
+          "tweet_url": "https://x.com/omoalhajaabiola/status/1943660305092919490",
+          "author_username": "omoalhajaabiola",
+          "author_followers": "140129",
+          "like_count": "237",
+          "retweet_count": "40",
+          "bookmark_count": "125",
+          "view_count": "21107",
+          "quote_count": "9",
+          "conversation_id": "1943660305092919490",
+          "has_media": "false",
+          "media_type": null,
+          "media_urls": null,
+          "external_links": "http://Make.com",
+          "topic": "n8n",
+          "engagement_score": 34,
+          "days_old": 3.8,
+          "freshness_multiplier": 1,
+          "base_score": 34,
+          "engagement_rate": 1.95,
+          "bookmark_rate": 0.59,
+          "amplification_rate": 0.23,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": false,
+          "viral_status": "low",
+          "engagement_class": "poor",
+          "bookmark_class": "poor",
+          "amplification_class": "average",
+          "overall_performance": "poor"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "Newgen is a classic example where a product gets into a higher orbit once it achieves the critical mass. It has very clearly repositioned itself from the edge of business to \"at the core\". \n\nThere are many process automation tools available - both enterprise & non-enterprise. N8N being most popular in non-enterprise space and then within enterprise software, OEMs have their own process automation platforms. \n\nWhere companies like Newgen gets the edge is not with the tech, but the years of insights of how to use underlying data and where to provision embedded AI capabilities. Launching agentic services becomes as easy as adding 2+2 eventually. All the hard-work that was done between 2020-2023 has culminated into something that has its own standing. Those who could envision ahead in time are the winners!! What a winner.",
+          "tweet_id": "1943947030813950117",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Sat Jul 12 08:14:23 +0000 2025",
+          "tweet_url": "https://x.com/Finstor85/status/1943947030813950117",
+          "author_username": "Finstor85",
+          "author_followers": "42131",
+          "like_count": "76",
+          "retweet_count": "6",
+          "bookmark_count": "18",
+          "view_count": "5299",
+          "quote_count": "0",
+          "conversation_id": "1943947030813950117",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/Pa3IDHbDk0",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 29,
+          "days_old": 3,
+          "freshness_multiplier": 1,
+          "base_score": 29,
+          "engagement_rate": 1.89,
+          "bookmark_rate": 0.34,
+          "amplification_rate": 0.11,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": false,
+          "viral_status": "low",
+          "engagement_class": "poor",
+          "bookmark_class": "poor",
+          "amplification_class": "poor",
+          "overall_performance": "poor"
+        }
+      }
+    ],
+    "Construct Thread": [
+      {
+        "json": {
+          "tweet_text": "the n8n automation ecosystem if FULL of fake gurus...\n\nthey can't show you how to build workflows because most of them are STOLEN, and they certainly can't teach you how to find clients\n\nhere's a blueprint to go from $0 to $10k/mo selling n8n workflows:\n\na thread 🧵\n\n(2) here's the exact automation stack that fixes this revenue leak:\n\n- webhook triggers from website forms\n- instant SMS with quote estimate + booking link\n- 7-day follow-up sequence with social proof videos\n- automated scheduling with deposit collection\n- review request automation 48 hours post-completion\n\nspeed is the killer in local services\n\n(3) moving to e-commerce brands ($1M-$10M revenue)...\n\nthey're drowning in customer service tickets while profit margins evaporate\n\n60% of support tickets are repeat questions that kill team productivity\n\nmost brands hire their way out... smart builders automate their way out\n\n(4) this e-commerce automation eliminates the support chaos:\n\n- AI-powered ticket classification using OpenAI + sentiment analysis\n- instant responses for order status, shipping, returns\n- automatic refund processing for qualifying cases\n- escalation triggers for high-value customers\n- upsell automation during positive support interactions\n\nyou can get up to 70% reduction in support workload without a doubt\n\n(5) the third goldmine is early-stage SaaS companies...\n\nthey're burning $200K+ on sales team overhead while conversion rates stay flat\n\n80% of qualified leads never get proper follow-up because sales reps focus on \"bigger\" opportunities\n\nfounders think they need more salespeople... they need better automation\n\n(6) this SaaS automation stack converts prospects on autopilot:\n\n- product usage tracking with behavioral scoring\n- triggered email sequences based on feature adoption\n- automated demo booking with calendar optimization\n- objection-handling chatbot with human handoff triggers\n- pricing experiment automation with dynamic offer testing\n\nyou can get SO MUCH more out of those leads, they're missing out on big money\n\n(7) now... once you've built these workflows, you need clients to buy them\n\nhere's the daily lead machine that generates 5-15 qualified leads using psychological triggers that feel personal at scale\n\ncontext-driven outreach gets 25%+ response rates\n\nanything else is sh*t\n\n(8) but first, you need intel on your prospects...\n\nthis research layer separates you from every other n8n seller:\n\n- prospect identification engine with ICP criteria matching\n- company news + recent hires + funding events enrichment\n- LinkedIn activity scraping for trigger events\n- technology stack analysis for pain points\n- competitor analysis for positioning opportunities\n\ncontext = conversion\n\nspend time investing in data collection for your persona, it will pay off\n\n(9) once you have the intel, here's how to turn it into conversations\n\nthis 7-day sequence works because it builds trust before asking for anything:\n\nday 1: insight bomb (pure value, no pitch)\nday 3: pattern share (industry trend + mini case study)\nday 5: resource drop (helpful tool/framework)\nday 7: soft ask (low-pressure meeting request)\n\nmagic happens between day 3-5\n\njust send this sequence in volume, there is no way you're not generating leads\n\n(10) but getting interest is only half the battle...\n\nmost automation stops at \"interested prospect\", this closing protocol turns interest into contracts:\n\n4-step sequence:\n1. discovery intensifier\n2. custom solution reveal\n3. objection anticipator\n4. decision forcer\n\neliminate \"thinking about it\" forever\n\nexecute this and you will convert every cold prospect into a customer\n\n(11) step 1 is crucial - the discovery intensifier...\n\nsend a questionnaire that:\n- uncovers specific pain points and quantifies impact\n- identifies decision-making process and timeline\n- establishes budget parameters without asking directly\n- creates urgency through cost-of-inaction calculations\n\nautomated follow-up if not completed within 48 hours\n\n(12) every objection should trigger an automated response...\n\nexample: \"need to think about it\"\n--> automated response: \"what specific aspect needs clarity...\"\n--> follow-up: case study addressing exact concern\n--> escalation: personal video addressing hesitation\n\nno leads slip through cracks when you automate objection handling\n\n(13) after the initial close attempt, this follow-up matrix keeps you top of mind:\n\nweek 1: education phase (case studies + ROI calculators)\nweek 2: social proof phase (testimonials + before/after metrics)\nweek 3: urgency phase (limited slots + bonus offers)\nweek 4: final phase (\"last chance\" + quarterly nurture)\n\ndecision point triggers determine next action\n\n(14) throughout this entire process, these psychological triggers do the heavy lifting:\n\n- pattern interrupt: \"you're absolutely right to think that...\"\n- authority transfer: \"our most successful clients initially had the same concern...\"\n- future pacing: \"imagine 6 months from now when this problem is solved...\"\n- loss aversion: \"cost of waiting typically exceeds implementation cost by 3x...\"\n\npsychology > perfect scripts\n\n(15) running all of this requires the right tech foundation...\n\ncore tools:\n- n8n (automation engine)\n- OpenAI (personalization + intelligence)\n- Apollo/ZoomInfo (prospect data)\n- Calendly/Cal (meeting scheduling)\n- Stripe (payment processing)\n- Airtable/Sheets (CRM backbone)\n\nadvanced integrations scale the entire operation but don't spend too much time on the tools, focus on finding new leads\n\n(16) and these tools mean nothing without proper monitoring...\n\ntrack these metrics obsessively:\n- conversion tracking at each stage\n- A/B testing on all messaging\n- deliverability monitoring\n- response sentiment analysis\n- ROI calculation per sequence\n\ndata drives decisions... not gut feelings\n\n(17) here's the thing nobody talks about...\n\nthis isn't \"set it and forget it\" automation... it's \"set it and optimize it weekly\" automation\n\ndifference between amateurs and pros:\n- amateurs build workflows once\n- pros iterate workflows constantly based on performance data\n\nweekly optimization is non-negotiable, especially when you're starting\n\nyour base system can get 10x better with data and feedback, work on it every week\n\n(18) your weekly optimization ritual should include:\n\n- review conversion rates at each stage\n- A/B test underperforming sequences\n- update personalization based on successful conversations\n- adjust timing based on response patterns\n- refine targeting based on closed deals\n\ncontinuous improvement = continuous revenue\n\n(19) the bottom line:\n\nmost people use n8n to save time... great entrepreneurs use n8n to make money\n\nthe automations that matter aren't the ones that eliminate busy work... they're the ones that eliminate revenue leaks\n\nwhile others automate their calendars, you'll automate your customer acquisition\n\n(20) stop collecting prompts and new workflows\n\nstart working on your f*cking outreach, get better at sales and marketing\n\nget in calls with leads, understand why your approach is not working\n\ntwist it, rework it, change your targets...\n\nthis is a daily job of improving/reworking a system until it becomes a cash machine\n\n(21) that's it for this thread\n\nfollow @EXM7777 for more\n\nand if you're serious about learning AI...\n\nsubscribe for free: https://t.co/KcCY4jJBSd\n\nengage with the post below:",
+          "tweet_id": "1943682338250194983",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 14:42:35 +0000 2025",
+          "tweet_url": "https://x.com/EXM7777/status/1943682338250194983",
+          "author_username": "EXM7777",
+          "author_followers": "11187",
+          "like_count": "449",
+          "retweet_count": "31",
+          "bookmark_count": "1040",
+          "view_count": "46120",
+          "quote_count": "3",
+          "conversation_id": "1943682338250194983",
+          "has_media": "false",
+          "media_type": null,
+          "media_urls": null,
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 59,
+          "days_old": 3.8,
+          "freshness_multiplier": 1,
+          "base_score": 59,
+          "engagement_rate": 3.3,
+          "bookmark_rate": 2.25,
+          "amplification_rate": 0.07,
+          "thread_indicator": "thread",
+          "content_type": "monetization",
+          "call_to_action": false,
+          "viral_status": "medium",
+          "engagement_class": "average",
+          "bookmark_class": "good",
+          "amplification_class": "poor",
+          "overall_performance": "average"
+        }
+      }
+    ],
+    "Merge": [
+      {
+        "json": {
+          "tweet_text": "the n8n automation ecosystem if FULL of fake gurus...\n\nthey can't show you how to build workflows because most of them are STOLEN, and they certainly can't teach you how to find clients\n\nhere's a blueprint to go from $0 to $10k/mo selling n8n workflows:\n\na thread 🧵\n\n(2) here's the exact automation stack that fixes this revenue leak:\n\n- webhook triggers from website forms\n- instant SMS with quote estimate + booking link\n- 7-day follow-up sequence with social proof videos\n- automated scheduling with deposit collection\n- review request automation 48 hours post-completion\n\nspeed is the killer in local services\n\n(3) moving to e-commerce brands ($1M-$10M revenue)...\n\nthey're drowning in customer service tickets while profit margins evaporate\n\n60% of support tickets are repeat questions that kill team productivity\n\nmost brands hire their way out... smart builders automate their way out\n\n(4) this e-commerce automation eliminates the support chaos:\n\n- AI-powered ticket classification using OpenAI + sentiment analysis\n- instant responses for order status, shipping, returns\n- automatic refund processing for qualifying cases\n- escalation triggers for high-value customers\n- upsell automation during positive support interactions\n\nyou can get up to 70% reduction in support workload without a doubt\n\n(5) the third goldmine is early-stage SaaS companies...\n\nthey're burning $200K+ on sales team overhead while conversion rates stay flat\n\n80% of qualified leads never get proper follow-up because sales reps focus on \"bigger\" opportunities\n\nfounders think they need more salespeople... they need better automation\n\n(6) this SaaS automation stack converts prospects on autopilot:\n\n- product usage tracking with behavioral scoring\n- triggered email sequences based on feature adoption\n- automated demo booking with calendar optimization\n- objection-handling chatbot with human handoff triggers\n- pricing experiment automation with dynamic offer testing\n\nyou can get SO MUCH more out of those leads, they're missing out on big money\n\n(7) now... once you've built these workflows, you need clients to buy them\n\nhere's the daily lead machine that generates 5-15 qualified leads using psychological triggers that feel personal at scale\n\ncontext-driven outreach gets 25%+ response rates\n\nanything else is sh*t\n\n(8) but first, you need intel on your prospects...\n\nthis research layer separates you from every other n8n seller:\n\n- prospect identification engine with ICP criteria matching\n- company news + recent hires + funding events enrichment\n- LinkedIn activity scraping for trigger events\n- technology stack analysis for pain points\n- competitor analysis for positioning opportunities\n\ncontext = conversion\n\nspend time investing in data collection for your persona, it will pay off\n\n(9) once you have the intel, here's how to turn it into conversations\n\nthis 7-day sequence works because it builds trust before asking for anything:\n\nday 1: insight bomb (pure value, no pitch)\nday 3: pattern share (industry trend + mini case study)\nday 5: resource drop (helpful tool/framework)\nday 7: soft ask (low-pressure meeting request)\n\nmagic happens between day 3-5\n\njust send this sequence in volume, there is no way you're not generating leads\n\n(10) but getting interest is only half the battle...\n\nmost automation stops at \"interested prospect\", this closing protocol turns interest into contracts:\n\n4-step sequence:\n1. discovery intensifier\n2. custom solution reveal\n3. objection anticipator\n4. decision forcer\n\neliminate \"thinking about it\" forever\n\nexecute this and you will convert every cold prospect into a customer\n\n(11) step 1 is crucial - the discovery intensifier...\n\nsend a questionnaire that:\n- uncovers specific pain points and quantifies impact\n- identifies decision-making process and timeline\n- establishes budget parameters without asking directly\n- creates urgency through cost-of-inaction calculations\n\nautomated follow-up if not completed within 48 hours\n\n(12) every objection should trigger an automated response...\n\nexample: \"need to think about it\"\n--> automated response: \"what specific aspect needs clarity...\"\n--> follow-up: case study addressing exact concern\n--> escalation: personal video addressing hesitation\n\nno leads slip through cracks when you automate objection handling\n\n(13) after the initial close attempt, this follow-up matrix keeps you top of mind:\n\nweek 1: education phase (case studies + ROI calculators)\nweek 2: social proof phase (testimonials + before/after metrics)\nweek 3: urgency phase (limited slots + bonus offers)\nweek 4: final phase (\"last chance\" + quarterly nurture)\n\ndecision point triggers determine next action\n\n(14) throughout this entire process, these psychological triggers do the heavy lifting:\n\n- pattern interrupt: \"you're absolutely right to think that...\"\n- authority transfer: \"our most successful clients initially had the same concern...\"\n- future pacing: \"imagine 6 months from now when this problem is solved...\"\n- loss aversion: \"cost of waiting typically exceeds implementation cost by 3x...\"\n\npsychology > perfect scripts\n\n(15) running all of this requires the right tech foundation...\n\ncore tools:\n- n8n (automation engine)\n- OpenAI (personalization + intelligence)\n- Apollo/ZoomInfo (prospect data)\n- Calendly/Cal (meeting scheduling)\n- Stripe (payment processing)\n- Airtable/Sheets (CRM backbone)\n\nadvanced integrations scale the entire operation but don't spend too much time on the tools, focus on finding new leads\n\n(16) and these tools mean nothing without proper monitoring...\n\ntrack these metrics obsessively:\n- conversion tracking at each stage\n- A/B testing on all messaging\n- deliverability monitoring\n- response sentiment analysis\n- ROI calculation per sequence\n\ndata drives decisions... not gut feelings\n\n(17) here's the thing nobody talks about...\n\nthis isn't \"set it and forget it\" automation... it's \"set it and optimize it weekly\" automation\n\ndifference between amateurs and pros:\n- amateurs build workflows once\n- pros iterate workflows constantly based on performance data\n\nweekly optimization is non-negotiable, especially when you're starting\n\nyour base system can get 10x better with data and feedback, work on it every week\n\n(18) your weekly optimization ritual should include:\n\n- review conversion rates at each stage\n- A/B test underperforming sequences\n- update personalization based on successful conversations\n- adjust timing based on response patterns\n- refine targeting based on closed deals\n\ncontinuous improvement = continuous revenue\n\n(19) the bottom line:\n\nmost people use n8n to save time... great entrepreneurs use n8n to make money\n\nthe automations that matter aren't the ones that eliminate busy work... they're the ones that eliminate revenue leaks\n\nwhile others automate their calendars, you'll automate your customer acquisition\n\n(20) stop collecting prompts and new workflows\n\nstart working on your f*cking outreach, get better at sales and marketing\n\nget in calls with leads, understand why your approach is not working\n\ntwist it, rework it, change your targets...\n\nthis is a daily job of improving/reworking a system until it becomes a cash machine\n\n(21) that's it for this thread\n\nfollow @EXM7777 for more\n\nand if you're serious about learning AI...\n\nsubscribe for free: https://t.co/KcCY4jJBSd\n\nengage with the post below:",
+          "tweet_id": "1943682338250194983",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 14:42:35 +0000 2025",
+          "tweet_url": "https://x.com/EXM7777/status/1943682338250194983",
+          "author_username": "EXM7777",
+          "author_followers": "11187",
+          "like_count": "449",
+          "retweet_count": "31",
+          "bookmark_count": "1040",
+          "view_count": "46120",
+          "quote_count": "3",
+          "conversation_id": "1943682338250194983",
+          "has_media": "false",
+          "media_type": null,
+          "media_urls": null,
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 59,
+          "days_old": 3.8,
+          "freshness_multiplier": 1,
+          "base_score": 59,
+          "engagement_rate": 3.3,
+          "bookmark_rate": 2.25,
+          "amplification_rate": 0.07,
+          "thread_indicator": "thread",
+          "content_type": "monetization",
+          "call_to_action": false,
+          "viral_status": "medium",
+          "engagement_class": "average",
+          "bookmark_class": "good",
+          "amplification_class": "poor",
+          "overall_performance": "average"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "n8n Complete Beginners Guide\n\nAgents, Webhooks, Integrations, HTTP Requests...\n\nAnd more.\n\n00:00 Introduction\n01:44 The Rise of n8n and agent builders\n04:21 The basics of n8n Workflows\n08:14 Your First Workflow\n10:11 Advanced Workflow Techniques\n13:00 Integrating External APIs and Webhooks\n23:53 Testing and Troubleshooting Workflows\n32:55 n8n Templates and Initial Setup\n33:16 Publishing and Automating with Dropbox\n33:30 Introducing AI Agents\n34:39 Setting Up AI Agent Prompts\n38:07 Integrating Notion with AI Agents\n44:53 Creating and Testing AI Workflows\n54:13 Advanced AI Agent Integrations",
+          "tweet_id": "1943744716954382610",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 18:50:28 +0000 2025",
+          "tweet_url": "https://x.com/rileybrown_ai/status/1943744716954382610",
+          "author_username": "rileybrown_ai",
+          "author_followers": "80447",
+          "like_count": "3082",
+          "retweet_count": "526",
+          "bookmark_count": "6306",
+          "view_count": "152561",
+          "quote_count": "6",
+          "conversation_id": "1943744716954382610",
+          "has_media": "true",
+          "media_type": "video",
+          "media_urls": "https://t.co/ZzuIPrwCIE",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 86,
+          "days_old": 3.6,
+          "freshness_multiplier": 1,
+          "base_score": 86,
+          "engagement_rate": 6.5,
+          "bookmark_rate": 4.13,
+          "amplification_rate": 0.35,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": false,
+          "viral_status": "viral",
+          "engagement_class": "excellent",
+          "bookmark_class": "excellent",
+          "amplification_class": "good",
+          "overall_performance": "excellent"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "I just scraped 50 local dentists in 60 seconds.\n\nNo coding, no expensive tools—completely FREE 🎯\n\nTHE EXACT PROCESS:\n\n1️⃣ Set up N8N HTTP request (POST method)\n2️⃣ Connect Apify's Google Maps scraper\n3️⃣ Configure search terms + location filters\n4️⃣ Auto-map data to Google Sheets\n5️⃣ Generate AI-powered outreach emails\n\nResults: Complete lead database with phone numbers, emails, and addresses in minutes.\n\nSave this post, it will save you thousands on lead gen tools 💡\n\nWant the full guide? DM me. 📥",
+          "tweet_id": "1943777320600289560",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 21:00:01 +0000 2025",
+          "tweet_url": "https://x.com/JulianGoldieSEO/status/1943777320600289560",
+          "author_username": "JulianGoldieSEO",
+          "author_followers": "85585",
+          "like_count": "521",
+          "retweet_count": "63",
+          "bookmark_count": "1127",
+          "view_count": "35023",
+          "quote_count": "0",
+          "conversation_id": "1943777320600289560",
+          "has_media": "true",
+          "media_type": "video",
+          "media_urls": "https://t.co/mFobS5LC8L",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 75,
+          "days_old": 3.5,
+          "freshness_multiplier": 1,
+          "base_score": 75,
+          "engagement_rate": 4.89,
+          "bookmark_rate": 3.22,
+          "amplification_rate": 0.18,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": true,
+          "viral_status": "high",
+          "engagement_class": "good",
+          "bookmark_class": "excellent",
+          "amplification_class": "average",
+          "overall_performance": "good"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "For the next 24 hours you can STEAL my n8n swipe file containing 12+ automation's.\n\nAll of these can be setup within 60 MINS and SAVE you 10+ HOURS per week.\n\nEasily worth $997+\nToday It's yours for FREE\n\n👉RT + Like &amp; Comment “n8n” and I’ll DM you the file\n(Must be following) https://t.co/JEZp1QRA6r",
+          "tweet_id": "1943681286062965180",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 14:38:25 +0000 2025",
+          "tweet_url": "https://x.com/marryevan999/status/1943681286062965180",
+          "author_username": "marryevan999",
+          "author_followers": "2567",
+          "like_count": "44",
+          "retweet_count": "25",
+          "bookmark_count": "5",
+          "view_count": "815",
+          "quote_count": "0",
+          "conversation_id": "1943681286062965180",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/JEZp1QRA6r",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 71,
+          "days_old": 3.8,
+          "freshness_multiplier": 1,
+          "base_score": 71,
+          "engagement_rate": 9.08,
+          "bookmark_rate": 0.61,
+          "amplification_rate": 3.07,
+          "thread_indicator": "single",
+          "content_type": "engagement_bait",
+          "call_to_action": true,
+          "viral_status": "high",
+          "engagement_class": "excellent",
+          "bookmark_class": "poor",
+          "amplification_class": "excellent",
+          "overall_performance": "good"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "🔥 Automate Your Entire Social Media in 1 Click with AI + N8N\n\nNo more posting manually across platforms.\n\nThis AI-powered workflow writes, designs, and schedules viral content for LinkedIn, Instagram, X, Facebook & more — all from one dashboard.\n\n✅ GPT-4o generates platform-specific posts\n✅ Auto-scheduling across all social channels\n✅ Custom hooks, captions & hashtags\n✅ Google Sheets integration for tracking\n✅ Fully automated – just plug & run\n\nPerfect for creators, agencies, and brands scaling fast.\n\nRetweet + Like+ Comment “Agent”. Must Follow so I’ll DM you.",
+          "tweet_id": "1943856974262940009",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Sat Jul 12 02:16:32 +0000 2025",
+          "tweet_url": "https://x.com/Sitara_AI7/status/1943856974262940009",
+          "author_username": "Sitara_AI7",
+          "author_followers": "2137",
+          "like_count": "128",
+          "retweet_count": "68",
+          "bookmark_count": "70",
+          "view_count": "5985",
+          "quote_count": "0",
+          "conversation_id": "1943856974262940009",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/Yfe9Fl2Rgh",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 69,
+          "days_old": 3.3,
+          "freshness_multiplier": 1,
+          "base_score": 69,
+          "engagement_rate": 4.44,
+          "bookmark_rate": 1.17,
+          "amplification_rate": 1.14,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": true,
+          "viral_status": "high",
+          "engagement_class": "good",
+          "bookmark_class": "poor",
+          "amplification_class": "excellent",
+          "overall_performance": "good"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "🚨 BREAKING: I just cracked the code on FREE leads! 🔥\n\nThis N8N + AI combo is INSANE! 😱\n\n500 leads in seconds? ✅ \nCosts 41 cents? ✅ \nAI writes emails? ✅\n\nGoogle Maps, LinkedIn, Instagram - it scrapes EVERYTHING! 🤖\n\nMy exact template? Link below! 👇 https://t.co/qY4ZGiB1lz",
+          "tweet_id": "1943797820643062259",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 22:21:29 +0000 2025",
+          "tweet_url": "https://x.com/JulianGoldieSEO/status/1943797820643062259",
+          "author_username": "JulianGoldieSEO",
+          "author_followers": "85585",
+          "like_count": "56",
+          "retweet_count": "6",
+          "bookmark_count": "94",
+          "view_count": "4657",
+          "quote_count": "0",
+          "conversation_id": "1943797820643062259",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/qY4ZGiB1lz",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 66,
+          "days_old": 3.4,
+          "freshness_multiplier": 1,
+          "base_score": 66,
+          "engagement_rate": 3.35,
+          "bookmark_rate": 2.02,
+          "amplification_rate": 0.13,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": false,
+          "viral_status": "high",
+          "engagement_class": "average",
+          "bookmark_class": "good",
+          "amplification_class": "poor",
+          "overall_performance": "average"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "I just finished setting up an AI Agent that processes 100+ client documents daily for agencies, SaaS and ecom businesses (in n8n)\n\nIt extracts data, sends emails, and handles document workflows without the need to do it manually\n\nComplete AI automation that saves 35+ hours/week on client paperwork\n\nYou can also use it for reporting of any type\n\n- Auto-extracts text from PDFs\n- Processes multiple file formats\n- Sends automated email responses\n- Routes documents intelligently\n\nThis AI workflow saves $80K+/year in processing costs\n\nWant it FREE?\n\n👉 RT + Like & Comment \"WORKFLOW\" and I'll DM the JSON file + doc to you ASAP\n\nNo opt-in, no BS\n\n(Must follow)",
+          "tweet_id": "1943656052311876013",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 12:58:08 +0000 2025",
+          "tweet_url": "https://x.com/dashboardlim/status/1943656052311876013",
+          "author_username": "dashboardlim",
+          "author_followers": "11216",
+          "like_count": "255",
+          "retweet_count": "109",
+          "bookmark_count": "232",
+          "view_count": "17289",
+          "quote_count": "1",
+          "conversation_id": "1943656052311876013",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/dSrQCOHD7y",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 61,
+          "days_old": 3.8,
+          "freshness_multiplier": 1,
+          "base_score": 61,
+          "engagement_rate": 3.45,
+          "bookmark_rate": 1.34,
+          "amplification_rate": 0.64,
+          "thread_indicator": "single",
+          "content_type": "engagement_bait",
+          "call_to_action": true,
+          "viral_status": "high",
+          "engagement_class": "average",
+          "bookmark_class": "average",
+          "amplification_class": "good",
+          "overall_performance": "average"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "If I were launching a services business today, here are the 9 tools I'd use to hit $1M in year one:\n\n1/ @n8n_io - Build an AI workforce. Automate proposals, client onboarding, reporting. We saved 20 hours/week on repetitive tasks within month one.\n\n2/ @SpaceChenst - Your outsourced finance department. Real-time P&L by client, cash flow forecasting, and fractional CFO guidance. Know your margins before they know you.\n\n3/ @NotionHQ - Operating system for everything. Client wiki, project tracking, SOPs, team knowledge base. Start with templates, customize as you scale.\n\n4/ @WisprFlow - Dictate proposals/emails/anything 3x faster than typing. Perfect for busy founders.\n\n5/ @useMotion - Calendar that thinks. Auto-schedules tasks around client meetings, ensures nothing drops. Like having an EA before you can afford one.\n\n6/ @TallyForms - Beautiful forms with conditional logic, payment collection, and Notion integration. Goodbye, Google Forms.\n\n7/ @Loom - Async communication superpower. Record SOPs once, use forever. Client updates in 2 minutes vs 30-minute calls.\n\n8/ @Mixpanel - Track what matters. Which services drive retention? What's your client LTV? Data-driven decisions from day one.\n\n9/ @Mercury - Banking that scales. Virtual cards for each client project, expense management built-in. Clean books from the start.\n\nWhat should I add to this list?",
+          "tweet_id": "1943641900973748596",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 12:01:54 +0000 2025",
+          "tweet_url": "https://x.com/jspujji/status/1943641900973748596",
+          "author_username": "jspujji",
+          "author_followers": "178958",
+          "like_count": "154",
+          "retweet_count": "19",
+          "bookmark_count": "608",
+          "view_count": "28121",
+          "quote_count": "2",
+          "conversation_id": "1943641900973748596",
+          "has_media": "false",
+          "media_type": null,
+          "media_urls": null,
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 60,
+          "days_old": 3.9,
+          "freshness_multiplier": 1,
+          "base_score": 60,
+          "engagement_rate": 2.78,
+          "bookmark_rate": 2.16,
+          "amplification_rate": 0.07,
+          "thread_indicator": "single",
+          "content_type": "monetization",
+          "call_to_action": false,
+          "viral_status": "high",
+          "engagement_class": "average",
+          "bookmark_class": "good",
+          "amplification_class": "poor",
+          "overall_performance": "average"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "🚀 AUTOMATE Your Socials — FREE GUIDE🚀\n\nPost to LinkedIn, X, IG, FB &amp; more — hands-free with AI + n8n ⚙️\n\n🎁 Get the full workflow + setup visual FREE!\n\nTo claim:👇\n\n1️⃣ Like ❤️\n2️⃣ Retweet 🔁\n3️⃣ Comment “AUTO”\n4️⃣ Follow (for DM)\n\n⏳ First 100 only — act fast! https://t.co/ETShc437gn",
+          "tweet_id": "1943907452392530198",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Sat Jul 12 05:37:07 +0000 2025",
+          "tweet_url": "https://x.com/mamuncoder/status/1943907452392530198",
+          "author_username": "mamuncoder",
+          "author_followers": "2146",
+          "like_count": "54",
+          "retweet_count": "24",
+          "bookmark_count": "5",
+          "view_count": "2119",
+          "quote_count": "0",
+          "conversation_id": "1943907452392530198",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/ETShc437gn",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 57,
+          "days_old": 3.1,
+          "freshness_multiplier": 1,
+          "base_score": 57,
+          "engagement_rate": 3.92,
+          "bookmark_rate": 0.24,
+          "amplification_rate": 1.13,
+          "thread_indicator": "single",
+          "content_type": "tutorial",
+          "call_to_action": true,
+          "viral_status": "medium",
+          "engagement_class": "good",
+          "bookmark_class": "poor",
+          "amplification_class": "good",
+          "overall_performance": "average"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "Software engineers are F%$#&D\n\nI just made this FULLY working app in 30 minutes and closing in on $10K MRR using Vibecode and n8n.\n\nThis simple landscaping app tracks customer appointments, billing, and support for both the owner and clients. I've closed on 4 clients so far.\n\nLet me know if you guys want to see a tutorial!\n\nSWE ngmi",
+          "tweet_id": "1943747466350014957",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 19:01:23 +0000 2025",
+          "tweet_url": "https://x.com/muhammad_zulali/status/1943747466350014957",
+          "author_username": "muhammad_zulali",
+          "author_followers": "391",
+          "like_count": "107",
+          "retweet_count": "9",
+          "bookmark_count": "202",
+          "view_count": "11892",
+          "quote_count": "1",
+          "conversation_id": "1943747466350014957",
+          "has_media": "true",
+          "media_type": "video",
+          "media_urls": "https://t.co/qT23ewYuLa",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 54,
+          "days_old": 3.6,
+          "freshness_multiplier": 1,
+          "base_score": 54,
+          "engagement_rate": 2.68,
+          "bookmark_rate": 1.7,
+          "amplification_rate": 0.08,
+          "thread_indicator": "single",
+          "content_type": "monetization",
+          "call_to_action": false,
+          "viral_status": "medium",
+          "engagement_class": "poor",
+          "bookmark_class": "average",
+          "amplification_class": "poor",
+          "overall_performance": "poor"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "The 12 Rules for n8n\n\nAgents, Webhooks, Integrations, HTTP Requests\n\nAnd More https://t.co/ugvToHlWjL",
+          "tweet_id": "1943783878952677466",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 21:26:05 +0000 2025",
+          "tweet_url": "https://x.com/muhammad_zulali/status/1943783878952677466",
+          "author_username": "muhammad_zulali",
+          "author_followers": "391",
+          "like_count": "60",
+          "retweet_count": "10",
+          "bookmark_count": "109",
+          "view_count": "6501",
+          "quote_count": "0",
+          "conversation_id": "1943783878952677466",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/ugvToHlWjL, https://t.co/ugvToHlWjL, https://t.co/ugvToHlWjL",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 53,
+          "days_old": 3.5,
+          "freshness_multiplier": 1,
+          "base_score": 53,
+          "engagement_rate": 2.75,
+          "bookmark_rate": 1.68,
+          "amplification_rate": 0.15,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": false,
+          "viral_status": "medium",
+          "engagement_class": "poor",
+          "bookmark_class": "average",
+          "amplification_class": "poor",
+          "overall_performance": "poor"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "I just merged all top n8n automations that help creators earn $10K/month on autopilot.\n\nCan’t believe I’m about to reveal this to everyone.\n\nCheck this out:\n\n→ Auto-generates high-converting hooks & captions with ChatGPT\n→ Dynamically creates AI images based on your posts (yes, like memes... but juiced)\n→ Logs everything — prompts, captions, images, platform info — into a clean Google Sheet (so you look smart)\n→ Prepares ready-to-approve HTML email previews for clients or team\n→ Routes final posts straight to TikTok, Instagram, LinkedIn, YouTube Shorts, X, Threads (it’s like a content octopus 🐙)\n→ Archives every post to Google Drive for future use (hello, content repurposing heaven)\n\nNo Zapier. No VA burnout. \n\nNo duct-tape spaghetti mess.\n\nLike + reply “YES” & I’ll send you the FULL workflow + setup FREE!",
+          "tweet_id": "1943621446317871425",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 10:40:38 +0000 2025",
+          "tweet_url": "https://x.com/JulianGoldieSEO/status/1943621446317871425",
+          "author_username": "JulianGoldieSEO",
+          "author_followers": "85585",
+          "like_count": "570",
+          "retweet_count": "71",
+          "bookmark_count": "519",
+          "view_count": "44065",
+          "quote_count": "3",
+          "conversation_id": "1943621446317871425",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/Gg7wCOq0iI",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 49,
+          "days_old": 3.9,
+          "freshness_multiplier": 1,
+          "base_score": 49,
+          "engagement_rate": 2.64,
+          "bookmark_rate": 1.18,
+          "amplification_rate": 0.17,
+          "thread_indicator": "single",
+          "content_type": "monetization",
+          "call_to_action": false,
+          "viral_status": "medium",
+          "engagement_class": "poor",
+          "bookmark_class": "average",
+          "amplification_class": "average",
+          "overall_performance": "average"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "💰 $153K in 60 Days from WhatsApp!\nNo team. No calls. Just 1 N8N workflow.\nIt scrapes leads → Writes AI DMs → Sends 10K msgs/day.\n\n🔥 Solo founders &amp; agencies are scaling FAST.\n\n👇 Comment “SALES” + Like\nI'll DM the full workflow (must follow) https://t.co/b80A24dQCv",
+          "tweet_id": "1943660282191991012",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 13:14:57 +0000 2025",
+          "tweet_url": "https://x.com/AsifAli_51/status/1943660282191991012",
+          "author_username": "AsifAli_51",
+          "author_followers": "105",
+          "like_count": "136",
+          "retweet_count": "31",
+          "bookmark_count": "73",
+          "view_count": "9088",
+          "quote_count": "1",
+          "conversation_id": "1943660282191991012",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/b80A24dQCv",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 43,
+          "days_old": 3.8,
+          "freshness_multiplier": 1,
+          "base_score": 43,
+          "engagement_rate": 2.65,
+          "bookmark_rate": 0.8,
+          "amplification_rate": 0.35,
+          "thread_indicator": "single",
+          "content_type": "engagement_bait",
+          "call_to_action": true,
+          "viral_status": "medium",
+          "engagement_class": "poor",
+          "bookmark_class": "poor",
+          "amplification_class": "good",
+          "overall_performance": "average"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "I just sent out this week's \"5 freeCodeCamp resources worth your time\" 🏗️. Some heaters in here including a 2-hour course on agentic \"vibe coding\" with n8n and a soil moisture Arduino project.\n\n1. freeCodeCamp just published this comprehensive course that will teach you how to build apps using the LAMP Stack – Linux, Apache, MySQL, PHP. This is a classic toolchain that a huge number of websites still use to this day. You can code along at home and build your own clone of Google Calendar – complete with multi-appointment support and booking conflict logic. Then you'll use JavaScript to add a dynamic user interface. This project will help you expand your horizons and get in some serious reps. (3 hour YouTube course): https://t.co/jnnOwXDWTh\n\n2. You may have heard the term “vibe coding”, where you write the specifications for your app, then hand it over to code generation agents who write the code for you. This approach has been a bit polarizing in the developer community, with vocal critics and vocal advocates. My advice is don't listen to any of them. Think for yourself. freeCodeCamp just published this course that will introduce you to vibe coding tools like n8n – an open source workflow automation tool – so you can wire together APIs and services without needing to write a ton of code manually. (2 hour YouTube course): https://t.co/13mWijnYmg\n\n3. On this week's podcast I interview Joe Hill. He's a software engineer who works on a data platform for NASA. Joe taught himself programming for 4 years while working as a janitor. As the single father of two Autistic boys, he first used his programming skills to build an iPad app to help them learn how to talk. He shares tons of practical tips for learning new skills and for getting things done inside big orgs. (1 hour watch or listen in your favorite podcast app): https://t.co/oxl8ZItGZV\n\n4. Learn how to write Python tests so you can make your codebase more robust. This tutorial will teach you the basics of pytest and show you tons of examples. You'll learn about Markers, Fixtures, Parameterization, and more. (20 minute read): https://t.co/a3yi9SY3zJ\n\n5. Tell your gardener friends: freeCodeCamp just published a tutorial on how to monitor the moisture of your soil using an Arduino microcontroller. This tutorial will show you what hardware to get and how to wire it up. Then it'll walk you through the code you'll run, and explain how everything works. (30 minute read): https://t.co/QLWSxd6a9N\n\nThe freeCodeCamp community is working hard to bring you new courses each week on pretty much everything. If you want to help our charity create even more open source learning resources, you should support our mission directly: https://t.co/PJXlqTfPxH\n\nQuote of the Week: \n“Becoming tool agnostic is one of the biggest strengths you will ever have as a programmer. If you walk into a place and they say “we use XYZ”, you can go “Great. I'll learn it.” That is so powerful.” — Software Engineer Joe Hill on this week's freeCodeCamp podcast",
+          "tweet_id": "1943698737882386434",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 15:47:45 +0000 2025",
+          "tweet_url": "https://x.com/ossia/status/1943698737882386434",
+          "author_username": "ossia",
+          "author_followers": "291446",
+          "like_count": "90",
+          "retweet_count": "12",
+          "bookmark_count": "44",
+          "view_count": "8380",
+          "quote_count": "0",
+          "conversation_id": "1943698737882386434",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/uWYsKAj49x",
+          "external_links": "https://www.freecodecamp.org/news/build-a-google-calendar-clone-with-php-mysql-and-javascript/, https://www.freecodecamp.org/news/how-to-vibe-code-with-help-from-n8n/, https://www.freecodecamp.org/news/from-freecodecamp-to-nasa-with-data-engineer-joe-hill-podcast-178/, https://www.freecodecamp.org/news/how-to-use-pytest-a-guide-to-testing-in-python/, https://www.freecodecamp.org/news/how-to-use-a-resistive-soil-moisture-sensor/, https://www.freecodecamp.org/donate",
+          "topic": "n8n",
+          "engagement_score": 38,
+          "days_old": 3.7,
+          "freshness_multiplier": 1,
+          "base_score": 38,
+          "engagement_rate": 1.74,
+          "bookmark_rate": 0.53,
+          "amplification_rate": 0.14,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": true,
+          "viral_status": "low",
+          "engagement_class": "poor",
+          "bookmark_class": "poor",
+          "amplification_class": "poor",
+          "overall_performance": "poor"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "N8N: AI Agent Creation Guide\nCreate intelligent, memory-driven AI agents using N8N, and connect them with tools like Gmail, Google Calendar, and more\n\nCoupon code is 11JULY2025\n\nhttps://t.co/bYLi2iTrJT",
+          "tweet_id": "1943647691055005770",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 12:24:55 +0000 2025",
+          "tweet_url": "https://x.com/omoalhajaabiola/status/1943647691055005770",
+          "author_username": "omoalhajaabiola",
+          "author_followers": "140129",
+          "like_count": "91",
+          "retweet_count": "15",
+          "bookmark_count": "80",
+          "view_count": "9353",
+          "quote_count": "0",
+          "conversation_id": "1943647691055005770",
+          "has_media": "false",
+          "media_type": null,
+          "media_urls": null,
+          "external_links": "https://www.udemy.com/course/n8n-ai-agent-creation-guide/?couponCode=11JULY2025",
+          "topic": "n8n",
+          "engagement_score": 37,
+          "days_old": 3.9,
+          "freshness_multiplier": 1,
+          "base_score": 37,
+          "engagement_rate": 1.99,
+          "bookmark_rate": 0.86,
+          "amplification_rate": 0.16,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": false,
+          "viral_status": "low",
+          "engagement_class": "poor",
+          "bookmark_class": "poor",
+          "amplification_class": "poor",
+          "overall_performance": "poor"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "There’s no single course that combines Notion, Zapier, Airtable, n8n, and https://t.co/hqZ3gkdiqQ into one practical learning experience, except @skill_afrika_ \nbootcamp\n\nAfter 9 weeks of intense learning, hands-on teaching, and real-world practice, Skill Afrika’s Workflow Automation Bootcamp wraps up today.\n\nWhat a journey. What an experience. On to the next.",
+          "tweet_id": "1943660305092919490",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Fri Jul 11 13:15:02 +0000 2025",
+          "tweet_url": "https://x.com/omoalhajaabiola/status/1943660305092919490",
+          "author_username": "omoalhajaabiola",
+          "author_followers": "140129",
+          "like_count": "237",
+          "retweet_count": "40",
+          "bookmark_count": "125",
+          "view_count": "21107",
+          "quote_count": "9",
+          "conversation_id": "1943660305092919490",
+          "has_media": "false",
+          "media_type": null,
+          "media_urls": null,
+          "external_links": "http://Make.com",
+          "topic": "n8n",
+          "engagement_score": 34,
+          "days_old": 3.8,
+          "freshness_multiplier": 1,
+          "base_score": 34,
+          "engagement_rate": 1.95,
+          "bookmark_rate": 0.59,
+          "amplification_rate": 0.23,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": false,
+          "viral_status": "low",
+          "engagement_class": "poor",
+          "bookmark_class": "poor",
+          "amplification_class": "average",
+          "overall_performance": "poor"
+        }
+      },
+      {
+        "json": {
+          "tweet_text": "Newgen is a classic example where a product gets into a higher orbit once it achieves the critical mass. It has very clearly repositioned itself from the edge of business to \"at the core\". \n\nThere are many process automation tools available - both enterprise & non-enterprise. N8N being most popular in non-enterprise space and then within enterprise software, OEMs have their own process automation platforms. \n\nWhere companies like Newgen gets the edge is not with the tech, but the years of insights of how to use underlying data and where to provision embedded AI capabilities. Launching agentic services becomes as easy as adding 2+2 eventually. All the hard-work that was done between 2020-2023 has culminated into something that has its own standing. Those who could envision ahead in time are the winners!! What a winner.",
+          "tweet_id": "1943947030813950117",
+          "date_collected": "Sat 12 Jul 2025 10:27:21 +0000",
+          "created_at": "Sat Jul 12 08:14:23 +0000 2025",
+          "tweet_url": "https://x.com/Finstor85/status/1943947030813950117",
+          "author_username": "Finstor85",
+          "author_followers": "42131",
+          "like_count": "76",
+          "retweet_count": "6",
+          "bookmark_count": "18",
+          "view_count": "5299",
+          "quote_count": "0",
+          "conversation_id": "1943947030813950117",
+          "has_media": "true",
+          "media_type": "photo",
+          "media_urls": "https://t.co/Pa3IDHbDk0",
+          "external_links": null,
+          "topic": "n8n",
+          "engagement_score": 29,
+          "days_old": 3,
+          "freshness_multiplier": 1,
+          "base_score": 29,
+          "engagement_rate": 1.89,
+          "bookmark_rate": 0.34,
+          "amplification_rate": 0.11,
+          "thread_indicator": "single",
+          "content_type": "educational",
+          "call_to_action": false,
+          "viral_status": "low",
+          "engagement_class": "poor",
+          "bookmark_class": "poor",
+          "amplification_class": "poor",
+          "overall_performance": "poor"
+        }
+      }
     ]
   },
   "repo_name": "n8n",
@@ -973,6 +2285,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-07-14T12:56:24.000Z",
-  "versionId": "2b25cf0a-e2d5-4f86-a1a2-3c207edd9c62"
+  "updatedAt": "2025-07-15T14:14:41.000Z",
+  "versionId": "b02d62e9-4847-4f85-a46a-934a705eb949"
 }
