@@ -198,7 +198,7 @@
   "nodes": [
     {
       "parameters": {
-        "jsCode": "// Create array of topics\nconst topics = [\"n8n\", \"AI\", \"MCP\", \"Cursor MCP\"];\n\n// Return as array of objects\nreturn topics.map(topic => ({\n  json: {\n    topic: topic\n  }\n}));"
+        "jsCode": "// Create array of topics\nconst topics = [\"n8n\", \"Claude MCP\", \"Cursor\"];\n\n// Return as array of objects\nreturn topics.map(topic => ({\n  json: {\n    topic: topic\n  }\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -424,7 +424,7 @@
             {
               "id": "14770443-872a-4d20-bf8b-927263c2801d",
               "name": "query",
-              "value": "={{ $json.topic }} ((-filter:replies min_retweets:2 min_faves:30) OR (filter:self_threads min_faves:15)) lang:en -spam -promotional -\"follow\" -bot -\"dm me\" -\"link in bio\" -\"like\" -\"reply\" -\"live\" -\"BREAKING\" -\"click\" -\"Click\" -\"thank me\" -\"retweet\" -\"comment\" -\"tune in\" within_time:73h",
+              "value": "={{ $json.topic }} ((-filter:replies min_retweets:2 min_faves:40) OR (filter:self_threads min_faves:15)) lang:en -spam -promotional -follow -bot -dm -\"link in bio\" -like -reply -live -BREAKING -breaking -click -\"thank me\" -retweet -comment -\"tune in\"",
               "type": "string"
             },
             {
@@ -499,7 +499,7 @@
       "typeVersion": 3,
       "position": [
         2000,
-        -460
+        -480
       ],
       "id": "f61cf4e3-6c12-4863-8122-1da5084193a7",
       "name": "Loop Over Threads"
@@ -534,7 +534,7 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2440,
+        2460,
         -460
       ],
       "id": "f34760b2-54db-43e0-a1f9-3207703490fb",
@@ -1369,6 +1369,6 @@
   },
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2025-07-17T11:19:06.000Z",
-  "versionId": "e9ec37f7-bdbd-461c-a993-f4cb1ba5e0d4"
+  "updatedAt": "2025-07-18T12:31:04.000Z",
+  "versionId": "0214d083-952f-49da-864b-18a5f2b4feed"
 }
