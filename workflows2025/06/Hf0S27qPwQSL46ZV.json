@@ -424,7 +424,7 @@
             {
               "id": "14770443-872a-4d20-bf8b-927263c2801d",
               "name": "query",
-              "value": "={{ $json.topic }} ((-filter:replies min_retweets:2 min_faves:40) OR (filter:self_threads min_faves:15)) lang:en -spam -promotional -follow -bot -dm -\"link in bio\" -like -reply -live -BREAKING -breaking -click -\"thank me\" -retweet -comment -\"tune in\"",
+              "value": "={{ $json.topic }} ((-filter:replies min_retweets:10 min_faves:60) OR (filter:self_threads min_faves:50 min_retweets:5)) lang:en -spam -promotional -follow -bot -dm -DM -\"link in bio\" -like -reply -live -BREAKING -breaking -click -\"thank me\" -retweet -comment -\"tune in\"",
               "type": "string"
             },
             {
@@ -443,6 +443,12 @@
               "id": "bc16ed32-f357-49c3-bb16-f48764fb82bc",
               "name": "topic",
               "value": "={{ $json.topic }}",
+              "type": "string"
+            },
+            {
+              "id": "5a1e0334-b35a-4004-8be2-76685bb58236",
+              "name": "",
+              "value": "",
               "type": "string"
             }
           ]
@@ -1369,6 +1375,6 @@
   },
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2025-07-18T12:31:04.000Z",
-  "versionId": "0214d083-952f-49da-864b-18a5f2b4feed"
+  "updatedAt": "2025-07-20T18:49:08.000Z",
+  "versionId": "c57118ca-999b-4313-9854-2e39e9c1ca55"
 }
