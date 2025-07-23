@@ -1347,7 +1347,10 @@
       "parameters": {
         "rule": {
           "interval": [
-            {}
+            {
+              "field": "hours",
+              "hoursInterval": 73
+            }
           ]
         }
       },
@@ -1370,11 +1373,13 @@
   },
   "staticData": {
     "node:Schedule Trigger": {
-      "recurrenceRules": []
+      "recurrenceRules": [
+        0
+      ]
     }
   },
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2025-07-20T18:49:08.000Z",
-  "versionId": "c57118ca-999b-4313-9854-2e39e9c1ca55"
+  "updatedAt": "2025-07-23T11:42:20.000Z",
+  "versionId": "e8e0e605-c8fc-4489-98ba-f0b105a40ae7"
 }
