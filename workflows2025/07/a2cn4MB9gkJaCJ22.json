@@ -1,7 +1,66 @@
 {
   "": "",
   "active": false,
-  "connections": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Email Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Processing": {
+      "main": [
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a record": {
+      "main": [
+        [
+          {
+            "node": "Switch Emotional States",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Emotional States": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
   "createdAt": "2025-07-21T15:06:55.387Z",
   "id": "a2cn4MB9gkJaCJ22",
   "isArchived": false,
@@ -97,15 +156,342 @@
       "type": "n8n-nodes-base.formTrigger",
       "typeVersion": 2.2,
       "position": [
-        -640,
-        -40
+        -1660,
+        -80
       ],
       "id": "5d7631d1-fc47-4ac2-ba6d-1329ca0d132b",
       "name": "On form submission",
       "webhookId": "f40a41c3-df0d-4306-a4df-15c3c15c5486"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nitems.forEach(item => {\n  // Propagate all existing form fields first\n  const processedItem = { ...item.json };\n  \n  // Use \"Email\" (capital E) to match your form field\n  if (item.json.Email && item.json.Email.trim()) {\n    // Validate email format\n    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n    const email = item.json.Email.trim().toLowerCase();\n    \n    if (emailRegex.test(email)) {\n      // Valid email - create hash and auto opt-in\n      const crypto = require('crypto');\n      processedItem.email_hash = crypto.createHash('sha256').update(email).digest('hex');\n      processedItem.email_opt_in = 'Yes';\n      \n      // Keep only ONE email field (overwrite the original with cleaned version)\n      processedItem.Email = email;\n    } else {\n      // Invalid email format\n      processedItem.email_hash = null;\n      processedItem.email_opt_in = 'No';\n      processedItem.Email = null;\n    }\n  } else {\n    // No email provided\n    processedItem.email_hash = null;\n    processedItem.email_opt_in = 'No';\n    processedItem.Email = null;\n  }\n  \n  // Normalize other field names for consistency\n  if (item.json['Personal state']) {\n    processedItem.current_emotional_state = item.json['Personal state'];\n  }\n  \n  if (item.json['Life Situation/Goals']) {\n    processedItem.life_situation = item.json['Life Situation/Goals'];\n  }\n  \n  // Update the item\n  item.json = processedItem;\n});\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1420,
+        -80
+      ],
+      "id": "7d6e4355-87c7-4c91-97c4-e83c61c4c332",
+      "name": "Email Processing"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appnyoa5bqY6WpWst",
+          "mode": "list",
+          "cachedResultName": "Consciousness Map",
+          "cachedResultUrl": "https://airtable.com/appnyoa5bqY6WpWst"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblzrBFaymJF88vjC",
+          "mode": "list",
+          "cachedResultName": "Submissions",
+          "cachedResultUrl": "https://airtable.com/appnyoa5bqY6WpWst/tblzrBFaymJF88vjC"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.Name }}",
+            "Email": "={{ $json.Email }}",
+            "Emotional_State": "={{ $json[\"Personal state\"] }}",
+            "Lifie_Situation": "={{ $json[\"Life Situation/Goals\"] }}",
+            "Email_opt_in": "={{ $json.email_opt_in }}",
+            "Email_Hash": "={{ $json.email_hash }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "USER_ID",
+              "displayName": "USER_ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Lifie_Situation",
+              "displayName": "Lifie_Situation",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Emotional_State",
+              "displayName": "Emotional_State",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email_opt_in",
+              "displayName": "Email_opt_in",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Yes",
+                  "value": "Yes"
+                },
+                {
+                  "name": "No",
+                  "value": "No"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Agents_Content",
+              "displayName": "Agents_Content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Email_Hash",
+              "displayName": "Email_Hash",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -1200,
+        -80
+      ],
+      "id": "7ba8bcba-e9ad-4db2-87a5-dc676ccc4f66",
+      "name": "Create a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "aR2eRiONnse3ODUc",
+          "name": "Airtable Personal Access Token account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ ['Shame', 'Guilt', 'Apathy', 'Grief', 'Fear', 'Desire', 'Anger', 'Pride'].includes($json.fields.Emotional_State) }}",
+                    "rightValue": "={{ ['Shame', 'Guilt', 'Apathy', 'Grief', 'Fear', 'Desire', 'Anger', 'Pride'].includes($json.fields.Emotional_State) }}",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "id": "82e49fce-3835-475c-9b62-9ebf92c1cf6a"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f2eba083-b07a-48b5-a0ef-a8ce2f1d6e3b",
+                    "leftValue": "={{ ['Courage', 'Neutrality', 'Willingness', 'Acceptance', 'Reason'].includes($json.fields.Emotional_State) }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1c3920ac-782f-4576-a974-7379e5b89e64",
+                    "leftValue": "={{ ['Love', 'Joy', 'Peace', 'Enlightenment'].includes($json.fields.Emotional_State) }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -920,
+        -80
+      ],
+      "id": "b16a4815-833d-4b1d-945a-5ce6b47f4bb6",
+      "name": "Switch Emotional States"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -660,
+        -380
+      ],
+      "id": "04e5e5d9-01cc-4757-8dd0-f6cd0c947301",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -660,
+        -80
+      ],
+      "id": "266a0a11-f370-4569-ad46-af0df871740b",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -660,
+        200
+      ],
+      "id": "6e9d5299-0783-4f39-9060-e54ff8f4624d",
+      "name": "AI Agent2"
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "Email Processing": [
+      {
+        "json": {
+          "Name": "Steve",
+          "Email": "steve_baker@gmail.com",
+          "Personal state": "Guilt",
+          "Life Situation/Goals": "Sono un uomo triste con manie suicide",
+          "submittedAt": "2025-07-23T14:08:41.064+02:00",
+          "formMode": "test",
+          "email_hash": "eabd6dc4c86e45c6c2c8d55fd1027a8be7384362e5cde52e9538b0492e0a73cd",
+          "email_opt_in": "Yes",
+          "current_emotional_state": "Guilt",
+          "life_situation": "Sono un uomo triste con manie suicide"
+        }
+      }
+    ]
+  },
   "repo_name": "n8n",
   "repo_owner": "thalderg",
   "repo_path": "workflows",
@@ -115,6 +501,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-07-21T15:24:13.000Z",
-  "versionId": "bfed63e7-42a6-4389-b5e2-c752ed4f2bf4"
+  "updatedAt": "2025-07-23T14:54:38.000Z",
+  "versionId": "3e740937-3dfb-4397-b4fc-16a03ce6c5c1"
 }
