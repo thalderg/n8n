@@ -144,9 +144,15 @@
               "requiredField": true
             },
             {
-              "fieldLabel": "Life Situation/Goals",
+              "fieldLabel": "Life Situation",
               "fieldType": "textarea",
-              "placeholder": "Describe where you are at and what you wish to achieve",
+              "placeholder": "Describe where you are at with your life",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Goal",
+              "fieldType": "textarea",
+              "placeholder": "Describe your main Goal in the near future (day/s, week/s, a month)",
               "requiredField": true
             }
           ]
@@ -165,7 +171,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const items = $input.all();\n\nitems.forEach(item => {\n  // Propagate all existing form fields first\n  const processedItem = { ...item.json };\n  \n  // Use \"Email\" (capital E) to match your form field\n  if (item.json.Email && item.json.Email.trim()) {\n    // Validate email format\n    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n    const email = item.json.Email.trim().toLowerCase();\n    \n    if (emailRegex.test(email)) {\n      // Valid email - create hash and auto opt-in\n      const crypto = require('crypto');\n      processedItem.email_hash = crypto.createHash('sha256').update(email).digest('hex');\n      processedItem.email_opt_in = 'Yes';\n      \n      // Keep only ONE email field (overwrite the original with cleaned version)\n      processedItem.Email = email;\n    } else {\n      // Invalid email format\n      processedItem.email_hash = null;\n      processedItem.email_opt_in = 'No';\n      processedItem.Email = null;\n    }\n  } else {\n    // No email provided\n    processedItem.email_hash = null;\n    processedItem.email_opt_in = 'No';\n    processedItem.Email = null;\n  }\n  \n  // Normalize other field names for consistency\n  if (item.json['Personal state']) {\n    processedItem.current_emotional_state = item.json['Personal state'];\n  }\n  \n  if (item.json['Life Situation/Goals']) {\n    processedItem.life_situation = item.json['Life Situation/Goals'];\n  }\n  \n  // Update the item\n  item.json = processedItem;\n});\n\nreturn items;"
+        "jsCode": "const items = $input.all();\n\nitems.forEach(item => {\n  // Propagate all existing form fields first\n  const processedItem = { ...item.json };\n  \n  // Use \"Email\" (capital E) to match your form field\n  if (item.json.Email && item.json.Email.trim()) {\n    // Validate email format\n    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n    const email = item.json.Email.trim().toLowerCase();\n    \n    if (emailRegex.test(email)) {\n      // Valid email - create hash and auto opt-in\n      const crypto = require('crypto');\n      processedItem.email_hash = crypto.createHash('sha256').update(email).digest('hex');\n      processedItem.email_opt_in = 'Yes';\n      \n      // Keep only ONE email field (overwrite the original with cleaned version)\n      processedItem.Email = email;\n    } else {\n      // Invalid email format\n      processedItem.email_hash = null;\n      processedItem.email_opt_in = 'No';\n      processedItem.Email = null;\n    }\n  } else {\n    // No email provided\n    processedItem.email_hash = null;\n    processedItem.email_opt_in = 'No';\n    processedItem.Email = null;\n  }\n  \n  // Normalize other field names for consistency\n  if (item.json['Personal state']) {\n    processedItem.current_emotional_state = item.json['Personal state'];\n  }\n  \n  if (item.json['Life Situation/Goals']) {\n    processedItem.life_situation = item.json['Life Situation/Goals'];\n  }\n\n  if (item.json['Goal']) {\n    processedItem.life_situation = item.json['Goal'];\n  }\n  // Update the item\n  item.json = processedItem;\n});\n\nreturn items;"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -467,27 +473,39 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2,
       "position": [
-        -660,
-        200
+        -640,
+        180
       ],
       "id": "6e9d5299-0783-4f39-9060-e54ff8f4624d",
       "name": "AI Agent2"
     }
   ],
   "pinData": {
+    "On form submission": [
+      {
+        "json": {
+          "Name": "Steve",
+          "Email": "steve_baker@gmail.com",
+          "Personal state": "Guilt",
+          "Life Situation": "Sono un uomo triste con manie suicide",
+          "Goal": "Uscire da questo staot di tristezza e apatia. Trovare la voglia di vivere e la fiducia in me stesso. Sentirmi tutto intero e non in parti separate che mi consumano tutte le energie vitali affimche le tenga unite. Trasformare il senso di paura e smarrimento e sfiducia nel futuro in calma e tranquillita' che all fine tutto andra bene",
+          "submittedAt": "2025-07-23T14:08:41.064+02:00",
+          "formMode": "test"
+        }
+      }
+    ],
     "Email Processing": [
       {
         "json": {
           "Name": "Steve",
           "Email": "steve_baker@gmail.com",
           "Personal state": "Guilt",
-          "Life Situation/Goals": "Sono un uomo triste con manie suicide",
+          "Life Situation": "Sono un uomo triste con manie suicide",
+          "Goal": "Uscire da questo staot di tristezza e apatia. Trovare la voglia di vivere e la fiducia in me stesso. Sentirmi tutto intero e non in parti separate che mi consumano tutte le energie vitali affimche le tenga unite. Trasformare il senso di paura e smarrimento e sfiducia nel futuro in calma e tranquillita' che all fine tutto andra bene",
           "submittedAt": "2025-07-23T14:08:41.064+02:00",
           "formMode": "test",
           "email_hash": "eabd6dc4c86e45c6c2c8d55fd1027a8be7384362e5cde52e9538b0492e0a73cd",
-          "email_opt_in": "Yes",
-          "current_emotional_state": "Guilt",
-          "life_situation": "Sono un uomo triste con manie suicide"
+          "email_opt_in": "Yes"
         }
       }
     ]
@@ -501,6 +519,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-07-23T14:54:38.000Z",
-  "versionId": "3e740937-3dfb-4397-b4fc-16a03ce6c5c1"
+  "updatedAt": "2025-07-24T09:58:17.000Z",
+  "versionId": "58a9a2b8-3dd3-4ce3-81a5-98ebd5833217"
 }
