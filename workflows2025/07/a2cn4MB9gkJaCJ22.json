@@ -59,6 +59,17 @@
           }
         ]
       ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "createdAt": "2025-07-21T15:06:55.387Z",
@@ -205,22 +216,13 @@
             "Name": "={{ $json.Name }}",
             "Email": "={{ $json.Email }}",
             "Emotional_State": "={{ $json[\"Personal state\"] }}",
-            "Lifie_Situation": "={{ $json[\"Life Situation/Goals\"] }}",
             "Email_opt_in": "={{ $json.email_opt_in }}",
-            "Email_Hash": "={{ $json.email_hash }}"
+            "Email_Hash": "={{ $json.email_hash }}",
+            "Life_Situation": "={{ $json[\"Life Situation\"] }}",
+            "Goal": "={{ $json.Goal }}"
           },
           "matchingColumns": [],
           "schema": [
-            {
-              "id": "id",
-              "displayName": "id",
-              "required": false,
-              "defaultMatch": true,
-              "display": true,
-              "type": "string",
-              "readOnly": true,
-              "removed": true
-            },
             {
               "id": "USER_ID",
               "displayName": "USER_ID",
@@ -266,8 +268,19 @@
               "removed": false
             },
             {
-              "id": "Lifie_Situation",
-              "displayName": "Lifie_Situation",
+              "id": "Life_Situation",
+              "displayName": "Life_Situation",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Goal",
+              "displayName": "Goal",
               "required": false,
               "defaultMatch": false,
               "canBeUsedToMatch": true,
@@ -309,17 +322,6 @@
               "removed": false
             },
             {
-              "id": "Agents_Content",
-              "displayName": "Agents_Content",
-              "required": false,
-              "defaultMatch": false,
-              "canBeUsedToMatch": true,
-              "display": true,
-              "type": "array",
-              "readOnly": false,
-              "removed": true
-            },
-            {
               "id": "Email_Hash",
               "displayName": "Email_Hash",
               "required": false,
@@ -329,6 +331,17 @@
               "type": "string",
               "readOnly": false,
               "removed": false
+            },
+            {
+              "id": "Agents_Content",
+              "displayName": "Agents_Content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
             }
           ],
           "attemptToConvertTypes": false,
@@ -478,6 +491,17 @@
       ],
       "id": "6e9d5299-0783-4f39-9060-e54ff8f4624d",
       "name": "AI Agent2"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [
+        -420,
+        -240
+      ],
+      "id": "b49611cb-bd3f-4990-b78a-442d7f23ebe7",
+      "name": "Think"
     }
   ],
   "pinData": {
@@ -508,6 +532,23 @@
           "email_opt_in": "Yes"
         }
       }
+    ],
+    "Create a record": [
+      {
+        "json": {
+          "Name": "Steve",
+          "Email": "steve_baker@gmail.com",
+          "Personal state": "Guilt",
+          "Life Situation": "Sono un uomo triste con manie suicide",
+          "Goal": "Uscire da questo staot di tristezza e apatia. Trovare la voglia di vivere e la fiducia in me stesso. Sentirmi tutto intero e non in parti separate che mi consumano tutte le energie vitali affimche le tenga unite. Trasformare il senso di paura e smarrimento e sfiducia nel futuro in calma e tranquillita' che all fine tutto andra bene",
+          "submittedAt": "2025-07-23T14:08:41.064+02:00",
+          "formMode": "test",
+          "email_hash": "eabd6dc4c86e45c6c2c8d55fd1027a8be7384362e5cde52e9538b0492e0a73cd",
+          "email_opt_in": "Yes",
+          "current_emotional_state": "Guilt",
+          "life_situation": "Sono un uomo triste con manie suicide"
+        }
+      }
     ]
   },
   "repo_name": "n8n",
@@ -519,6 +560,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-07-24T09:58:17.000Z",
-  "versionId": "58a9a2b8-3dd3-4ce3-81a5-98ebd5833217"
+  "updatedAt": "2025-07-25T15:43:58.000Z",
+  "versionId": "72aa0e7e-526d-41e7-a7a4-74ea9409b6d6"
 }
