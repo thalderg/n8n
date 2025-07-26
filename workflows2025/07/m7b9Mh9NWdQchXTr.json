@@ -1,0 +1,585 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Email Processing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Processing": {
+      "main": [
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a record": {
+      "main": [
+        [
+          {
+            "node": "Switch Emotional States",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Emotional States": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-07-26T11:59:43.837Z",
+  "id": "m7b9Mh9NWdQchXTr",
+  "isArchived": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Consciousness Level Mapping Simple",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Personal Coach",
+        "formDescription": "Automated personal development system that assesses users' consciousness levels based on David Hawkins' Map of Consciousness and provides personalized growth guidance through AI-powered coaching",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email"
+            },
+            {
+              "fieldLabel": "Personal state",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Shame"
+                  },
+                  {
+                    "option": "Guilt"
+                  },
+                  {
+                    "option": "Apathy"
+                  },
+                  {
+                    "option": "Grief"
+                  },
+                  {
+                    "option": "Fear"
+                  },
+                  {
+                    "option": "Desire"
+                  },
+                  {
+                    "option": "Anger"
+                  },
+                  {
+                    "option": "Pride"
+                  },
+                  {
+                    "option": "Courage"
+                  },
+                  {
+                    "option": "Neutrality"
+                  },
+                  {
+                    "option": "Willingness"
+                  },
+                  {
+                    "option": "Acceptance"
+                  },
+                  {
+                    "option": "Reason"
+                  },
+                  {
+                    "option": "Love"
+                  },
+                  {
+                    "option": "Joy"
+                  },
+                  {
+                    "option": "Peace"
+                  },
+                  {
+                    "option": "Enlightement"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Life Situation",
+              "fieldType": "textarea",
+              "placeholder": "Describe where you are at with your life",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Goal",
+              "fieldType": "textarea",
+              "placeholder": "Describe your main Goal in the near future (day/s, week/s, a month)",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {},
+        "path": "fd12467e-5fae-4876-9030-6463dbdba421"
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -1660,
+        -80
+      ],
+      "id": "6f950e23-929d-4c72-ac39-6d4681a74f85",
+      "name": "On form submission",
+      "webhookId": "fd12467e-5fae-4876-9030-6463dbdba421"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nitems.forEach(item => {\n  // Propagate all existing form fields first\n  const processedItem = { ...item.json };\n  \n  // Use \"Email\" (capital E) to match your form field\n  if (item.json.Email && item.json.Email.trim()) {\n    // Validate email format\n    const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\n    const email = item.json.Email.trim().toLowerCase();\n    \n    if (emailRegex.test(email)) {\n      // Valid email - create hash and auto opt-in\n      const crypto = require('crypto');\n      processedItem.email_hash = crypto.createHash('sha256').update(email).digest('hex');\n      processedItem.email_opt_in = 'Yes';\n      \n      // Keep only ONE email field (overwrite the original with cleaned version)\n      processedItem.Email = email;\n    } else {\n      // Invalid email format\n      processedItem.email_hash = null;\n      processedItem.email_opt_in = 'No';\n      processedItem.Email = null;\n    }\n  } else {\n    // No email provided\n    processedItem.email_hash = null;\n    processedItem.email_opt_in = 'No';\n    processedItem.Email = null;\n  }\n  \n  // Normalize other field names for consistency\n  if (item.json['Personal state']) {\n    processedItem.current_emotional_state = item.json['Personal state'];\n  }\n  \n  if (item.json['Life Situation/Goals']) {\n    processedItem.life_situation = item.json['Life Situation/Goals'];\n  }\n\n  if (item.json['Goal']) {\n    processedItem.life_situation = item.json['Goal'];\n  }\n  // Update the item\n  item.json = processedItem;\n});\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1420,
+        -80
+      ],
+      "id": "7ac7bbf2-4c2f-4e3a-9093-a6973dfb39c8",
+      "name": "Email Processing"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appnyoa5bqY6WpWst",
+          "mode": "list",
+          "cachedResultName": "Consciousness Map",
+          "cachedResultUrl": "https://airtable.com/appnyoa5bqY6WpWst"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblzrBFaymJF88vjC",
+          "mode": "list",
+          "cachedResultName": "Submissions",
+          "cachedResultUrl": "https://airtable.com/appnyoa5bqY6WpWst/tblzrBFaymJF88vjC"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.Name }}",
+            "Email": "={{ $json.Email }}",
+            "Emotional_State": "={{ $json[\"Personal state\"] }}",
+            "Email_opt_in": "={{ $json.email_opt_in }}",
+            "Email_Hash": "={{ $json.email_hash }}",
+            "Life_Situation": "={{ $json[\"Life Situation\"] }}",
+            "Goal": "={{ $json.Goal }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "USER_ID",
+              "displayName": "USER_ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Life_Situation",
+              "displayName": "Life_Situation",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Goal",
+              "displayName": "Goal",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Emotional_State",
+              "displayName": "Emotional_State",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email_opt_in",
+              "displayName": "Email_opt_in",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Yes",
+                  "value": "Yes"
+                },
+                {
+                  "name": "No",
+                  "value": "No"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email_Hash",
+              "displayName": "Email_Hash",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Agents_Content",
+              "displayName": "Agents_Content",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        -1200,
+        -80
+      ],
+      "id": "ee298c50-13f8-4e5e-9d07-83a83e2d97c1",
+      "name": "Create a record",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "aR2eRiONnse3ODUc",
+          "name": "Airtable Personal Access Token account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ ['Shame', 'Guilt', 'Apathy', 'Grief', 'Fear', 'Desire', 'Anger', 'Pride'].includes($json.fields.Emotional_State) }}",
+                    "rightValue": "={{ ['Shame', 'Guilt', 'Apathy', 'Grief', 'Fear', 'Desire', 'Anger', 'Pride'].includes($json.fields.Emotional_State) }}",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "id": "82e49fce-3835-475c-9b62-9ebf92c1cf6a"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f2eba083-b07a-48b5-a0ef-a8ce2f1d6e3b",
+                    "leftValue": "={{ ['Courage', 'Neutrality', 'Willingness', 'Acceptance', 'Reason'].includes($json.fields.Emotional_State) }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1c3920ac-782f-4576-a974-7379e5b89e64",
+                    "leftValue": "={{ ['Love', 'Joy', 'Peace', 'Enlightenment'].includes($json.fields.Emotional_State) }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -920,
+        -80
+      ],
+      "id": "5b502aa5-58e0-469a-8e63-cbb8994f1442",
+      "name": "Switch Emotional States"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -660,
+        -380
+      ],
+      "id": "1b166cf2-7a55-489d-810a-3345bcddbeeb",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -660,
+        -80
+      ],
+      "id": "8914df59-4ec6-48fc-acd5-20d6052d19de",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -640,
+        180
+      ],
+      "id": "14468804-03ee-4c34-80ee-19e530a7ac4f",
+      "name": "AI Agent2"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [
+        -420,
+        -240
+      ],
+      "id": "6dc5403a-f710-4217-ba8e-ced4c12ed6b2",
+      "name": "Think"
+    }
+  ],
+  "pinData": {
+    "On form submission": [
+      {
+        "json": {
+          "Name": "Steve",
+          "Email": "steve_baker@gmail.com",
+          "Personal state": "Guilt",
+          "Life Situation": "Sono un uomo triste con manie suicide",
+          "Goal": "Uscire da questo staot di tristezza e apatia. Trovare la voglia di vivere e la fiducia in me stesso. Sentirmi tutto intero e non in parti separate che mi consumano tutte le energie vitali affimche le tenga unite. Trasformare il senso di paura e smarrimento e sfiducia nel futuro in calma e tranquillita' che all fine tutto andra bene",
+          "submittedAt": "2025-07-23T14:08:41.064+02:00",
+          "formMode": "test"
+        }
+      }
+    ],
+    "Email Processing": [
+      {
+        "json": {
+          "Name": "Steve",
+          "Email": "steve_baker@gmail.com",
+          "Personal state": "Guilt",
+          "Life Situation": "Sono un uomo triste con manie suicide",
+          "Goal": "Uscire da questo staot di tristezza e apatia. Trovare la voglia di vivere e la fiducia in me stesso. Sentirmi tutto intero e non in parti separate che mi consumano tutte le energie vitali affimche le tenga unite. Trasformare il senso di paura e smarrimento e sfiducia nel futuro in calma e tranquillita' che all fine tutto andra bene",
+          "submittedAt": "2025-07-23T14:08:41.064+02:00",
+          "formMode": "test",
+          "email_hash": "eabd6dc4c86e45c6c2c8d55fd1027a8be7384362e5cde52e9538b0492e0a73cd",
+          "email_opt_in": "Yes"
+        }
+      }
+    ],
+    "Create a record": [
+      {
+        "json": {
+          "Name": "Steve",
+          "Email": "steve_baker@gmail.com",
+          "Personal state": "Guilt",
+          "Life Situation": "Sono un uomo triste con manie suicide",
+          "Goal": "Uscire da questo staot di tristezza e apatia. Trovare la voglia di vivere e la fiducia in me stesso. Sentirmi tutto intero e non in parti separate che mi consumano tutte le energie vitali affimche le tenga unite. Trasformare il senso di paura e smarrimento e sfiducia nel futuro in calma e tranquillita' che all fine tutto andra bene",
+          "submittedAt": "2025-07-23T14:08:41.064+02:00",
+          "formMode": "test",
+          "email_hash": "eabd6dc4c86e45c6c2c8d55fd1027a8be7384362e5cde52e9538b0492e0a73cd",
+          "email_opt_in": "Yes",
+          "current_emotional_state": "Guilt",
+          "life_situation": "Sono un uomo triste con manie suicide"
+        }
+      }
+    ]
+  },
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "createdAt": "2025-05-29T13:56:07.453Z",
+      "updatedAt": "2025-05-29T13:56:07.453Z",
+      "id": "0VZ5UhwYeLVnd583",
+      "name": "Product"
+    },
+    {
+      "createdAt": "2025-05-29T13:56:07.414Z",
+      "updatedAt": "2025-05-29T13:56:07.414Z",
+      "id": "8JwyhMiXJR46hkag",
+      "name": "Ideation"
+    },
+    {
+      "createdAt": "2025-05-29T13:56:07.328Z",
+      "updatedAt": "2025-05-29T13:56:07.328Z",
+      "id": "TQ35wQbgc3ccWuXf",
+      "name": "AI"
+    }
+  ],
+  "triggerCount": 0,
+  "updatedAt": "2025-07-26T11:59:43.000Z",
+  "versionId": "235ed97f-2655-4adb-935e-d7d212038290"
+}
