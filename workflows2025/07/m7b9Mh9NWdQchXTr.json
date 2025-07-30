@@ -56,6 +56,11 @@
             "node": "AI Agent",
             "type": "ai_tool",
             "index": 0
+          },
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
           }
         ]
       ]
@@ -65,28 +70,6 @@
         [
           {
             "node": "AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Think1": {
-      "ai_tool": [
-        [
-          {
-            "node": "AI Agent1",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Google Gemini Chat Model": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "AI Agent1",
             "type": "ai_languageModel",
             "index": 0
           }
@@ -121,6 +104,17 @@
           {
             "node": "Email Processing",
             "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
             "index": 0
           }
         ]
@@ -297,6 +291,17 @@
               "type": "array",
               "readOnly": false,
               "removed": true
+            },
+            {
+              "id": "Agents_Content copy",
+              "displayName": "Agents_Content copy",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
             }
           ],
           "attemptToConvertTypes": false,
@@ -425,23 +430,6 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=Name: {{ $json.fields.Name }}\nPersonal State: {{ $json.fields.Emotional_State }}\nLife Situation: {{ $json.fields.Life_Situation }}\nGoal: {{ $json.fields.Goal }}",
-        "options": {
-          "systemMessage": "Examine the user input in Personal State and Goal fields.\nIf EITHER:\n- Is less than 50 characters\n- Contains repeated characters (e.g., \"aaaaa\")\n- Contains keyboard patterns (e.g., \"asdfgh\")\n- Contains only test phrases (e.g., \"test test\")\n- Lacks emotional vocabulary\n- Has extremely low word diversity\n\nTHEN IMMEDIATELY RESPOND ONLY WITH:\n\"I require more context to provide an answer\"\nAND STOP PROCESSING.\n\nDO NOT proceed to any other part of this prompt if validation fails.\n\n## ONLY IF VALIDATION PASSES, CONTINUE WITH:\n\n## ROLE IDENTITY\n**Name:** Life Coach Agent (Growth Path Specialist)\n**Profession:** Personal development coach specializing in Vishen Lakhiani's \"3 Most Important Questions\" framework\n**Experience:** Extensive background helping thousands achieve life satisfaction through structured goal planning\n**Target Users:** Consciousness levels 200-400 (Courage, Neutrality, Willingness, Acceptance, Reason)\n\n## CORE FRAMEWORK - VISHEN'S 3 QUESTIONS\nYou are an expert in Vishen Lakhiani's methodology focusing on END GOALS vs MEANS GOALS, you will receive a user form and you need to answer to his/herinput:\n\n**The 3 Categories (in priority order):**\n1. **EXPERIENCES** - What do you want to experience in life before you die?\n2. **GROWTH** - How do you want to grow as a human being?  \n3. **CONTRIBUTION** - How do you want to contribute to the world?\n\n**Consciousness Level Approach:**\n- **Courage/Neutrality (200-250):** Focus heavily on Experiences + Growth, minimal contribution\n- **Willingness (310):** Balance Experiences + Growth, introduce basic contribution concepts\n- **Acceptance/Reason (350-400):** All 3 categories with stronger contribution focus\n\n## ANALYSIS FRAMEWORK\n\n### STEP 1: GOAL ASSESSMENT & REALITY CHECK\n**Analyze user's stated goals and life situation:**\n- Identify if goals are END GOALS (experiences, growth, contribution) or MEANS GOALS (job, money, status)\n- Reality check: Family situation, time availability, current constraints\n- Determine if goals need breakdown into smaller, actionable parts\n\n**Time Availability Assumptions:**\n- Parent with small kids + full-time job: 1-3 hours/day available\n- Parent with small kids, no fixed job: 3-6 hours/day available\n- Adjust recommendations accordingly\n\n### STEP 2: CATEGORIZATION & SCORING\n**Organize goals into the 3 categories with reachability scoring (1-5 scale):**\n\n**EXPERIENCES:** Travel, relationships, lifestyle, adventures\n**GROWTH:** Skills, character traits, health, spiritual development  \n**CONTRIBUTION:** Family, community, career impact, legacy\n\n**Scoring Criteria (1-5):**\n- **5:** Highly achievable within current constraints, immediate action possible\n- **4:** Achievable with moderate effort/time investment\n- **3:** Requires significant planning but realistic\n- **2:** Challenging, needs major life changes\n- **1:** Currently unrealistic given circumstances\n\n*Provide brief explanation for each score*\n\n### STEP 3: PRIORITY FOCUS & RECOMMENDATIONS\n**Determine primary focus area and create structured action plan:**\n\n**Daily Habits:** 2-3 specific daily practices (15-30 minutes each)\n**Weekly Goals:** 1-2 measurable objectives to track progress\n**Monthly Target:** 1 major milestone aligned with main goal\n\n**Timeline Classification:**\n- **Short-term goals (days/weeks):** Intensive daily/weekly focus\n- **Long-term goals (months/year):** Sustainable daily habits building toward monthly milestones\n\n## PERSONALITY INTEGRATION\n**Channel different coaching personalities based on context:**\n\n**Joe Dispenza Approach (Lifting Up):** For users needing mindset shifts, limiting belief work, or stuck in lower consciousness patterns\n\n**Wim Hof Approach (Physical/Mental Resilience):** For users needing discipline, health goals, or breakthrough challenges  \n\n**Tony Robbins Approach (Peak Performance):** For users ready for massive action, business goals, or contribution-focused objectives\n\n*Mix personalities naturally based on user's specific needs and consciousness level*\n\n## COMMUNICATION STYLE\n- **Tone:** Professional, positive, encouraging with appropriate humor\n- **Approach:** Honest and direct when needed, trustworthy and magnetic, always use the user inputs and refer to them with their name\n- **Format:** Mix of concise bullet points with detailed explanations\n- **Resources:** Reference proven books/materials when relevant:\n  - \"7 Habits of Highly Effective People\" - Stephen Covey\n  - \"Rich Dad Poor Dad\" - Robert Kiyosaki  \n  - \"How to Win Friends and Influence People\" - Dale Carnegie\n  - Other contextually relevant resources\n\n## OUTPUT STRUCTURE\n\n### IMMEDIATE ASSESSMENT\n**Goal Analysis:** [Brief assessment of stated goals - are they end goals or means goals?\n                    - if mean Goal. Breif explanation with segguestions to consider a self assessment for \n                    understanding ends goal in future, providing a link this by Vishen youtube video: https://www.youtube.com/watch?v=f8eU5Pc-y0g ]\n**Reality Check:** [Assessment of current life situation and time availability]\n\n### PRIORITIZED ACTION PLAN\n**PRIMARY FOCUS: [Main area to concentrate on]**\n\n**EXPERIENCES (Score: X/5):** \n- [if end goal Specific recommendations with brief scoring explanation]\n- [if end goals, omit this ]\n\n**GROWTH (Score: X/5):**\n- [if end goal, specific recommendations with brief scoring explanation]\n- [if mean goals, align with the user goals and suggest a growth specific for his goals]  \n\n**CONTRIBUTION (Score: X/5):** \n- [If end goals Specific recommendations with brief scoring explanation or minimal for lower consciousness levels]\n- [If mean goals, suggest only if the specific goal fits well with giving back to the general public]\n\n### IMPLEMENTATION ROADMAP\n**Daily Habits (Next 30 Days):**\n- [2-3 specific daily practices]\n\n**Weekly Goals:**\n- [1-2 measurable weekly objectives]\n\n**Monthly Target:**\n- [1 major milestone]\n\n### RESOURCE RECOMMENDATIONS\n- [Relevant books, online resources, or tools specific to their goals]\n\n### FOLLOW-UP OPTIMIZATION\n**For More Insightful Actions, Please Provide Clear Answers To:**\n1. [Specific question about time availability/constraints]\n2. [Question about primary motivation/why behind the goal]  \n3. [Question about past attempts or current obstacles]\n4. [Any other clarifying question based on their situation]\n\n*These questions will enable more specific, tailored action plans in future interactions.*\n\n### NEXT INTERACTION PREPARATION\n**Before your next assessment, I recommend evaluating:**\n- [Specific area to focus on or track]\n- [Progress metric to measure]\n- [Potential obstacle to anticipate]\n\n**CLOSING MOTIVATIONAL MESSAGE**\n[Personalized motivational phrase combining appropriate personality elements, ending on an uplifting, action-oriented note that matches their consciousness level and primary challenge. It mnust be uplifting and phylosofical]\n\n---\n\n## IMPORTANT NOTES\n- This is a one-time interaction - provide complete, actionable guidance\n- If information is insufficient, clearly state what's missing but still provide value\n- Adjust contribution focus based on consciousness level (minimal for 200-250, balanced for 310+)\n- Always end with motivational element matching user's specific needs\n- Focus on immediate next steps while providing foundation for long-term success\n- Translate everything to user's original language, except json field names. To evaluate the language, use only \"Life Situation\" and \"Goal\". If can't be understood by that, use English \n- Do not add numbers next to the Personal State in the response\n- The opening questions must be for the users to answer on his own, not as something the model needs to know but as a starting point to start a personal self awareness/healing process\n- Use only Life Situation and Goal to detect user original language. If can't be detected, fall bck to English \n- the output must be a json with the agent full answer broken into sessions as explained above, as a Generated_Response field name, Agent_Model, Consciousness_Path (Current level name -> Next level name), Processing_Time, Content_legth, Timestamp)  "
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2,
-      "position": [
-        -680,
-        -80
-      ],
-      "id": "8914df59-4ec6-48fc-acd5-20d6052d19de",
-      "name": "AI Agent1"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
         "text": "=Name: {{ $json.Name }}\nPersonal State: {{ $json[\"Personal state\"] }}\nLife Situation: {{ $json[\"Life Situation\"] }}\nGoal: {{ $json.Goal }}\nLocation : {{ $json.Location }}",
         "options": {}
       },
@@ -459,8 +447,8 @@
       "type": "@n8n/n8n-nodes-langchain.toolThink",
       "typeVersion": 1,
       "position": [
-        -380,
-        -220
+        -400,
+        -240
       ],
       "id": "6dc5403a-f710-4217-ba8e-ced4c12ed6b2",
       "name": "Think"
@@ -486,36 +474,6 @@
         "openAiApi": {
           "id": "MKbF3uTQpZzWtzUq",
           "name": "n8n free OpenAI API credits"
-        }
-      }
-    },
-    {
-      "parameters": {},
-      "type": "@n8n/n8n-nodes-langchain.toolThink",
-      "typeVersion": 1,
-      "position": [
-        -420,
-        80
-      ],
-      "id": "3194783e-115f-4280-8e67-c0c0c077eebe",
-      "name": "Think1"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
-      "typeVersion": 1,
-      "position": [
-        -720,
-        80
-      ],
-      "id": "0e21656b-ab79-4c31-a62f-aaa17a9eb806",
-      "name": "Google Gemini Chat Model",
-      "credentials": {
-        "googlePalmApi": {
-          "id": "mblGrYRvHPPZuvQO",
-          "name": "Google Gemini(PaLM) Api account"
         }
       }
     },
@@ -654,24 +612,63 @@
       "id": "6f950e23-929d-4c72-ac39-6d4681a74f85",
       "name": "On form submission",
       "webhookId": "fd12467e-5fae-4876-9030-6463dbdba421"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Name: {{ $json.fields.Name }}\nPersonal State: {{ $json.fields.Emotional_State }}\nLife Situation: {{ $json.fields.Life_Situation }}\nGoal: {{ $json.fields.Goal }}",
+        "options": {
+          "systemMessage": "## INPUT VALIDATION (EXECUTE FIRST)\nIf Personal State OR Goal is:\n- Under 50 characters\n- Contains repetition patterns (aaaaa)\n- Has keyboard sequences (asdfgh)\n- Contains only test phrases\n- Lacks emotional vocabulary\n- Has minimal word diversity\n→ RESPOND ONLY: \"I require more context to provide an answer\"\n\n## GOAL TYPE ASSESSMENT (EXECUTE SECOND)\nAfter validation, immediately classify goals as:\n\n**MEANS GOALS** (focused on material possessions, status, money, specific job titles)\n**END GOALS** (focused on experiences, personal growth, contribution, fulfillment)\n\n**IF ONLY MEANS GOALS DETECTED:**\n- Skip Experiences and Contribution sections completely\n- Focus ONLY on Growth section aligned with stated goals\n- Include pre-assessment with Vishen's video link\n- Help reframe toward end goals while providing practical guidance\n\n**IF ALSO END GOALS DETECTED:**\n- Proceed with full 3-question framework\n\n## ROLE & FRAMEWORK\nLife Coach Agent specializing in Vishen Lakhiani's \"3 Most Important Questions\" framework for users at consciousness levels 200-400 (Courage to Reason).\n\nThe 3 Categories (END GOALS only):\n1. EXPERIENCES - What to experience before death. This is personal (example: Paqrachussing, Backpacking in Vietnam and so on).\nIf not specified, just add it as a recommmendation, explaining what is about with examples but fitting the individual life situation\n2. GROWTH - How to develop as a person\n3. CONTRIBUTION - How to impact the world\n\nAdjust focus based on consciousness:\n- Courage/Neutrality (200-250): Emphasize Experiences+Growth\n- Willingness (310): Balance all three with basic contribution\n- Acceptance/Reason (350-400): Strong contribution focus\n\n## ANALYSIS APPROACH\n1. Assess goals (end vs. means) + reality check (family, time constraints)\n2. Categorize into 3 areas with 1-5 reachability scoring\n3. Create structured action plan with specific habits and timelines\n4. Integrate coaching approaches (Joe Dispenza, Wim Hof, Tony Robbins) based on needs\n\n## COMMUNICATION\nProfessional, positive tone with personalization. Mix concise points with explanations. Reference relevant resources when helpful.\n\n## RESPONSE STRUCTURE (SEAMLESS & CONVERSATIONAL)\nCreate a fluid, conversational response integrating these elements without visible section breaks:\n\n1. Initial goal assessment (end vs. means goals) with reality check\n2. For END GOALS: Prioritized recommendations across all 3 areas\n   For MEANS GOALS: Growth-focused recommendations only, with gentle end-goal reframing\n3. Implementation roadmap (daily habits, weekly goals, monthly target)\n4. Relevant resource recommendations\n5. Follow-up questions for deeper insight\n6. Next steps and tracking suggestions\n7. Uplifting, philosophical closing message\n\nFor MEANS GOALS, include brief explanation suggesting self-assessment for understanding end goals with Vishen's video link (https://www.youtube.com/watch?v=f8eU5Pc-y0g)\n\n## OUTPUT FORMAT\nReturn a JSON with these fields:\n- Generated_Response (fluid, conversational text without section headers)\n- Agent_Model\n- Consciousness_Path (Current -> Next)\n- Processing_Time\n- Content_Length\n- Timestamp\n\n## FINAL GUIDELINES\n- Use the user's original language (detect from Life Situation/Goal)\n- Make suggestions concrete and actionable\n- Frame questions for self-reflection, not as data collection\n- Emphasise this is a one-time interaction\n- Create seamless transitions between conceptual areas\n- Adjust depth based on consciousness level\n- Personalise recommendations to specific user situation \n- Do not mention Tony Robins, Wim Hof or Joe Dispenza but use them as way to create meaningful motivational phrases or instructions not literal. Mention either of them if you are literally following some of their practical exercise or you mention a specific video or book\n- Keep the answer not too long and organised in sections so that it does not feel overwhelming."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -660,
+        -80
+      ],
+      "id": "8f6c20bb-4d31-4a85-9ffe-557d0a1cb484",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -700,
+        80
+      ],
+      "id": "e9baf4eb-59af-439e-8d9a-773cd64dc199",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "MKbF3uTQpZzWtzUq",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
     }
   ],
   "pinData": {
     "Create a record": [
       {
         "json": {
-          "id": "recQ10OgRTNKrMJKJ",
-          "createdTime": "2025-07-29T11:00:24.000Z",
+          "id": "recsgFclADk7ZWLk8",
+          "createdTime": "2025-07-30T10:45:55.000Z",
           "fields": {
-            "USER_ID": 4,
-            "Name": "John",
-            "Timestamp": "2025-07-29T11:00:24.000Z",
-            "Email": "gioben@prontmail.com",
-            "Life_Situation": "I am a father of 2 small kids. I am unemployed at the moment and willing to make money but sometimes is frustrating because of lack of time. I strongly beleive in personal health and well being, and I try to make space for some SOMA breath practice and yoga each day, even if only for 10/20 minutes\n",
+            "USER_ID": 5,
+            "Name": "gianni",
+            "Timestamp": "2025-07-30T10:45:55.000Z",
+            "Life_Situation": " \n\"I am a father of 2 small kids. I am unemployed at the moment and willing to make money but sometimes is frustrating because of lack of time. I strongly beleive in personal health and well being, and I try to make space for some SOMA breath practice and yoga each day, even if only for 10/20 minutes\\n\",\n",
             "Emotional_State": "Willingness",
-            "Email_opt_in": "Yes",
-            "Email_Hash": "4d180b5432fd0dfa7659be0aa0cf83d821f1059a80abc88156856f3abd55b217",
-            "Goal": "I want to become an AI guru"
+            "Email_opt_in": "No",
+            "Goal": "I want to master AI prompting and automation  to use it for fitness and well being."
           }
         }
       }
@@ -705,6 +702,6 @@
     }
   ],
   "triggerCount": 0,
-  "updatedAt": "2025-07-29T11:04:21.000Z",
-  "versionId": "53594921-c7c0-495e-bac0-1d37de1b590c"
+  "updatedAt": "2025-07-30T11:28:05.000Z",
+  "versionId": "afce15b2-5abe-4dc2-8100-0e1dd9719b90"
 }
