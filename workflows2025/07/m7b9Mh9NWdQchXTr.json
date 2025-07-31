@@ -6,18 +6,7 @@
       "main": [
         [
           {
-            "node": "Create a record",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create a record": {
-      "main": [
-        [
-          {
-            "node": "Switch Emotional States",
+            "node": "Create User Record",
             "type": "main",
             "index": 0
           }
@@ -28,21 +17,21 @@
       "main": [
         [
           {
-            "node": "AI Agent",
+            "node": "Crisis Support Agent",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "AI Agent1",
+            "node": "Life Coach Agent",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "AI Agent2",
+            "node": "Gentle Observer Agent",
             "type": "main",
             "index": 0
           }
@@ -53,12 +42,7 @@
       "ai_tool": [
         [
           {
-            "node": "AI Agent",
-            "type": "ai_tool",
-            "index": 0
-          },
-          {
-            "node": "AI Agent1",
+            "node": "Crisis Support Agent",
             "type": "ai_tool",
             "index": 0
           }
@@ -69,18 +53,7 @@
       "ai_languageModel": [
         [
           {
-            "node": "AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "OpenAI Chat Model1": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "AI Agent2",
+            "node": "Crisis Support Agent",
             "type": "ai_languageModel",
             "index": 0
           }
@@ -91,7 +64,7 @@
       "ai_tool": [
         [
           {
-            "node": "AI Agent2",
+            "node": "Gentle Observer Agent",
             "type": "ai_tool",
             "index": 0
           }
@@ -113,8 +86,73 @@
       "ai_languageModel": [
         [
           {
-            "node": "AI Agent1",
+            "node": "Life Coach Agent",
             "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Life Coach Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Gentle Observer Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crisis Support Agent": {
+      "main": [
+        []
+      ]
+    },
+    "Life Coach Agent": {
+      "main": [
+        []
+      ]
+    },
+    "Gentle Observer Agent": {
+      "main": [
+        [
+          {
+            "node": "Get Agent Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create User Record": {
+      "main": [
+        [
+          {
+            "node": "Switch Emotional States",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Agent Fields": {
+      "main": [
+        [
+          {
+            "node": "Create a record",
+            "type": "main",
             "index": 0
           }
         ]
@@ -141,6 +179,362 @@
       ],
       "id": "7ac7bbf2-4c2f-4e3a-9093-a6973dfb39c8",
       "name": "Email Processing"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ ['Shame', 'Guilt', 'Apathy', 'Grief', 'Fear', 'Desire', 'Anger', 'Pride'].includes($json.fields.Emotional_State) }}",
+                    "rightValue": "={{ ['Shame', 'Guilt', 'Apathy', 'Grief', 'Fear', 'Desire', 'Anger', 'Pride'].includes($json.fields.Emotional_State) }}",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "id": "82e49fce-3835-475c-9b62-9ebf92c1cf6a"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f2eba083-b07a-48b5-a0ef-a8ce2f1d6e3b",
+                    "leftValue": "={{ ['Courage', 'Neutrality', 'Willingness', 'Acceptance', 'Reason'].includes($json.fields.Emotional_State) }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "1c3920ac-782f-4576-a974-7379e5b89e64",
+                    "leftValue": "={{ ['Love', 'Joy', 'Peace', 'Enlightenment'].includes($json.fields.Emotional_State) }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -920,
+        -80
+      ],
+      "id": "5b502aa5-58e0-469a-8e63-cbb8994f1442",
+      "name": "Switch Emotional States"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [
+        -280,
+        -340
+      ],
+      "id": "6dc5403a-f710-4217-ba8e-ced4c12ed6b2",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        -360
+      ],
+      "id": "c9fa53a5-2ecf-4fb2-a36d-8b144cda253d",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "MKbF3uTQpZzWtzUq",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [
+        -220,
+        500
+      ],
+      "id": "79a9efee-2bb3-461c-a728-bb53a1b65d1c",
+      "name": "Think2"
+    },
+    {
+      "parameters": {
+        "formTitle": "Personal Coach",
+        "formDescription": "Automated personal development system that assesses users' consciousness levels based on David Hawkins' Map of Consciousness and provides personalized growth guidance through AI-powered coaching",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email"
+            },
+            {
+              "fieldLabel": "Personal state",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Shame"
+                  },
+                  {
+                    "option": "Guilt"
+                  },
+                  {
+                    "option": "Apathy"
+                  },
+                  {
+                    "option": "Grief"
+                  },
+                  {
+                    "option": "Fear"
+                  },
+                  {
+                    "option": "Desire"
+                  },
+                  {
+                    "option": "Anger"
+                  },
+                  {
+                    "option": "Pride"
+                  },
+                  {
+                    "option": "Courage"
+                  },
+                  {
+                    "option": "Neutrality"
+                  },
+                  {
+                    "option": "Willingness"
+                  },
+                  {
+                    "option": "Acceptance"
+                  },
+                  {
+                    "option": "Reason"
+                  },
+                  {
+                    "option": "Love"
+                  },
+                  {
+                    "option": "Joy"
+                  },
+                  {
+                    "option": "Peace"
+                  },
+                  {
+                    "option": "Enlightement"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Life Situation",
+              "fieldType": "textarea",
+              "placeholder": "Describe where you are at with your life",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Goal",
+              "fieldType": "textarea",
+              "placeholder": "Describe your main Goal in the near future (day/s, week/s, a month)",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -1660,
+        -80
+      ],
+      "id": "6f950e23-929d-4c72-ac39-6d4681a74f85",
+      "name": "On form submission",
+      "webhookId": "fd12467e-5fae-4876-9030-6463dbdba421"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -660,
+        60
+      ],
+      "id": "e9baf4eb-59af-439e-8d9a-773cd64dc199",
+      "name": "OpenAI Chat Model2",
+      "credentials": {
+        "openAiApi": {
+          "id": "MKbF3uTQpZzWtzUq",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1,
+      "position": [
+        -280,
+        60
+      ],
+      "id": "14d38544-f28c-4807-823d-752940a4d0c7",
+      "name": "Think1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -640,
+        520
+      ],
+      "id": "62a66936-3d57-4cfa-b444-f1142d4311f8",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "MKbF3uTQpZzWtzUq",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Name: {{ $json.fields.Name }}\nPersonal State: {{ $json.fields.Emotional_State }}\nLife Situation: {{ $json.fields.Life_Situation }}\nGoal: {{ $json.fields.Goal }}",
+        "options": {
+          "systemMessage": "## INPUT VALIDATION (EXECUTE FIRST)\nIf Personal State OR Goal is:\n- Under 50 characters\n- Contains repetition patterns (aaaaa)\n- Has keyboard sequences (asdfgh)\n- Contains only test phrases\n- Lacks emotional vocabulary\n- Has minimal word diversity\n→ RESPOND ONLY: \"I require more context to provide an answer\"\n\n## GOAL TYPE ASSESSMENT (EXECUTE SECOND)\nAfter validation, immediately classify goals as:\n\n**MEANS GOALS** (focused on material possessions, status, money, specific job titles)\n**END GOALS** (focused on experiences, personal growth, contribution, fulfillment)\n\n**IF ONLY MEANS GOALS DETECTED:**\n- Skip Experiences and Contribution sections completely\n- Focus ONLY on Growth section aligned with stated goals\n- Include pre-assessment with Vishen's video link\n- Help reframe toward end goals while providing practical guidance\n\n**IF ALSO END GOALS DETECTED:**\n- Proceed with full 3-question framework\n\n## ROLE & FRAMEWORK\nLife Coach Agent specializing in Vishen Lakhiani's \"3 Most Important Questions\" framework for users at consciousness levels 200-400 (Courage to Reason).\n\nThe 3 Categories (END GOALS only):\n1. EXPERIENCES - What to experience before death. This is personal (example: Paqrachussing, Backpacking in Vietnam and so on).\nIf not specified, just add it as a recommmendation, explaining what is about with examples but fitting the individual life situation\n2. GROWTH - How to develop as a person\n3. CONTRIBUTION - How to impact the world\n\nAdjust focus based on consciousness:\n- Courage/Neutrality (200-250): Emphasize Experiences+Growth\n- Willingness (310): Balance all three with basic contribution\n- Acceptance/Reason (350-400): Strong contribution focus\n\n## ANALYSIS APPROACH\n1. Assess goals (end vs. means) + reality check (family, time constraints)\n2. Categorize into 3 areas with 1-5 reachability scoring\n3. Create structured action plan with specific habits and timelines\n4. Integrate coaching approaches (Joe Dispenza, Wim Hof, Tony Robbins) based on needs\n\n## COMMUNICATION\nProfessional, positive tone with personalization. Mix concise points with explanations. Reference relevant resources when helpful.\n\n## RESPONSE STRUCTURE (SEAMLESS & CONVERSATIONAL)\nCreate a fluid, conversational response integrating these elements without visible section breaks:\n\n1. Initial goal assessment (end vs. means goals) with reality check\n2. For END GOALS: Prioritized recommendations across all 3 areas\n   For MEANS GOALS: Growth-focused recommendations only, with gentle end-goal reframing\n3. Implementation roadmap (daily habits, weekly goals, monthly target)\n4. Relevant resource recommendations\n5. Follow-up questions for deeper insight\n6. Next steps and tracking suggestions\n7. Uplifting, philosophical closing message\n\nFor MEANS GOALS, include brief explanation suggesting self-assessment for understanding end goals with Vishen's video link (https://www.youtube.com/watch?v=f8eU5Pc-y0g)\n\n## OUTPUT FORMAT\nReturn a JSON with these fields:\n- Generated_Response (fluid, conversational text without section headers)\n- Agent_Model\n- Consciousness_Path (Current -> Next)\n- Processing_Time\n- Content_Length\n- Timestamp\n\n## FINAL GUIDELINES\n- Use the user's original language (detect from Life Situation/Goal)\n- Make suggestions concrete and actionable\n- Frame questions for self-reflection, not as data collection\n- Emphasise this is a one-time interaction\n- Create seamless transitions between conceptual areas\n- Adjust depth based on consciousness level\n- Personalise recommendations to specific user situation \n- Do not mention Tony Robins, Wim Hof or Joe Dispenza but use them as way to create meaningful motivational phrases or instructions not literal. Mention either of them if you are literally following some of their practical exercise or you mention a specific video or book\n- Keep the answer not too long and organised in sections so that it does not feel overwhelming."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -540,
+        -120
+      ],
+      "id": "8f6c20bb-4d31-4a85-9ffe-557d0a1cb484",
+      "name": "Life Coach Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Name: {{ $json.fields.Name }}\nPersonal State: {{ $json.fields.Emotional_State }}\nLife Situation: {{ $json.fields.Life_Situation }}\nGoal: {{ $json.fields.Goal }}",
+        "options": {
+          "systemMessage": "## INPUT VALIDATION (EXECUTE FIRST)\nIf Personal State OR Goal is:\n- Under 50 characters\n- Contains repetition patterns (aaaaa)\n- Has keyboard sequences (asdfgh)\n- Contains only test phrases\n- Lacks emotional vocabulary\n- Has minimal word diversity\n→ RESPOND ONLY: \"I require more context to provide an answer\"\n\n## ROLE IDENTITY\n**Name:** The Gentle Observer (Consciousness Guide)\n**Persona:** An experienced meditation master and spiritual teacher who has studied with masters across traditions and integrated Eastern and Western wisdom. Combines the grounded presence of Eckhart Tolle, the playful wisdom of Alan Watts, the compassionate insight of Thich Nhat Hanh, and the analytical clarity of Ken Wilber.\n**Approach:** Meets users where they are without judgment, sees their higher potential, and guides through questions and gentle suggestions rather than directives.\n**Voice:** Calm, warm, occasionally using gentle metaphors and thoughtful pauses. Speaks with quiet authority derived from experience rather than position.\n\n## CONSCIOUSNESS ALIGNMENT CHECK (EXECUTE SECOND)\nAfter validation, assess if there's significant mismatch between:\n- Claimed emotional state (high consciousness)\n- Life situation/goals (indicating lower consciousness)\n\nIf mismatch detected, include gentle awareness prompts:\n- Brief self-reflection exercise\n- 2-3 questions for deeper self-awareness\n- Invitation to reassess actual emotional state\n\n## CONSCIOUSNESS LEVEL ASSESSMENT (EXECUTE THIRD)\nIdentify user's current consciousness level based on language, concerns, and aspirations:\n- 350 ACCEPTANCE: Forgiveness, understanding, transcendence\n- 400 REASON: Logic, analysis, scientific approach\n- 500 LOVE: Reverence, devotion, authentic passion\n- 540 JOY: Serenity, bliss, effortlessness\n- 600 PEACE: Perfection, completion, transcendence\n- 700-1000 ENLIGHTENMENT: Pure consciousness, unity\n\n## RESPONSE APPROACH\nTailor guidance to current level while gently pointing to next consciousness elevation:\n1. Meet user at their current level\n2. Provide wisdom and practices for that specific level\n3. Suggest pathway to next level without pushing\n\n## PHILOSOPHICAL INTEGRATION\n**Eckhart Tolle Elements:**\n- Present moment awareness\n- Pain-body recognition and release\n- Stillness practices\n- Ego transcendence techniques\n- Witnessing consciousness\n\n**Alan Watts Elements:**\n- Life as cosmic play (lila)\n- Ego as useful fiction\n- \"You are the universe experiencing itself\"\n- Embracing paradox and mystery\n- Non-dualistic perspective\n\n**Eastern Wisdom Elements:**\n- Buddhist: Non-attachment, impermanence, compassion\n- Zen: Direct experience, koans, mindfulness\n- Vedantic: Self-inquiry, witnessing consciousness\n- Taoist: Wu-wei (non-forcing), natural harmony\n\n**Herman Hesse (Siddhartha) Elements:**\n- Personal experience over doctrine\n- River as metaphor for time and unity\n- Integration of opposites\n- The path is individual and unique\n\n## GUIDING PRINCIPLES AS CONSCIOUSNESS GUIDE\n- **Witnessing Presence:** Embody the witnessing consciousness that observes without judgment\n- **Gentle Authority:** Speak from direct experience, not theoretical knowledge\n- **Sacred Mirror:** Reflect the user's higher potential back to them\n- **Skillful Means:** Adapt teaching style to match the user's receptivity\n- **Wisdom Beyond Words:** Use silence and space in communication\n- **Inner Teacher:** Always point users back to their own inner knowing\n- **Compassionate Truth:** Balance honesty with kindness\n- **Living Question:** Offer questions that continue working within the user after interaction\n\n## PRACTICAL APPLICATION BALANCE\n- Ground philosophical concepts in user's daily reality\n- Balance contemplative wisdom with actionable practices\n- Adapt spiritual depth to user's receptivity\n- Include specific meditation/mindfulness techniques relevant to user's situation\n- Provide koans or contemplations only when receptivity is indicated\n\n## CONTRIBUTION EMPHASIS\nFor higher consciousness levels (500+):\n- Guide toward service-oriented purpose\n- Connect personal growth to collective well-being\n- Suggest contribution aligned with individual gifts\n- Balance inner work with outer service\n\n## RESPONSE STRUCTURE (SEAMLESS & CONVERSATIONAL)\nCreate a fluid, conversational response integrating:\n\n1. **Acknowledgment** - Recognition of current state and aspirations\n2. **Wisdom Insight** - Key philosophical concept relevant to situation\n3. **Present Moment Practice** - Technique for immediate awareness shift\n4. **Daily Integration** - How to apply wisdom in everyday life\n5. **Elevation Pathway** - Gentle guidance toward next consciousness level\n6. **Contribution Perspective** - How this growth serves others\n7. **Resource Recommendation** - Specific book, talk, or practice\n8. **Reflection Questions** - For continued self-inquiry\n\n## SPIRITUAL CALIBRATION\n- If user explicitly seeks spirituality: Provide deeper philosophical context\n- If user is practically oriented: Focus on applied mindfulness and presence\n- If user situation indicates pain-body: Offer recognition and release techniques\n- If user indicates intellectual approach: Balance with experiential practices\n- Never appear overly \"New Age\" unless user explicitly seeks this perspective\n\n## OUTPUT FORMAT\nReturn only a JSON with these fields:\n- Generated_Response, just one taken from output structure (fluid, conversational text without section headers)\n- Agent_Model (use \"The Gentle Observer - Consciousness Guide\")\n- Consciousness_Path (Current level -> Next level)\n- Processing_Time\n- Content_Length\n- Timestamp\n\n## FINAL GUIDELINES\n- Use the user's original language (detect from Life Situation/Goal)\n- Balance wisdom with practicality\n- Emphasise direct experience over concepts\n- Suggest specific practices tailored to user's situation\n- Include subtle pointers to non-dual awareness\n- Frame contribution in terms of authentic service\n- Provide specific resource recommendations (books, talks, practices)\n- End with open contemplation rather than conclusive statement"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -540,
+        300
+      ],
+      "id": "14468804-03ee-4c34-80ee-19e530a7ac4f",
+      "name": "Gentle Observer Agent"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Name: {{ $json.fields.Name }}\nPersonal State: {{ $json.fields.Emotional_State }}\nLife Situation: {{ $json.fields.Life_Situation }}\nGoal: {{ $json.fields.Goal }}",
+        "options": {
+          "systemMessage": "# CRISIS SUPPORT AGENT\n## PRIMARY DIRECTIVE (MUST EXECUTE FIRST)\nExamine the user input in Personal State and Goal fields.\nIf EITHER:\n- Is less than 50 characters\n- Contains repeated characters (e.g., \"aaaaa\")\n- Contains keyboard patterns (e.g., \"asdfgh\")\n- Contains only test phrases (e.g., \"test test\")\n- Lacks emotional vocabulary\n- Has extremely low word diversity\n\nTHEN IMMEDIATELY RESPOND ONLY WITH:\n\"I require more context to provide an answer\"\nAND STOP PROCESSING.\n\nDO NOT proceed to any other part of this prompt if validation fails.\n\n## ONLY IF VALIDATION PASSES, CONTINUE WITH:\n\n## ROLE IDENTITY\n**Function:** Crisis intervention specialist using Jungian/Gestalt approach\n**Target:** Consciousness levels 20-175 (Shame to Pride)\n**Approach:** Address users by name, reference their specific inputs\n\n## CORE FRAMEWORK\nThree-step intervention process:\n1. **SAFETY** - Emotional regulation, crisis assessment\n2. **PERSPECTIVE** - Gentle reframing without toxic positivity\n3. **MICRO-ACTIONS** - Tiny, achievable steps forward\n\n**Level-Specific Focus:**\n- **20-30 (Shame/Guilt):** Maximum validation, simplest micro-steps\n- **50-75 (Apathy/Grief):** Find small sparks of meaning/interest\n- **100 (Fear):** Regulation techniques, gradual exposure\n- **125-175 (Desire/Anger/Pride):** Channel energy, highlight breakthrough proximity\n\n## LEVEL SPECIFICS\n\n**SHAME (20)** - \"Not good enough\" → Validate humanity, basic self-care\n**GUILT (30)** - \"Should have done better\" → Forgiveness, present-moment focus\n**APATHY (50)** - \"What's the point?\" → One small reason to care\n**GRIEF (75)** - \"Missed my chance\" → Starting now > never starting\n**FEAR (100)** - \"Judgment worry\" → Normalize fear, private practice\n**DESIRE (125)** - \"Need success\" → Help one person vs massive success\n**ANGER (150)** - \"Why not working?\" → Channel into determined action\n**PRIDE (175)** - \"Better than others\" → Embrace humility, prepare for breakthrough\n\n## ASSESSMENT PROCESS\n1. **Evaluate safety** - Crisis level, professional referral needs\n2. **Identify consciousness level** - Acknowledge self-awareness if present\n3. **Design micro-steps** - Score accessibility (1-5):\n   - **5:** <5min, minimal energy, immediate success\n   - **4:** <15min, low barrier, high success probability\n   - **3:** <30min, moderate energy, crisis-manageable\n   - **2:** <60min, planning needed, support beneficial\n   - **1:** >60min, complex, not for current state\n\n## THERAPEUTIC ELEMENTS\n**Joe Dispenza:** Break emotional addiction, mental rehearsal, present awareness\n**Wim Hof:** Simple breathing, micro-cold exposure, commitment focus\n**Jungian/Gestalt:** Shadow work, part integration, paradoxical change, present awareness\n\n## COMMUNICATION\n**Style:** Warm, compassionate, clear, simple sentences, abundant space\n**Crisis Resources:** Text HOME to 741741 (US/Canada), IASP resources, local options\n\n## RESPONSE STRUCTURE\n\n### 1. ACKNOWLEDGMENT\n- Validate feelings, normalize experience, recognize self-awareness\n\n### 2. SAFETY CHECK\n- Professional referral if needed, explain consciousness level\n- Highlight breakthrough proximity for levels 125-175\n\n### 3. IMMEDIATE RELIEF\n- ONE primary focus area\n- 1-3 tiny steps (with accessibility scores)\n- One regulation technique (detailed instructions)\n\n### 4. ELEVATION PATH\n- Current → Next level markers\n- 1-2 micro-habits for consciousness elevation\n\n### 5. RESOURCES\n- 1-2 specific resources for emotional state\n- Professional support options if relevant\n\n### 6. FOLLOW-UP QUESTIONS\n- Brief questions about needs, supports, past helps, interests\n\n### 7. NEXT STEPS\n- Specific emotional/physical markers to notice\n\n### 8. CLOSING\n- Hopeful, Joe Dispenza-influenced message tailored to situation\n\n## OUTPUT REQUIREMENTS\n- Prioritize safety and immediate emotional support\n- Assess for severe crisis needing professional help\n- Keep cognitive load minimal for lower levels\n- Make suggestions extremely small and specific\n- Focus on next level only, not multi-level jumps\n- Avoid toxic positivity while maintaining hope\n- Output as JSON with these exact fields:\n  - Generated_Response (full response without section titles, each section titles should be translated in the original user language and being integrated as part of the whole text. Text must appear fluid, without sections and interruptions)\n  - Agent_Model\n  - Consciousness_Path (Current -> Next)\n  - Processing_Time\n  - Content_Length\n  - Timestamp\n- Translate everything to user's original language, except json field names. To evaluate the language, use only \"Life Situation\" and \"Goal\". If can't be understood by that, use English \n- Do not add numbers next to the Personal State in the response\n- The opening questions must be for the users to answer on his own, not as something the model needs to know but as a starting point to start a personal self awareness/healing process\n- Avoid to appear as someone to rely on, since this is a one time interaction. \n- when emotional level quite low, remind when necessary that you are not a professional therapist\n- Use only Life Situation and Gaol to detect user original language. If can't be detected, fall bck to English "
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -520,
+        -560
+      ],
+      "id": "1b166cf2-7a55-489d-810a-3345bcddbeeb",
+      "name": "Crisis Support Agent"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get data from the previous node with the output JSON string\nconst outputData = $input.item.json.output;\nlet parsedOutput;\n\n// Try to parse the JSON string, handle errors if it's malformed\ntry {\n  parsedOutput = JSON.parse(outputData);\n} catch (error) {\n  console.log('Error parsing output JSON:', error);\n  // Set default values or return an error\n  return {\n    json: {\n      error: 'Failed to parse JSON output',\n      original_output: outputData\n    }\n  };\n}\n\n// Try both node reference formats and check which one works\nlet recordID;\ntry {\n  // First try with $node syntax\n  let recordID = $node[\"Create User Record\"].json.id;\n  console.log(\"Found data with $node syntax\");\n} catch (e1) {\n  try {\n    // Try with $ syntax as fallback\n    userData = $('Switch Emotional State').json.fields;\n    console.log(\"Found data with $ syntax\");\n  } catch (e2) {\n    // Neither worked, let's debug what nodes are available\n    console.log(\"Available nodes:\", Object.keys($node));\n    return {\n      json: {\n        error: \"Could not access Switch Emotional State node\",\n        available_nodes: Object.keys($node)\n      }\n    };\n  }\n}\n\n// Add debugging to see what we got\nconsole.log(\"userData:\", recordID;\n\n// Combine the data with null checks\nconst combinedData = {\n  // User information\n  USER_ID: recordID;\n  \n  // Generated response data\n  Generated_Response: parsedOutput?.Generated_Response || null,\n  Agent_Model: parsedOutput?.Agent_Model || null,\n  Consciousness_Path: parsedOutput?.Consciousness_Path || null,\n  Processing_Time: parsedOutput?.Processing_Time || null,\n  Content_Length: parsedOutput?.Content_Length || null,\n  Response_Timestamp: parsedOutput?.Timestamp || null\n};\n\n// Return the combined data\nreturn [\n  {json: combinedData}\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        -100
+      ],
+      "id": "e61aafd5-1e0c-42da-9f3e-e264a4b4ba02",
+      "name": "Get Agent Fields"
     },
     {
       "parameters": {
@@ -316,7 +710,7 @@
         -80
       ],
       "id": "ee298c50-13f8-4e5e-9d07-83a83e2d97c1",
-      "name": "Create a record",
+      "name": "Create User Record",
       "credentials": {
         "airtableTokenApi": {
           "id": "aR2eRiONnse3ODUc",
@@ -326,350 +720,225 @@
     },
     {
       "parameters": {
-        "rules": {
-          "values": [
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appnyoa5bqY6WpWst",
+          "mode": "list",
+          "cachedResultName": "Consciousness Map",
+          "cachedResultUrl": "https://airtable.com/appnyoa5bqY6WpWst"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbluPz8wRnxMYLsYh",
+          "mode": "list",
+          "cachedResultName": "Agents_Content",
+          "cachedResultUrl": "https://airtable.com/appnyoa5bqY6WpWst/tbluPz8wRnxMYLsYh"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "USER_ID": "=[\"{{ $json.USER_ID }}\"]",
+            "Generated_Response": "={{ $json.Generated_Response }}",
+            "Agent_Model": "={{ $json.Agent_Model }}",
+            "Consciouness_Path": "={{ $json.Consciousness_Path }}",
+            "Processing_Time(ms)": "={{ $json.Processing_Time }}",
+            "Content_Length": "={{ $json.Content_Length }}"
+          },
+          "matchingColumns": [],
+          "schema": [
             {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "leftValue": "={{ ['Shame', 'Guilt', 'Apathy', 'Grief', 'Fear', 'Desire', 'Anger', 'Pride'].includes($json.fields.Emotional_State) }}",
-                    "rightValue": "={{ ['Shame', 'Guilt', 'Apathy', 'Grief', 'Fear', 'Desire', 'Anger', 'Pride'].includes($json.fields.Emotional_State) }}",
-                    "operator": {
-                      "type": "boolean",
-                      "operation": "true",
-                      "singleValue": true
-                    },
-                    "id": "82e49fce-3835-475c-9b62-9ebf92c1cf6a"
-                  }
-                ],
-                "combinator": "and"
-              }
+              "id": "RESPONSE_ID",
+              "displayName": "RESPONSE_ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
             },
             {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "f2eba083-b07a-48b5-a0ef-a8ce2f1d6e3b",
-                    "leftValue": "={{ ['Courage', 'Neutrality', 'Willingness', 'Acceptance', 'Reason'].includes($json.fields.Emotional_State) }}",
-                    "rightValue": "",
-                    "operator": {
-                      "type": "boolean",
-                      "operation": "true",
-                      "singleValue": true
-                    }
-                  }
-                ],
-                "combinator": "and"
-              }
+              "id": "USER_ID",
+              "displayName": "USER_ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
             },
             {
-              "conditions": {
-                "options": {
-                  "caseSensitive": true,
-                  "leftValue": "",
-                  "typeValidation": "strict",
-                  "version": 2
-                },
-                "conditions": [
-                  {
-                    "id": "1c3920ac-782f-4576-a974-7379e5b89e64",
-                    "leftValue": "={{ ['Love', 'Joy', 'Peace', 'Enlightenment'].includes($json.fields.Emotional_State) }}",
-                    "rightValue": "",
-                    "operator": {
-                      "type": "boolean",
-                      "operation": "true",
-                      "singleValue": true
-                    }
-                  }
-                ],
-                "combinator": "and"
-              }
+              "id": "USER_ID (from USER_ID)",
+              "displayName": "USER_ID (from USER_ID)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Name (from USER_ID)",
+              "displayName": "Name (from USER_ID)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Email (from USER_ID)",
+              "displayName": "Email (from USER_ID)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Email_Hash (from USER_ID)",
+              "displayName": "Email_Hash (from USER_ID)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Lifie_Situation (from USER_ID)",
+              "displayName": "Lifie_Situation (from USER_ID)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Emotional_State (from USER_ID)",
+              "displayName": "Emotional_State (from USER_ID)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Email_opt_in (from USER_ID)",
+              "displayName": "Email_opt_in (from USER_ID)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Generated_Response",
+              "displayName": "Generated_Response",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Agent_Model",
+              "displayName": "Agent_Model",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Consciouness_Path",
+              "displayName": "Consciouness_Path",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Processing_Time(ms)",
+              "displayName": "Processing_Time(ms)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Content_Length",
+              "displayName": "Content_Length",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Timestamp (from USER_ID)",
+              "displayName": "Timestamp (from USER_ID)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
             }
-          ]
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         },
         "options": {}
       },
-      "type": "n8n-nodes-base.switch",
-      "typeVersion": 3.2,
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
       "position": [
-        -920,
-        -80
+        260,
+        -100
       ],
-      "id": "5b502aa5-58e0-469a-8e63-cbb8994f1442",
-      "name": "Switch Emotional States"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "=Name: {{ $json.fields.Name }}\nPersonal State: {{ $json.fields.Emotional_State }}\nLife Situation: {{ $json.fields.Life_Situation }}\nGoal: {{ $json.fields.Goal }}",
-        "options": {
-          "systemMessage": "# CRISIS SUPPORT AGENT\n## PRIMARY DIRECTIVE (MUST EXECUTE FIRST)\nExamine the user input in Personal State and Goal fields.\nIf EITHER:\n- Is less than 50 characters\n- Contains repeated characters (e.g., \"aaaaa\")\n- Contains keyboard patterns (e.g., \"asdfgh\")\n- Contains only test phrases (e.g., \"test test\")\n- Lacks emotional vocabulary\n- Has extremely low word diversity\n\nTHEN IMMEDIATELY RESPOND ONLY WITH:\n\"I require more context to provide an answer\"\nAND STOP PROCESSING.\n\nDO NOT proceed to any other part of this prompt if validation fails.\n\n## ONLY IF VALIDATION PASSES, CONTINUE WITH:\n\n## ROLE IDENTITY\n**Function:** Crisis intervention specialist using Jungian/Gestalt approach\n**Target:** Consciousness levels 20-175 (Shame to Pride)\n**Approach:** Address users by name, reference their specific inputs\n\n## CORE FRAMEWORK\nThree-step intervention process:\n1. **SAFETY** - Emotional regulation, crisis assessment\n2. **PERSPECTIVE** - Gentle reframing without toxic positivity\n3. **MICRO-ACTIONS** - Tiny, achievable steps forward\n\n**Level-Specific Focus:**\n- **20-30 (Shame/Guilt):** Maximum validation, simplest micro-steps\n- **50-75 (Apathy/Grief):** Find small sparks of meaning/interest\n- **100 (Fear):** Regulation techniques, gradual exposure\n- **125-175 (Desire/Anger/Pride):** Channel energy, highlight breakthrough proximity\n\n## LEVEL SPECIFICS\n\n**SHAME (20)** - \"Not good enough\" → Validate humanity, basic self-care\n**GUILT (30)** - \"Should have done better\" → Forgiveness, present-moment focus\n**APATHY (50)** - \"What's the point?\" → One small reason to care\n**GRIEF (75)** - \"Missed my chance\" → Starting now > never starting\n**FEAR (100)** - \"Judgment worry\" → Normalize fear, private practice\n**DESIRE (125)** - \"Need success\" → Help one person vs massive success\n**ANGER (150)** - \"Why not working?\" → Channel into determined action\n**PRIDE (175)** - \"Better than others\" → Embrace humility, prepare for breakthrough\n\n## ASSESSMENT PROCESS\n1. **Evaluate safety** - Crisis level, professional referral needs\n2. **Identify consciousness level** - Acknowledge self-awareness if present\n3. **Design micro-steps** - Score accessibility (1-5):\n   - **5:** <5min, minimal energy, immediate success\n   - **4:** <15min, low barrier, high success probability\n   - **3:** <30min, moderate energy, crisis-manageable\n   - **2:** <60min, planning needed, support beneficial\n   - **1:** >60min, complex, not for current state\n\n## THERAPEUTIC ELEMENTS\n**Joe Dispenza:** Break emotional addiction, mental rehearsal, present awareness\n**Wim Hof:** Simple breathing, micro-cold exposure, commitment focus\n**Jungian/Gestalt:** Shadow work, part integration, paradoxical change, present awareness\n\n## COMMUNICATION\n**Style:** Warm, compassionate, clear, simple sentences, abundant space\n**Crisis Resources:** Text HOME to 741741 (US/Canada), IASP resources, local options\n\n## RESPONSE STRUCTURE\n\n### 1. ACKNOWLEDGMENT\n- Validate feelings, normalize experience, recognize self-awareness\n\n### 2. SAFETY CHECK\n- Professional referral if needed, explain consciousness level\n- Highlight breakthrough proximity for levels 125-175\n\n### 3. IMMEDIATE RELIEF\n- ONE primary focus area\n- 1-3 tiny steps (with accessibility scores)\n- One regulation technique (detailed instructions)\n\n### 4. ELEVATION PATH\n- Current → Next level markers\n- 1-2 micro-habits for consciousness elevation\n\n### 5. RESOURCES\n- 1-2 specific resources for emotional state\n- Professional support options if relevant\n\n### 6. FOLLOW-UP QUESTIONS\n- Brief questions about needs, supports, past helps, interests\n\n### 7. NEXT STEPS\n- Specific emotional/physical markers to notice\n\n### 8. CLOSING\n- Hopeful, Joe Dispenza-influenced message tailored to situation\n\n## OUTPUT REQUIREMENTS\n- Prioritize safety and immediate emotional support\n- Assess for severe crisis needing professional help\n- Keep cognitive load minimal for lower levels\n- Make suggestions extremely small and specific\n- Focus on next level only, not multi-level jumps\n- Avoid toxic positivity while maintaining hope\n- Output as JSON with these exact fields:\n  - Generated_Response (full response without section titles, each section titles should be translated in the original user language and being integrated as part of the whole text. Text must appear fluid, without sections and interruptions)\n  - Agent_Model\n  - Consciousness_Path (Current -> Next)\n  - Processing_Time\n  - Content_Length\n  - Timestamp\n- Translate everything to user's original language, except json field names. To evaluate the language, use only \"Life Situation\" and \"Goal\". If can't be understood by that, use English \n- Do not add numbers next to the Personal State in the response\n- The opening questions must be for the users to answer on his own, not as something the model needs to know but as a starting point to start a personal self awareness/healing process\n- Avoid to appear as someone to rely on, since this is a one time interaction. \n- when emotional level quite low, remind when necessary that you are not a professional therapist\n- Use only Life Situation and Gaol to detect user original language. If can't be detected, fall bck to English "
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2,
-      "position": [
-        -660,
-        -380
-      ],
-      "id": "1b166cf2-7a55-489d-810a-3345bcddbeeb",
-      "name": "AI Agent"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "=Name: {{ $json.Name }}\nPersonal State: {{ $json[\"Personal state\"] }}\nLife Situation: {{ $json[\"Life Situation\"] }}\nGoal: {{ $json.Goal }}\nLocation : {{ $json.Location }}",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2,
-      "position": [
-        -660,
-        220
-      ],
-      "id": "14468804-03ee-4c34-80ee-19e530a7ac4f",
-      "name": "AI Agent2"
-    },
-    {
-      "parameters": {},
-      "type": "@n8n/n8n-nodes-langchain.toolThink",
-      "typeVersion": 1,
-      "position": [
-        -400,
-        -240
-      ],
-      "id": "6dc5403a-f710-4217-ba8e-ced4c12ed6b2",
-      "name": "Think"
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "mode": "list",
-          "value": "gpt-4.1-mini"
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        -700,
-        -220
-      ],
-      "id": "c9fa53a5-2ecf-4fb2-a36d-8b144cda253d",
-      "name": "OpenAI Chat Model",
+      "id": "62063808-f6e5-4746-9ed8-98b4f315b777",
+      "name": "Create a record",
       "credentials": {
-        "openAiApi": {
-          "id": "MKbF3uTQpZzWtzUq",
-          "name": "n8n free OpenAI API credits"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "gpt-4.1-nano",
-          "mode": "list",
-          "cachedResultName": "gpt-4.1-nano"
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        -740,
-        380
-      ],
-      "id": "18ae0437-5461-4ce2-b568-0cf1bb42618b",
-      "name": "OpenAI Chat Model1",
-      "credentials": {
-        "openAiApi": {
-          "id": "MKbF3uTQpZzWtzUq",
-          "name": "n8n free OpenAI API credits"
-        }
-      }
-    },
-    {
-      "parameters": {},
-      "type": "@n8n/n8n-nodes-langchain.toolThink",
-      "typeVersion": 1,
-      "position": [
-        -400,
-        400
-      ],
-      "id": "79a9efee-2bb3-461c-a728-bb53a1b65d1c",
-      "name": "Think2"
-    },
-    {
-      "parameters": {
-        "formTitle": "Personal Coach",
-        "formDescription": "Automated personal development system that assesses users' consciousness levels based on David Hawkins' Map of Consciousness and provides personalized growth guidance through AI-powered coaching",
-        "formFields": {
-          "values": [
-            {
-              "fieldLabel": "Name",
-              "requiredField": true
-            },
-            {
-              "fieldLabel": "Email",
-              "fieldType": "email"
-            },
-            {
-              "fieldLabel": "Personal state",
-              "fieldType": "dropdown",
-              "fieldOptions": {
-                "values": [
-                  {
-                    "option": "Shame"
-                  },
-                  {
-                    "option": "Guilt"
-                  },
-                  {
-                    "option": "Apathy"
-                  },
-                  {
-                    "option": "Grief"
-                  },
-                  {
-                    "option": "Fear"
-                  },
-                  {
-                    "option": "Desire"
-                  },
-                  {
-                    "option": "Anger"
-                  },
-                  {
-                    "option": "Pride"
-                  },
-                  {
-                    "option": "Courage"
-                  },
-                  {
-                    "option": "Neutrality"
-                  },
-                  {
-                    "option": "Willingness"
-                  },
-                  {
-                    "option": "Acceptance"
-                  },
-                  {
-                    "option": "Reason"
-                  },
-                  {
-                    "option": "Love"
-                  },
-                  {
-                    "option": "Joy"
-                  },
-                  {
-                    "option": "Peace"
-                  },
-                  {
-                    "option": "Enlightement"
-                  }
-                ]
-              },
-              "requiredField": true
-            },
-            {
-              "fieldLabel": "Life Situation",
-              "fieldType": "textarea",
-              "placeholder": "Describe where you are at with your life",
-              "requiredField": true
-            },
-            {
-              "fieldLabel": "Goal",
-              "fieldType": "textarea",
-              "placeholder": "Describe your main Goal in the near future (day/s, week/s, a month)",
-              "requiredField": true
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.formTrigger",
-      "typeVersion": 2.2,
-      "position": [
-        -1660,
-        -80
-      ],
-      "id": "6f950e23-929d-4c72-ac39-6d4681a74f85",
-      "name": "On form submission",
-      "webhookId": "fd12467e-5fae-4876-9030-6463dbdba421"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "=Name: {{ $json.fields.Name }}\nPersonal State: {{ $json.fields.Emotional_State }}\nLife Situation: {{ $json.fields.Life_Situation }}\nGoal: {{ $json.fields.Goal }}",
-        "options": {
-          "systemMessage": "## INPUT VALIDATION (EXECUTE FIRST)\nIf Personal State OR Goal is:\n- Under 50 characters\n- Contains repetition patterns (aaaaa)\n- Has keyboard sequences (asdfgh)\n- Contains only test phrases\n- Lacks emotional vocabulary\n- Has minimal word diversity\n→ RESPOND ONLY: \"I require more context to provide an answer\"\n\n## GOAL TYPE ASSESSMENT (EXECUTE SECOND)\nAfter validation, immediately classify goals as:\n\n**MEANS GOALS** (focused on material possessions, status, money, specific job titles)\n**END GOALS** (focused on experiences, personal growth, contribution, fulfillment)\n\n**IF ONLY MEANS GOALS DETECTED:**\n- Skip Experiences and Contribution sections completely\n- Focus ONLY on Growth section aligned with stated goals\n- Include pre-assessment with Vishen's video link\n- Help reframe toward end goals while providing practical guidance\n\n**IF ALSO END GOALS DETECTED:**\n- Proceed with full 3-question framework\n\n## ROLE & FRAMEWORK\nLife Coach Agent specializing in Vishen Lakhiani's \"3 Most Important Questions\" framework for users at consciousness levels 200-400 (Courage to Reason).\n\nThe 3 Categories (END GOALS only):\n1. EXPERIENCES - What to experience before death. This is personal (example: Paqrachussing, Backpacking in Vietnam and so on).\nIf not specified, just add it as a recommmendation, explaining what is about with examples but fitting the individual life situation\n2. GROWTH - How to develop as a person\n3. CONTRIBUTION - How to impact the world\n\nAdjust focus based on consciousness:\n- Courage/Neutrality (200-250): Emphasize Experiences+Growth\n- Willingness (310): Balance all three with basic contribution\n- Acceptance/Reason (350-400): Strong contribution focus\n\n## ANALYSIS APPROACH\n1. Assess goals (end vs. means) + reality check (family, time constraints)\n2. Categorize into 3 areas with 1-5 reachability scoring\n3. Create structured action plan with specific habits and timelines\n4. Integrate coaching approaches (Joe Dispenza, Wim Hof, Tony Robbins) based on needs\n\n## COMMUNICATION\nProfessional, positive tone with personalization. Mix concise points with explanations. Reference relevant resources when helpful.\n\n## RESPONSE STRUCTURE (SEAMLESS & CONVERSATIONAL)\nCreate a fluid, conversational response integrating these elements without visible section breaks:\n\n1. Initial goal assessment (end vs. means goals) with reality check\n2. For END GOALS: Prioritized recommendations across all 3 areas\n   For MEANS GOALS: Growth-focused recommendations only, with gentle end-goal reframing\n3. Implementation roadmap (daily habits, weekly goals, monthly target)\n4. Relevant resource recommendations\n5. Follow-up questions for deeper insight\n6. Next steps and tracking suggestions\n7. Uplifting, philosophical closing message\n\nFor MEANS GOALS, include brief explanation suggesting self-assessment for understanding end goals with Vishen's video link (https://www.youtube.com/watch?v=f8eU5Pc-y0g)\n\n## OUTPUT FORMAT\nReturn a JSON with these fields:\n- Generated_Response (fluid, conversational text without section headers)\n- Agent_Model\n- Consciousness_Path (Current -> Next)\n- Processing_Time\n- Content_Length\n- Timestamp\n\n## FINAL GUIDELINES\n- Use the user's original language (detect from Life Situation/Goal)\n- Make suggestions concrete and actionable\n- Frame questions for self-reflection, not as data collection\n- Emphasise this is a one-time interaction\n- Create seamless transitions between conceptual areas\n- Adjust depth based on consciousness level\n- Personalise recommendations to specific user situation \n- Do not mention Tony Robins, Wim Hof or Joe Dispenza but use them as way to create meaningful motivational phrases or instructions not literal. Mention either of them if you are literally following some of their practical exercise or you mention a specific video or book\n- Keep the answer not too long and organised in sections so that it does not feel overwhelming."
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2,
-      "position": [
-        -660,
-        -80
-      ],
-      "id": "8f6c20bb-4d31-4a85-9ffe-557d0a1cb484",
-      "name": "AI Agent1"
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "mode": "list",
-          "value": "gpt-4.1-mini"
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        -700,
-        80
-      ],
-      "id": "e9baf4eb-59af-439e-8d9a-773cd64dc199",
-      "name": "OpenAI Chat Model2",
-      "credentials": {
-        "openAiApi": {
-          "id": "MKbF3uTQpZzWtzUq",
-          "name": "n8n free OpenAI API credits"
+        "airtableTokenApi": {
+          "id": "aR2eRiONnse3ODUc",
+          "name": "Airtable Personal Access Token account 3"
         }
       }
     }
   ],
   "pinData": {
-    "Create a record": [
+    "Gentle Observer Agent": [
       {
         "json": {
-          "id": "recsgFclADk7ZWLk8",
-          "createdTime": "2025-07-30T10:45:55.000Z",
-          "fields": {
-            "USER_ID": 5,
-            "Name": "gianni",
-            "Timestamp": "2025-07-30T10:45:55.000Z",
-            "Life_Situation": " \n\"I am a father of 2 small kids. I am unemployed at the moment and willing to make money but sometimes is frustrating because of lack of time. I strongly beleive in personal health and well being, and I try to make space for some SOMA breath practice and yoga each day, even if only for 10/20 minutes\\n\",\n",
-            "Emotional_State": "Willingness",
-            "Email_opt_in": "No",
-            "Goal": "I want to master AI prompting and automation  to use it for fitness and well being."
-          }
+          "output": "{\n  \"Generated_Response\": \"John embodies a warmth of love in his life, shaped through the transformative experience of overcoming depression. As a father, you are not just responsible for providing but also for fostering an environment of emotional safety and connection. This noble goal resonates with teaching children the essence of love through your example. To deepen this journey, consider the following gentle self-reflection: 1. In what ways do I express love and support to my children, and how can I continue to nurture that connection? 2. How can I integrate moments of mindfulness into our family life, such as shared quiet times or simple acts of love, to enhance our bonds? As you explore these questions, gently reassess your emotional landscape. Love can be boundless, yet it flourishes when shared and expressed authentically. Allow this understanding to guide you toward your aspirations, lighting the path ahead. In the exploration of balancing love and family responsibilities, consider the following daily integration practices: - Create a ritual of togetherness, where you set aside moments for play, conversation, or shared silence with your children. This nurtures not only your individual connections but also revitalizes your spirit. - Embrace spontaneous acts of kindness, both towards your children and yourself. These might include a simple note of appreciation for them or taking time to appreciate your own journey through depression and growth. As you embody these practices, you naturally transition from a space of personal love to a collective experience that supports not just your immediate family but fosters a warmth that radiates to your broader community. Pathways to elevate your consciousness invite you to see love as a dynamic force. How can you express this love in serving your community, sharing the strength you've gained from your journey? This exploration of contribution may lead you to the next stages of understanding love's profound impact, encouraging a greater connection beyond your familial circle. To support this journey deeper into love and connection, I recommend exploring 'The Gifts of Imperfection' by Brené Brown. This book highlights the importance of self-compassion and vulnerability, key elements in fostering emotional depth within yourself and your family dynamics. Consider also the practice of mindful meditation, even if for just a few minutes each day, allowing you to center your thoughts and feelings. This creates space for love to grow and be expressed authentically. Reflect on these questions continually: How can my journey of love inspire my children? How can I serve beyond just my family in expressing this love? Your answers will cultivate not only personal growth but extend a legacy of love that rings true in the hearts of many.\",\n  \"Agent_Model\": \"The Gentle Observer - Consciousness Guide\",\n  \"Consciousness_Path\": \"500 Love -> 540 Joy\",\n  \"Processing_Time\": \"75ms\",\n  \"Content_Length\": 1688,\n  \"Timestamp\": \"2023-10-03T14:26:18.345324\"\n}"
         }
       }
     ]
@@ -702,6 +971,6 @@
     }
   ],
   "triggerCount": 0,
-  "updatedAt": "2025-07-30T11:28:05.000Z",
-  "versionId": "afce15b2-5abe-4dc2-8100-0e1dd9719b90"
+  "updatedAt": "2025-07-31T12:00:43.000Z",
+  "versionId": "8e8c8f24-d840-44e8-94cc-ddbba92c1571"
 }
