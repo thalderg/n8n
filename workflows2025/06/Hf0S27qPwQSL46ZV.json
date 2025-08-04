@@ -198,12 +198,12 @@
   "nodes": [
     {
       "parameters": {
-        "jsCode": "// Create array of topics\nconst topics = [\"n8n\", \"Claude MCP\", \"Cursor\"];\n\n// Return as array of objects\nreturn topics.map(topic => ({\n  json: {\n    topic: topic\n  }\n}));"
+        "jsCode": "// Create array of topics\nconst topics = [\"n8n -FREE\", \"from:JulianGoldieSEO\", \"from:boringmarketer\"];\n\n// Return as array of objects\nreturn topics.map(topic => ({\n  json: {\n    topic: topic\n  }\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -100,
+        -96,
         -240
       ],
       "id": "e82e8c21-c075-4181-878d-26ec36498f6a",
@@ -328,8 +328,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1160,
-        -60
+        1168,
+        -64
       ],
       "id": "4abab152-91a6-4783-81e8-f59e04d0f27d",
       "name": "Edit Fields"
@@ -343,8 +343,8 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        920,
-        -60
+        928,
+        -64
       ],
       "id": "addf66a7-a847-49bc-82b7-02ed4c2a28f3",
       "name": "Split Out"
@@ -356,8 +356,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1420,
-        -60
+        1424,
+        -64
       ],
       "id": "690c282b-78fc-4c64-84be-b6b040845fa3",
       "name": "Add Score"
@@ -369,8 +369,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1620,
-        -60
+        1632,
+        -64
       ],
       "id": "fca7e9da-ec7d-4a1d-b784-a2bbcd5ad4a0",
       "name": "Add Rates & Indicators"
@@ -405,8 +405,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        700,
-        -60
+        704,
+        -64
       ],
       "id": "24806ffc-8f4b-43cd-a05e-dec947c1fbea",
       "name": "Get Tweets",
@@ -424,7 +424,7 @@
             {
               "id": "14770443-872a-4d20-bf8b-927263c2801d",
               "name": "query",
-              "value": "={{ $json.topic }} lang:en -spam -promotional -follow -bot -dm -DM -\"link in bio\" -like -reply -live -LIVE -BREAKING -breaking -click -\"thank me\" -retweet -comment -\"tune in\"",
+              "value": "={{ $json.topic }}) within_time:5d filter:has_engagement min_faves:100 min_retweets:10 lang:en -spam -promotional -follow -Follow -bot -dm -DM -\"link in bio\" -like -LIKE -RETWEET -COMMENT -reply -Reply -live -LIVE -BREAKING -breaking -click -\"thank me\" -retweet -Retweet -comment -Comment -\"tune in\"",
               "type": "string"
             },
             {
@@ -458,8 +458,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        440,
-        -60
+        448,
+        -64
       ],
       "id": "c5337c57-c98b-4727-a04d-40121cc32917",
       "name": "Set API Query"
@@ -491,8 +491,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1820,
-        -60
+        1824,
+        -64
       ],
       "id": "694dd4b0-862f-4807-ac52-d3b333ed9724",
       "name": "If Threads"
@@ -540,8 +540,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2460,
-        -460
+        2464,
+        -464
       ],
       "id": "f34760b2-54db-43e0-a1f9-3207703490fb",
       "name": "Get Thread",
@@ -559,8 +559,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2680,
-        -460
+        2688,
+        -464
       ],
       "id": "6fac71ef-b616-48fa-a66d-e748be4c6ff4",
       "name": "Construct Thread"
@@ -572,8 +572,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2260,
-        -460
+        2272,
+        -464
       ],
       "id": "9fed0c13-d10c-4d55-b68c-ddd8653e4cb0",
       "name": "Construct Thread Query"
@@ -585,7 +585,7 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        140,
+        144,
         -80
       ],
       "id": "92586035-bd29-47cd-8db2-2278d8316412",
@@ -955,8 +955,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.6,
       "position": [
-        2980,
-        -60
+        2992,
+        -64
       ],
       "id": "ece33406-e0ca-4e8d-8d2b-55f18424e529",
       "name": "Append or update tweets row",
@@ -1332,7 +1332,7 @@
       "typeVersion": 4.6,
       "position": [
         2960,
-        -460
+        -464
       ],
       "id": "38ba758e-6977-4808-80cf-f746f4b6d0c2",
       "name": "Append or Update Thread row",
@@ -1348,8 +1348,7 @@
         "rule": {
           "interval": [
             {
-              "field": "hours",
-              "hoursInterval": 73
+              "daysInterval": 2
             }
           ]
         }
@@ -1380,6 +1379,6 @@
   },
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2025-08-01T11:59:11.000Z",
-  "versionId": "86c85d2b-9231-4e15-ac06-d7d8e49a0523"
+  "updatedAt": "2025-08-04T14:07:26.000Z",
+  "versionId": "1fc6c96e-e943-4403-a83a-02454b7ac70c"
 }
