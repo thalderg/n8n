@@ -61,7 +61,7 @@
       "main": [
         [
           {
-            "node": "Split Out",
+            "node": "Has Tweets",
             "type": "main",
             "index": 0
           }
@@ -186,6 +186,24 @@
           }
         ]
       ]
+    },
+    "Has Tweets": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "createdAt": "2025-08-05T12:18:21.291Z",
@@ -198,7 +216,7 @@
   "nodes": [
     {
       "parameters": {
-        "jsCode": "// Create array of topics\nconst topics = [\"from:beast_ico\", \"from:s4mmyEth\", \"from:0xNairolf\", \"from:cookiedotfun\", \"from:PizzinoMichael\", \"from:0xDith\", \"from:GCcookeHQ\",\"from:aixbt_agent\",\"from:GCcookeHQ\",\"from:aixbt_agent\",\"from:tri_sigma_\"];//\"from:beast_ico\", \"from:s4mmyEth\", \"from:0xNairolf\", \"from:cookiedotfun\", \"from:PizzinoMichael\", \"from:0xDith\", \"from:GCcookeHQ\",\"from:aixbt_agent\", \n\n// Return as array of objects\nreturn topics.map(topic => ({\n  json: {\n    topic: topic\n  }\n}));"
+        "jsCode": "// Create array of topics\nconst topics = [\"from:beast_ico\", \"from:s4mmyEth\", \"from:0xNairolf\", \"from:cookiedotfun\", \"from:PizzinoMichael\", \"from:0xDith\", \"from:GCcookeHQ\",\"from:aixbt_agent\",\"from:GCcookeHQ\",\"from:aixbt_agent\",\"from:tri_sigma_\"];//\"from:beast_ico\", \"from:s4mmyEth\", \"from:0xNairolf\", \"from:cookiedotfun\", \"from:PizzinoMichael\", \"from:0xDith\", \"from:GCcookeHQ\",\"from:aixbt_agent\",\"from:GCcookeHQ\",\"from:aixbt_agent\",\"from:tri_sigma_\"]\n\n// Return as array of objects\nreturn topics.map(topic => ({\n  json: {\n    topic: topic\n  }\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -328,7 +346,7 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1168,
+        1280,
         -64
       ],
       "id": "19022196-db94-44e7-a391-be02834995ce",
@@ -343,8 +361,8 @@
       "type": "n8n-nodes-base.splitOut",
       "typeVersion": 1,
       "position": [
-        928,
-        -64
+        1120,
+        -80
       ],
       "id": "35c14c2a-dfff-4cf8-99ca-9b7240c1820a",
       "name": "Split Out"
@@ -356,7 +374,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1424,
+        1504,
         -64
       ],
       "id": "bd7d7a77-2157-4664-a99e-c5fa30628ba6",
@@ -369,7 +387,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1632,
+        1680,
         -64
       ],
       "id": "dea03cb5-a232-4049-b21d-0ea2c0a6e700",
@@ -424,7 +442,7 @@
             {
               "id": "14770443-872a-4d20-bf8b-927263c2801d",
               "name": "query",
-              "value": "={{ $json.topic }} within_time:3d filter:has_engagement min_faves:100 min_retweets:5 lang:en",
+              "value": "={{ $json.topic }} within_time:5d filter:has_engagement min_faves:100 lang:en",
               "type": "string"
             },
             {
@@ -497,7 +515,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1824,
+        1872,
         -64
       ],
       "id": "8b569264-0f7e-43ea-9db3-472e7ad63a7f",
@@ -1365,6 +1383,40 @@
       ],
       "id": "fa9a1d23-14d4-4d8c-8f6e-8f9fd9dc95de",
       "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1289782f-d93b-4b47-8a64-e9ac00375f1f",
+              "leftValue": "={{ $json.has_next_page }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        -64
+      ],
+      "id": "c6f3d192-dfff-4daa-873d-28725827346c",
+      "name": "Has Tweets"
     }
   ],
   "pinData": {},
@@ -1402,6 +1454,6 @@
     }
   ],
   "triggerCount": 1,
-  "updatedAt": "2025-08-06T10:03:24.000Z",
-  "versionId": "67f41bd9-fd70-465b-99a9-3dc651122aa3"
+  "updatedAt": "2025-08-07T10:01:52.000Z",
+  "versionId": "0a0143e8-2a03-4147-9e61-d82b42a14883"
 }
