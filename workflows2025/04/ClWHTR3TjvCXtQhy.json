@@ -218,6 +218,15 @@
     "callerPolicy": "workflowsFromSameOwner",
     "errorWorkflow": "grZqSy719R58QAs9"
   },
+  "shared": [
+    {
+      "createdAt": "2025-04-29T08:50:05.520Z",
+      "updatedAt": "2025-04-29T08:50:05.520Z",
+      "role": "workflow:owner",
+      "workflowId": "ClWHTR3TjvCXtQhy",
+      "projectId": "wg2OyJWQzlMX1LZw"
+    }
+  ],
   "staticData": {
     "node:Schedule Trigger": {
       "recurrenceRules": []
