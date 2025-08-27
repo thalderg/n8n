@@ -83,14 +83,66 @@
       "main": [
         [
           {
-            "node": "Loop Over Threads",
+            "node": "Append or update tweets row",
             "type": "main",
             "index": 0
           }
         ],
         [
           {
-            "node": "Append or update tweets row",
+            "node": "Loop Over Threads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Topics": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Set API Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update tweets row": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Topic Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Tweets": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Topics",
             "type": "main",
             "index": 0
           }
@@ -99,7 +151,13 @@
     },
     "Loop Over Threads": {
       "main": [
-        [],
+        [
+          {
+            "node": "Loop Over Topics",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "Construct Thread Query",
@@ -142,63 +200,11 @@
         ]
       ]
     },
-    "Loop Over Topics": {
-      "main": [
-        [],
-        [
-          {
-            "node": "Set API Query",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Append or update tweets row": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Topics",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Append or Update Thread row": {
       "main": [
         [
           {
             "node": "Loop Over Threads",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Schedule Trigger": {
-      "main": [
-        [
-          {
-            "node": "Topic Generator",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Has Tweets": {
-      "main": [
-        [
-          {
-            "node": "Split Out",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Loop Over Topics",
             "type": "main",
             "index": 0
           }
@@ -216,7 +222,7 @@
   "nodes": [
     {
       "parameters": {
-        "jsCode": "// Create array of topics\nconst topics = [\"from:beast_ico\", \"from:s4mmyEth\", \"from:0xNairolf\", \"from:cookiedotfun\", \"from:PizzinoMichael\", \"from:0xDith\", \"from:GCcookeHQ\",\"from:aixbt_agent\",\"from:GCcookeHQ\",\"from:aixbt_agent\",\"from:tri_sigma_\"];//\"from:beast_ico\", \"from:s4mmyEth\", \"from:0xNairolf\", \"from:cookiedotfun\", \"from:PizzinoMichael\", \"from:0xDith\", \"from:GCcookeHQ\",\"from:aixbt_agent\",\"from:GCcookeHQ\",\"from:aixbt_agent\",\"from:tri_sigma_\"]\n\n// Return as array of objects\nreturn topics.map(topic => ({\n  json: {\n    topic: topic\n  }\n}));"
+        "jsCode": "// Create array of topics\nconst topics = [\"from:aixbt_agent\",\"from:GCcookeHQ\", \"from:Zeneca\", \"from:waleswoosh\", \"from:beast_ico\", \"from:GCcookeHQ\", \"from:s4mmyEth\", \"from:0xNairolf\", \"from:cookiedotfun\", \"from:PizzinoMichael\", \"from:0xDith\", \"from:GCcookeHQ\",\"from:aixbt_agent\",\"from:tri_sigma_\", \"from:Route2FI\", \"from:milesdeutscher\", \"from:PixOnChain\", \"from:Defi0xJeff\", \"from:ZssBecker\", \"from:Axel_bitblaze69\", \"from:waleswoosh\", \"from:Zeneca\", \"from:iamDCinvestor\"];\n// Return as array of objects\nreturn topics.map(topic => ({\n  json: {\n    topic: topic\n  }\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -442,7 +448,7 @@
             {
               "id": "14770443-872a-4d20-bf8b-927263c2801d",
               "name": "query",
-              "value": "={{ $json.topic }} within_time:5d filter:has_engagement min_faves:100 lang:en",
+              "value": "={{ $json.topic }} within_time:3d filter:has_engagement min_faves:100 lang:en",
               "type": "string"
             },
             {
@@ -501,7 +507,7 @@
             {
               "id": "e8d17d4e-345b-4428-90ee-ecaa6f0c35f6",
               "leftValue": "={{ $json.thread_indicator }}",
-              "rightValue": "thread",
+              "rightValue": "single",
               "operator": {
                 "type": "string",
                 "operation": "equals"
@@ -520,87 +526,6 @@
       ],
       "id": "8b569264-0f7e-43ea-9db3-472e7ad63a7f",
       "name": "If Threads"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        2000,
-        -480
-      ],
-      "id": "8554c8ac-18c3-4c51-930b-563f7de31ce8",
-      "name": "Loop Over Threads"
-    },
-    {
-      "parameters": {
-        "url": "https://api.twitterapi.io/twitter/tweet/advanced_search",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendQuery": true,
-        "queryParameters": {
-          "parameters": [
-            {
-              "name": "query",
-              "value": "={{ $json.query }}"
-            },
-            {
-              "name": "limit",
-              "value": "=20"
-            },
-            {
-              "name": "result_type",
-              "value": "latest"
-            }
-          ]
-        },
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Accept\": \"application/json\"\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        2464,
-        -464
-      ],
-      "id": "58bef3d1-5011-4610-9217-0b129d27b5f0",
-      "name": "Get Thread",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "Y9mqglloyte4NEfz",
-          "name": "Twitter API"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "jsCode": "// Get the main tweet from \"Loop Over Threads\" node\nconst mainTweet = $('Loop Over Threads').first().json;\n\n// Get the input data which contains the tweets array\nconst inputData = $input.first().json;\n\n// Extract the tweets array from the nested structure\nconst threadTweets = inputData.tweets || [];\n\n// Reverse to get chronological order (oldest to newest)\nconst orderedThreadTweets = threadTweets.reverse();\n\n// Extract just the text from each thread tweet\nconst threadTexts = orderedThreadTweets.map(tweet => tweet.text);\n\n// Build the combined text starting with main tweet\nlet combinedText = mainTweet.tweet_text;\n\n// Add each thread part with numbering starting from (2)\nthreadTexts.forEach((text, index) => {\n  combinedText += `\\n\\n(${index + 2}) ${text}`;\n});\n\n// Create the result maintaining the exact JSON structure from \"Loop Over Threads\"\nconst result = {\n  ...mainTweet, // Keep all original fields exactly as they were\n  tweet_text: combinedText // Update only the tweet_text field\n};\n\nreturn [result];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2688,
-        -464
-      ],
-      "id": "087d0904-22ff-4c74-bdc6-572715f3bacf",
-      "name": "Construct Thread"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Get the input data\nconst inputData = $input.all();\nconst results = [];\n\ninputData.forEach(item => {\n  const data = item.json;\n  \n  // Parse the created_at date\n  const createdAt = new Date(data.created_at);\n  \n  // Format the since time (set seconds to 00)\n  const sinceYear = createdAt.getUTCFullYear();\n  const sinceMonth = String(createdAt.getUTCMonth() + 1).padStart(2, '0');\n  const sinceDay = String(createdAt.getUTCDate()).padStart(2, '0');\n  const sinceHour = String(createdAt.getUTCHours()).padStart(2, '0');\n  const sinceMinute = String(createdAt.getUTCMinutes()).padStart(2, '0');\n  \n  const sinceTime = `${sinceYear}-${sinceMonth}-${sinceDay}_${sinceHour}:${sinceMinute}:00_UTC`;\n  \n  // Calculate until time (10 minutes later)\n  const untilDate = new Date(createdAt.getTime() + 10 * 60 * 1000); // Add 10 minutes\n  const untilYear = untilDate.getUTCFullYear();\n  const untilMonth = String(untilDate.getUTCMonth() + 1).padStart(2, '0');\n  const untilDay = String(untilDate.getUTCDate()).padStart(2, '0');\n  const untilHour = String(untilDate.getUTCHours()).padStart(2, '0');\n  const untilMinute = String(untilDate.getUTCMinutes()).padStart(2, '0');\n  \n  const untilTime = `${untilYear}-${untilMonth}-${untilDay}_${untilHour}:${untilMinute}:00_UTC`;\n  \n  // Construct the query\n  const query = `since:${sinceTime} until:${untilTime} from:${data.author_username} filter:self_threads`;\n  \n  // Return the result\n  results.push({\n    query: query,\n    original_tweet_id: data.tweet_id,\n    author_username: data.author_username,\n    created_at: data.created_at,\n    since_time: sinceTime,\n    until_time: untilTime\n  });\n});\n\nreturn results;\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        2272,
-        -464
-      ],
-      "id": "94ea3552-b562-4078-b713-b452de273953",
-      "name": "Construct Thread Query"
     },
     {
       "parameters": {
@@ -979,8 +904,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.6,
       "position": [
-        2992,
-        -64
+        2384,
+        -528
       ],
       "id": "b5237b20-1179-4ba4-a128-9aaa594b4971",
       "name": "Append or update tweets row",
@@ -990,6 +915,138 @@
           "name": "Google Sheets account"
         }
       }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -480,
+        -400
+      ],
+      "id": "fa9a1d23-14d4-4d8c-8f6e-8f9fd9dc95de",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1289782f-d93b-4b47-8a64-e9ac00375f1f",
+              "leftValue": "={{ $json.has_next_page }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        896,
+        -64
+      ],
+      "id": "c6f3d192-dfff-4daa-873d-28725827346c",
+      "name": "Has Tweets"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2368,
+        96
+      ],
+      "id": "00a377a4-baca-4da4-b63f-748689f5dbf2",
+      "name": "Loop Over Threads"
+    },
+    {
+      "parameters": {
+        "url": "https://api.twitterapi.io/twitter/tweet/advanced_search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.query }}"
+            },
+            {
+              "name": "limit",
+              "value": "=20"
+            },
+            {
+              "name": "result_type",
+              "value": "latest"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Accept\": \"application/json\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2832,
+        112
+      ],
+      "id": "02ae6140-684c-4b99-adc0-68508518274e",
+      "name": "Get Thread",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Y9mqglloyte4NEfz",
+          "name": "Twitter API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the main tweet from \"Loop Over Threads\" node\nconst mainTweet = $('Loop Over Threads').first().json;\n\n// Get the input data which contains the tweets array\nconst inputData = $input.first().json;\n\n// Extract the tweets array from the nested structure\nconst threadTweets = inputData.tweets || [];\n\n// Reverse to get chronological order (oldest to newest)\nconst orderedThreadTweets = threadTweets.reverse();\n\n// Extract just the text from each thread tweet\nconst threadTexts = orderedThreadTweets.map(tweet => tweet.text);\n\n// Build the combined text starting with main tweet\nlet combinedText = mainTweet.tweet_text;\n\n// Add each thread part with numbering starting from (2)\nthreadTexts.forEach((text, index) => {\n  combinedText += `\\n\\n(${index + 2}) ${text}`;\n});\n\n// Create the result maintaining the exact JSON structure from \"Loop Over Threads\"\nconst result = {\n  ...mainTweet, // Keep all original fields exactly as they were\n  tweet_text: combinedText // Update only the tweet_text field\n};\n\nreturn [result];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3056,
+        112
+      ],
+      "id": "26993911-1d2d-4e8e-a6c0-bf7c500ccbb8",
+      "name": "Construct Thread"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the input data\nconst inputData = $input.all();\nconst results = [];\n\ninputData.forEach(item => {\n  const data = item.json;\n  \n  // Parse the created_at date\n  const createdAt = new Date(data.created_at);\n  \n  // Format the since time (set seconds to 00)\n  const sinceYear = createdAt.getUTCFullYear();\n  const sinceMonth = String(createdAt.getUTCMonth() + 1).padStart(2, '0');\n  const sinceDay = String(createdAt.getUTCDate()).padStart(2, '0');\n  const sinceHour = String(createdAt.getUTCHours()).padStart(2, '0');\n  const sinceMinute = String(createdAt.getUTCMinutes()).padStart(2, '0');\n  \n  const sinceTime = `${sinceYear}-${sinceMonth}-${sinceDay}_${sinceHour}:${sinceMinute}:00_UTC`;\n  \n  // Calculate until time (10 minutes later)\n  const untilDate = new Date(createdAt.getTime() + 10 * 60 * 1000); // Add 10 minutes\n  const untilYear = untilDate.getUTCFullYear();\n  const untilMonth = String(untilDate.getUTCMonth() + 1).padStart(2, '0');\n  const untilDay = String(untilDate.getUTCDate()).padStart(2, '0');\n  const untilHour = String(untilDate.getUTCHours()).padStart(2, '0');\n  const untilMinute = String(untilDate.getUTCMinutes()).padStart(2, '0');\n  \n  const untilTime = `${untilYear}-${untilMonth}-${untilDay}_${untilHour}:${untilMinute}:00_UTC`;\n  \n  // Construct the query\n  const query = `since:${sinceTime} until:${untilTime} from:${data.author_username} filter:self_threads`;\n  \n  // Return the result\n  results.push({\n    query: query,\n    original_tweet_id: data.tweet_id,\n    author_username: data.author_username,\n    created_at: data.created_at,\n    since_time: sinceTime,\n    until_time: untilTime\n  });\n});\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        112
+      ],
+      "id": "36debb93-5f69-44a3-8d02-8f1bde96c3f1",
+      "name": "Construct Thread Query"
     },
     {
       "parameters": {
@@ -1355,10 +1412,10 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.6,
       "position": [
-        2960,
-        -464
+        3280,
+        112
       ],
-      "id": "68d3f60a-3476-4949-967c-d5cf05a90d04",
+      "id": "2f88fa30-dcfd-4df3-91a5-e838b84f5dc5",
       "name": "Append or Update Thread row",
       "credentials": {
         "googleApi": {
@@ -1366,57 +1423,6 @@
           "name": "Google Sheets account"
         }
       }
-    },
-    {
-      "parameters": {
-        "rule": {
-          "interval": [
-            {}
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        -480,
-        -400
-      ],
-      "id": "fa9a1d23-14d4-4d8c-8f6e-8f9fd9dc95de",
-      "name": "Schedule Trigger"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "1289782f-d93b-4b47-8a64-e9ac00375f1f",
-              "leftValue": "={{ $json.has_next_page }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        896,
-        -64
-      ],
-      "id": "c6f3d192-dfff-4daa-873d-28725827346c",
-      "name": "Has Tweets"
     }
   ],
   "pinData": {},
@@ -1463,6 +1469,6 @@
     }
   ],
   "triggerCount": 1,
-  "updatedAt": "2025-08-07T10:01:52.000Z",
-  "versionId": "0a0143e8-2a03-4147-9e61-d82b42a14883"
+  "updatedAt": "2025-08-27T17:42:11.000Z",
+  "versionId": "c5f8594b-6314-4904-bbf9-b11841c90051"
 }
