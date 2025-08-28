@@ -448,7 +448,7 @@
             {
               "id": "14770443-872a-4d20-bf8b-927263c2801d",
               "name": "query",
-              "value": "={{ $json.topic }} within_time:3d filter:has_engagement min_faves:100 lang:en",
+              "value": "={{ $json.topic }} within_time:3d min_faves:50 lang:en",
               "type": "string"
             },
             {
@@ -1469,6 +1469,6 @@
     }
   ],
   "triggerCount": 1,
-  "updatedAt": "2025-08-27T17:42:11.000Z",
-  "versionId": "c5f8594b-6314-4904-bbf9-b11841c90051"
+  "updatedAt": "2025-08-28T10:49:38.000Z",
+  "versionId": "d99cf8f9-fb2f-4e3a-9800-c686978e1a98"
 }
