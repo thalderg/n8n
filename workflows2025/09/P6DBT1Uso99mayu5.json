@@ -1,0 +1,438 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Events": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-09-16T10:15:28.675Z",
+  "id": "P6DBT1Uso99mayu5",
+  "isArchived": false,
+  "meta": null,
+  "name": "Agent Using Tools",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -576,
+        128
+      ],
+      "id": "77a64bf1-be1d-4175-a474-4989b126aac8",
+      "name": "Telegram Trigger",
+      "webhookId": "bffb7502-df2f-46df-b8e4-90d7f1647730"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a6d6da92-8272-4f6f-97be-7b733fc5b6d2",
+                    "leftValue": "={{ $json.message.voice.file_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "voice"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -336,
+        128
+      ],
+      "id": "37d0bb6d-a397-429e-b6ba-56c5ee27ce7a",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "13f27e1a-8d2b-4e19-afe4-ee282c5098a7",
+              "name": "=text",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1755b708-ef52-4bc3-9207-2665b2b8d0ea",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -128,
+        272
+      ],
+      "id": "b991b53e-428f-4949-8b80-4a028a269723",
+      "name": "Telegram",
+      "webhookId": "b441a5e7-2724-42b2-aa43-0f1f87f2d38f"
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        112,
+        272
+      ],
+      "id": "dbe7d8db-b1b0-4d09-b71a-c60f699281b1",
+      "name": "OpenAI"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=<AgentInstructions>\n    <Role>\n        <Name>Event Manager Agent</Name>\n        <Description>Manages calendar events by fetching, creating, and updating entries based on user requests.</Description>\n        <currentDate>{{$now}}</currentDate>\n    </Role>\n\n    <Goal>\n        <Primary>Assist with scheduling, updating, and retrieving calendar events while maintaining clarity and efficiency.</Primary>\n    </Goal>\n\n    <Instructions>\n        <!-- 1. General Scheduling -->\n        <Instruction>\n            When the user requests a new event (e.g. “Schedule a meeting with John Smith on Tuesday at 4:00 PM”):\n            • Use \"Search Google Calendar\" to check existing events for conflicts.\n            • If conflicts exist, inform the user and provide alternatives based on availability.\n            • Once the user confirms a time, use \"Create Google Calendar Event\" with final details (title, time, participants, etc.).\n        </Instruction>\n\n        <!-- 2. Updating Events -->\n        <Instruction>\n            When the user requests changes to an existing event (e.g. “Update my meeting with John Smith to 5:00 PM”):\n            - First, Use Search Google Calendar in order to find the eventID of the requested event the user wants changed.\n            • Confirm event details (time, participants, description).\n            • Use \"Update Google Calendar Event\" to save changes.\n            • Summarize the updates for confirmation.\n        </Instruction>\n\n        <!-- 3. Fetching Events -->\n        <Instruction>\n            When the user requests event information (e.g. “What do I have on Monday?” or “What are my events from Monday to Wednesday?”):\n            • Parse single dates as StartDate “YYYY-MM-DD 00:00:00” and EndDate “YYYY-MM-DD 23:59:59”.\n            • Parse date ranges with StartDate on the first day at “00:00:00” and EndDate on the last day at “23:59:59”.\n            • Use \"Search Google Calendar\" to retrieve relevant events.\n            • Present a concise list of events (time, title, participants).\n        </Instruction>\n\n        <!-- 4. Tools Available -->\n        <Instruction>\n            Tools accessible to this Agent:\n            1) Search Google Calendar\n            2) Update Google Calendar Event\n            3) Create Google Calendar Event\n        </Instruction>\n\n        <!-- 5. Communication Style -->\n        <Instruction>\n            Provide brief, clear responses. Always confirm event details before taking action. Maintain a concise conversation flow and clarify when necessary.\n        </Instruction>\n    </Instructions>\n</AgentInstructions>\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        448,
+        112
+      ],
+      "id": "e4b10eac-d330-4cf1-8232-113d9c81733e",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        144,
+        528
+      ],
+      "id": "e1faf1a9-9987-4131-b90b-15c2ec812f1b",
+      "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        304,
+        528
+      ],
+      "id": "a70cd7a7-c250-4394-9194-a8573ed9d298",
+      "name": "Window Buffer Memory"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        112
+      ],
+      "id": "31313fc2-46b2-4f6f-8fdd-a9267c1dc715",
+      "name": "Telegram1",
+      "webhookId": "5eef9666-01dd-41e6-87a7-235abee972c7"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Searches Google Calendar",
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "test@aifoundations.io",
+          "mode": "list",
+          "cachedResultName": "test@aifoundations.io"
+        },
+        "options": {
+          "timeMin": "={{ $fromAI('StartDate','the start date and time for fetching events') }}",
+          "timeMax": "={{ $fromAI('EndDate','the end date and time for fetching events') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        512
+      ],
+      "id": "d91cda4d-4644-435e-9294-3fe9aa2ab6a9",
+      "name": "Search Events"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Creates Google Calendar Events",
+        "calendar": {
+          "__rl": true,
+          "value": "test@aifoundations.io",
+          "mode": "list",
+          "cachedResultName": "test@aifoundations.io"
+        },
+        "start": "={{ $fromAI('StartDate','the start date and time for creating events') }}",
+        "end": "={{ $fromAI('EndDate','the end date and time for creating events') }}",
+        "additionalFields": {
+          "summary": "={{ $fromAI('eventName','the name used for creating new events') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        512
+      ],
+      "id": "5d0d6891-b9ca-4e53-94b2-16b623fc175b",
+      "name": "Create Event"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Update Google Calendar Event",
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "test@aifoundations.io",
+          "mode": "list",
+          "cachedResultName": "test@aifoundations.io"
+        },
+        "eventId": "={{ $fromAI('eventID','the event ID of the event needing updated') }}",
+        "updateFields": {
+          "end": "={{ $fromAI('updatedEnd','the updated end time and day of the event') }}",
+          "start": "={{ $fromAI('updatedStart','the updated start time and day of the event') }}",
+          "summary": "={{ $fromAI('eventName','the updated name of the event') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.2,
+      "position": [
+        752,
+        512
+      ],
+      "id": "27dd513b-db53-42ae-b444-0ccba067b9da",
+      "name": "Update Event"
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "createdAt": "2025-09-16T10:15:28.682Z",
+      "updatedAt": "2025-09-16T10:15:28.682Z",
+      "role": "workflow:owner",
+      "workflowId": "P6DBT1Uso99mayu5",
+      "projectId": "rwZmgF8pMPgWdXwq"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-09-16T10:15:28.000Z",
+  "versionId": "b2e8e870-83a8-4616-b3b9-2c4cbffeff51"
+}
