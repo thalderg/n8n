@@ -75,17 +75,6 @@
         ]
       ]
     },
-    "Window Buffer Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "AI Agent": {
       "main": [
         [
@@ -120,6 +109,33 @@
       ]
     },
     "Update Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram1": {
+      "main": [
+        []
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a task in Google Tasks": {
       "ai_tool": [
         [
           {
@@ -301,14 +317,14 @@
         "text": "={{ $json.text }}",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "=<AgentInstructions>\n    <Role>\n        <Name>Event Manager Agent</Name>\n        <Description>Manages calendar events by fetching, creating, and updating entries based on user requests.</Description>\n        <currentDate>{{$now}}</currentDate>\n    </Role>\n\n    <Goal>\n        <Primary>Assist with scheduling, updating, and retrieving calendar events while maintaining clarity and efficiency.</Primary>\n    </Goal>\n\n    <Instructions>\n        <!-- 1. General Scheduling -->\n        <Instruction>\n            When the user requests a new event (e.g. “Schedule a meeting with John Smith on Tuesday at 4:00 PM”):\n            • Use \"Search Google Calendar\" to check existing events for conflicts.\n            • If conflicts exist, inform the user and provide alternatives based on availability.\n            • Once the user confirms a time, use \"Create Google Calendar Event\" with final details (title, time, participants, etc.).\n        </Instruction>\n\n        <!-- 2. Updating Events -->\n        <Instruction>\n            When the user requests changes to an existing event (e.g. “Update my meeting with John Smith to 5:00 PM”):\n            - First, Use Search Google Calendar in order to find the eventID of the requested event the user wants changed.\n            • Confirm event details (time, participants, description).\n            • Use \"Update Google Calendar Event\" to save changes.\n            • Summarize the updates for confirmation.\n        </Instruction>\n\n        <!-- 3. Fetching Events -->\n        <Instruction>\n            When the user requests event information (e.g. “What do I have on Monday?” or “What are my events from Monday to Wednesday?”):\n            • Parse single dates as StartDate “YYYY-MM-DD 00:00:00” and EndDate “YYYY-MM-DD 23:59:59”.\n            • Parse date ranges with StartDate on the first day at “00:00:00” and EndDate on the last day at “23:59:59”.\n            • Use \"Search Google Calendar\" to retrieve relevant events.\n            • Present a concise list of events (time, title, participants).\n        </Instruction>\n\n        <!-- 4. Tools Available -->\n        <Instruction>\n            Tools accessible to this Agent:\n            1) Search Google Calendar\n            2) Update Google Calendar Event\n            3) Create Google Calendar Event\n        </Instruction>\n\n        <!-- 5. Communication Style -->\n        <Instruction>\n            Provide brief, clear responses. Always confirm event details before taking action. Maintain a concise conversation flow and clarify when necessary.\n        </Instruction>\n    </Instructions>\n</AgentInstructions>\n"
+          "systemMessage": "=<AgentInstructions>\n    <Role>\n        <Name>Calendar & Task Manager Agent</Name>\n        <Description>Manages calendar events and tasks by fetching, creating, updating, and completing entries based on user requests.</Description>\n        <currentDate>{{$now}}</currentDate>\n    </Role>\n\n    <Goal>\n        <Primary>Assist with scheduling, updating, and retrieving calendar events and tasks while maintaining clarity and efficiency.</Primary>\n    </Goal>\n\n    <Instructions>\n        <!-- 1. General Scheduling (Calendar) -->\n        <Instruction>\n            When the user requests a new event (e.g. \"Schedule a meeting with John Smith on Tuesday at 4:00 PM\"):\n            • Use \"Search Google Calendar\" to check existing events for conflicts.\n            • If conflicts exist, inform the user and provide alternatives based on availability.\n            • Once the user confirms a time, use \"Create Google Calendar Event\" with final details (title, time, participants, etc.).\n        </Instruction>\n\n        <!-- 2. Updating Events (Calendar) -->\n        <Instruction>\n            When the user requests changes to an existing event (e.g. \"Update my meeting with John Smith to 5:00 PM\"):\n            - First, Use Search Google Calendar in order to find the eventID of the requested event the user wants changed.\n            • Confirm event details (time, participants, description).\n            • Use \"Update Google Calendar Event\" to save changes.\n            • Summarize the updates for confirmation.\n        </Instruction>\n\n        <!-- 3. Fetching Events (Calendar) -->\n        <Instruction>\n            When the user requests event information (e.g. \"What do I have on Monday?\" or \"What are my events from Monday to Wednesday?\"):\n            • Parse single dates as StartDate \"YYYY-MM-DD 00:00:00\" and EndDate \"YYYY-MM-DD 23:59:59\".\n            • Parse date ranges with StartDate on the first day at \"00:00:00\" and EndDate on the last day at \"23:59:59\".\n            • Use \"Search Google Calendar\" to retrieve relevant events.\n            • Present a concise list of events (time, title, participants).\n        </Instruction>\n\n        <!-- 4. Task Management -->\n<Instruction>\n    For task operations, use the appropriate Google Tasks tools:\n    \n    • Creating tasks: Use \"Create Google Tasks\" with title and due date if specified\n    • Listing tasks: Use \"Get Many Google Tasks\" with showCompleted=true to see all tasks\n    • Getting single task: Use \"Get Google Tasks\" to retrieve specific task details\n    • Updating tasks: Use \"Update Google Tasks\" to change task name or details\n    • Completing tasks: Use \"Update Google Tasks\" with status=\"completed\"\n    • Deleting tasks: Use \"Delete Google Tasks\" to permanently remove tasks\n</Instruction>\n\n<!-- 5. Task Date Handling -->\n        <Instruction>\n            When the user requests task information (e.g. \"What tasks do I have on Monday?\" or \"Show my tasks from Monday to Wednesday?\"):\n            • Parse single dates as due date \"YYYY-MM-DD\" for filtering tasks.\n            • Parse date ranges with dueMin on the first day \"YYYY-MM-DD\" and dueMax on the last day \"YYYY-MM-DD\".\n            • Use \"Google Tasks\" operation \"getAll\" with showCompleted=true and appropriate date filters.\n            • Always show both completed and pending tasks for the requested date range.\n        </Instruction>\n\n        <!-- 6. Task Display Format -->\n        <Instruction>\n            When showing tasks for a specific date, always display in this format:\n\n            ✅ **Completed:**\n            - Task name 1\n            - Task name 2\n\n            ⏰ **Pending:**\n            - Task name 3  \n            - Task name 4\n\n            If no tasks in a category, show \"No completed tasks\" or \"No pending tasks\"\n        </Instruction>\n\n        <!-- 7. Task Creation with Dates -->\n        <Instruction>\n            When creating tasks with dates:\n            • \"Add task for today\" → due date: current date in \"YYYY-MM-DD\" format\n            • \"Add task for tomorrow\" → due date: next day in \"YYYY-MM-DD\" format\n            • \"Add task for Friday\" → due date: next Friday in \"YYYY-MM-DD\" format\n            • \"Add task for September 25\" → due date: \"2025-09-25\" format\n\n         <!-- 8. Tools Available -->\n<Instruction>\n    Tools accessible to this Agent:\n    1) Search Google Calendar\n    2) Update Google Calendar Event  \n    3) Create Google Calendar Event\n    4) Create Google Tasks\n    5) Update Google Tasks\n    6) Get Google Tasks\n    7) Get Many Google Tasks\n    8) Delete Google Tasks\n</Instruction>\n        </Instruction>\n\n<!-- Communication Style -->\n<Instruction>\n    Provide brief, clear responses. Always confirm details before taking action on updates or deletions. \n    Maintain a concise conversation flow and clarify when necessary.\n    \n    For ambiguous requests, distinguish between calendar events (specific times/appointments) and tasks (reminders/to-dos). \n    When in doubt, ask for clarification or default to creating a task.\n    \n    Always maintain context of previous requests within the conversation.\n    When user says \"Yes\" or \"No\", refer to the immediate previous action being confirmed.\n</Instruction>\n</AgentInstructions>\n"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
-        448,
-        112
+        400,
+        160
       ],
       "id": "e4b10eac-d330-4cf1-8232-113d9c81733e",
       "name": "AI Agent"
@@ -320,8 +336,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.1,
       "position": [
-        144,
-        528
+        192,
+        464
       ],
       "id": "e1faf1a9-9987-4131-b90b-15c2ec812f1b",
       "name": "OpenAI Chat Model",
@@ -334,20 +350,6 @@
     },
     {
       "parameters": {
-        "sessionIdType": "customKey",
-        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}"
-      },
-      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
-      "typeVersion": 1.3,
-      "position": [
-        304,
-        528
-      ],
-      "id": "a70cd7a7-c250-4394-9194-a8573ed9d298",
-      "name": "Window Buffer Memory"
-    },
-    {
-      "parameters": {
         "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
         "text": "={{ $json.output }}",
         "additionalFields": {}
@@ -355,8 +357,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        880,
-        112
+        800,
+        144
       ],
       "id": "31313fc2-46b2-4f6f-8fdd-a9267c1dc715",
       "name": "Telegram1",
@@ -385,8 +387,8 @@
       "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.2,
       "position": [
-        480,
-        512
+        752,
+        432
       ],
       "id": "d91cda4d-4644-435e-9294-3fe9aa2ab6a9",
       "name": "Search Events",
@@ -416,8 +418,8 @@
       "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.2,
       "position": [
-        624,
-        512
+        848,
+        432
       ],
       "id": "5d0d6891-b9ca-4e53-94b2-16b623fc175b",
       "name": "Create Event",
@@ -449,8 +451,8 @@
       "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.2,
       "position": [
-        752,
-        512
+        960,
+        432
       ],
       "id": "27dd513b-db53-42ae-b444-0ccba067b9da",
       "name": "Update Event",
@@ -458,6 +460,40 @@
         "googleCalendarOAuth2Api": {
           "id": "RDxm6PWdrRguEIuu",
           "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{$('Telegram Trigger').item.json.message.chat.id}}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        336,
+        400
+      ],
+      "id": "aaf9b166-e724-4e08-9432-4d36a0f50265",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "task": "MTA1NzYyNzU3MTI4NjMxMjMyMzY6MDow",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.googleTasksTool",
+      "typeVersion": 1,
+      "position": [
+        448,
+        416
+      ],
+      "id": "c1a08c3b-c397-41f4-97ed-d72051503984",
+      "name": "Create a task in Google Tasks",
+      "credentials": {
+        "googleTasksOAuth2Api": {
+          "id": "TJkYzxOql76gvIwy",
+          "name": "Google Tasks account"
         }
       }
     }
@@ -481,6 +517,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2025-09-18T13:35:28.000Z",
-  "versionId": "ae4bb467-5541-488d-a5e2-9c627f22f2c4"
+  "updatedAt": "2025-09-22T13:58:48.000Z",
+  "versionId": "838ce3a3-63ee-4a43-8cd0-89c366a170f8"
 }
