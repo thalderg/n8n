@@ -1,6 +1,6 @@
 {
   "": "",
-  "active": false,
+  "active": true,
   "connections": {
     "Telegram Trigger": {
       "main": [
@@ -46,7 +46,7 @@
       "main": [
         [
           {
-            "node": "Events Classifier",
+            "node": "Calendar Manager",
             "type": "main",
             "index": 0
           }
@@ -57,7 +57,7 @@
       "main": [
         [
           {
-            "node": "Events Classifier",
+            "node": "Calendar Manager",
             "type": "main",
             "index": 0
           }
@@ -113,17 +113,6 @@
         []
       ]
     },
-    "Events Classifier": {
-      "main": [
-        [
-          {
-            "node": "Calendar Manager",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Calendar Manager": {
       "main": [
         [
@@ -135,22 +124,11 @@
         ]
       ]
     },
-    "OpenAI Chat Model1": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "Events Classifier",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Memory": {
       "ai_memory": [
         [
           {
-            "node": "Events Classifier",
+            "node": "Calendar Manager",
             "type": "ai_memory",
             "index": 0
           }
@@ -164,7 +142,7 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "name": "Agent Using Tools",
+  "name": "Google Calendar Manager",
   "nodes": [
     {
       "parameters": {
@@ -335,8 +313,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.1,
       "position": [
-        720,
-        592
+        304,
+        512
       ],
       "id": "e1faf1a9-9987-4131-b90b-15c2ec812f1b",
       "name": "OpenAI Chat Model",
@@ -356,7 +334,7 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1488,
+        1072,
         176
       ],
       "id": "31313fc2-46b2-4f6f-8fdd-a9267c1dc715",
@@ -386,8 +364,8 @@
       "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.2,
       "position": [
-        992,
-        608
+        736,
+        496
       ],
       "id": "d91cda4d-4644-435e-9294-3fe9aa2ab6a9",
       "name": "Search Events",
@@ -417,8 +395,8 @@
       "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.2,
       "position": [
-        1120,
-        592
+        880,
+        496
       ],
       "id": "5d0d6891-b9ca-4e53-94b2-16b623fc175b",
       "name": "Create Event",
@@ -450,8 +428,8 @@
       "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.2,
       "position": [
-        1264,
-        592
+        992,
+        496
       ],
       "id": "27dd513b-db53-42ae-b444-0ccba067b9da",
       "name": "Update Event",
@@ -466,68 +444,19 @@
       "parameters": {
         "promptType": "define",
         "text": "={{ $json.text }}",
-        "options": {
-          "systemMessage": "=<ClassifierInstructions>\n    <Role>\n        <Name>Events Classifier</Name>\n        <Description>Route user requests to Calendar or Task agents and manage conversation flow.</Description>\n        <currentDate>{{$now}}</currentDate>\n    </Role>\n\n    <Instructions>\n        <Instruction>\n            Classify user requests and route to appropriate agents. Handle agent responses and forward to user.\n            Always respond with valid JSON format as specified in the JSON Output Format Examples section below.\n            \n            THREE input types:\n            1. NEW USER REQUEST: Classify and route to agent using routing JSON format\n            2. AGENT RESPONSE: Forward directly to user using forwarding JSON format\n            3. USER CLARIFICATION: Route back to active agent with full context using context reconstruction JSON format\n        </Instruction>\n\n        <Instruction>\n            CLASSIFICATION RULES:\n            CALENDAR (specific time/people): \"meeting at 3pm\", \"dinner with John\"\n            TASK (actions, no specific time): \"buy milk\", \"call dentist\"\n            \n            Weekly goals: \"by end of week\" → [WEEKLY GOAL], due 2025-09-28\n            Monthly goals: \"by end of month\" → [MONTHLY GOAL], due 2025-09-30\n            \n            Use the routing JSON format from the examples section for all classifications.\n        </Instruction>\n\n        <Instruction>\n            CONTEXT RECONSTRUCTION for continuing conversations:\n            Include original request + conflict details + user resolution in command.\n            Use the context reconstruction JSON format from the examples section.\n            \n            Example flow: \"COMPLETE CONTEXT: User originally wanted John meeting at 9pm Friday Sept 27. Mike call conflicts at 9pm. User wants to replace Mike call with John meeting and reschedule Mike to 10pm.\"\n            \n            ✅ Complete examples: \"meeting Friday 3pm\", \"weekly goal finish project\"\n            ❌ Incomplete examples: \"meeting Friday\", \"add task\"\n        </Instruction>\n\n        <Instruction>\n            SESSION MANAGEMENT:\n            - NEW request: session=\"new\" in routing JSON format\n            - User responding to agent question: session=\"continue\" in context reconstruction JSON format\n            - Agent reports success: use forwarding JSON format \n            - Agent needs help: use clarification JSON format with active_agent tracking\n            \n            Always refer to the JSON Output Format Examples section for exact formatting.\n        </Instruction>\n\n        <!-- JSON Output Format Examples Section -->\n        <Instruction>\n            JSON OUTPUT FORMAT EXAMPLES:\n            \n            1. New Request Routing:\n            {\"action\":\"route\",\"agent\":\"CALENDAR\",\"command\":\"Create meeting with John Friday Sept 27, 2025 at 9:00 PM\",\"session\":\"new\",\"reasoning\":\"Complete calendar request with specific time and person\"}\n            \n            {\"action\":\"route\",\"agent\":\"TASK\",\"command\":\"Create weekly goal '[WEEKLY GOAL] Finish project report' due 2025-09-28\",\"session\":\"new\",\"reasoning\":\"Weekly goal with calculated end-of-week date\"}\n            \n            2. Context Reconstruction (Multi-turn):\n            {\"action\":\"route\",\"agent\":\"CALENDAR\",\"command\":\"COMPLETE CONTEXT: User originally wanted John meeting at 9pm Friday Sept 27. Mike call conflicts at 9pm. User wants to replace Mike call with John meeting and reschedule Mike to 10pm on same day.\",\"session\":\"continue\",\"reasoning\":\"Conflict resolution with full context reconstruction\"}\n            \n            3. Agent Response Forwarding:\n            {\"action\":\"forward\",\"message\":\"Done! Mike's call moved to 10pm, John's meeting scheduled at 9pm on Friday Sept 27.\"}\n            \n            {\"action\":\"forward\",\"message\":\"Meeting with John successfully created for Friday Sept 27 at 9:00 PM.\"}\n            \n            4. Clarification Needed:\n            {\"action\":\"clarify\",\"message\":\"What time should I schedule this meeting with John?\",\"active_agent\":\"CALENDAR\",\"session\":\"active\"}\n            \n            {\"action\":\"clarify\",\"message\":\"9:00 PM conflicts with Mike call. Options: 1) Replace Mike call 2) Move Mike to different time 3) Schedule John at different time. How to resolve?\",\"active_agent\":\"CALENDAR\",\"session\":\"active\"}\n            \n            Always use these exact JSON structures. Never deviate from these formats.\n        </Instruction>\n    </Instructions>\n</ClassifierInstructions>"
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2.2,
-      "position": [
-        400,
-        160
-      ],
-      "id": "aeaa1762-da35-4f57-b9d4-7512c6926cc7",
-      "name": "Events Classifier"
-    },
-    {
-      "parameters": {
-        "promptType": "define",
-        "text": "={{ $json.output }}",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "=<AgentInstructions>\n    <Role>\n        <Name>Event Manager Agent</Name>\n        <Description>Manages calendar events by fetching, creating, and updating entries based on user requests.</Description>\n        <currentDate>{{$now}}</currentDate>\n    </Role>\n\n    <Goal>\n        <Primary>Assist with scheduling, updating, and retrieving calendar events while maintaining clarity and efficiency.</Primary>\n    </Goal>\n\n    <Instructions>\n        <!-- 1. General Scheduling -->\n        <Instruction>\n            When the user requests a new event (e.g. \"Schedule a meeting with John Smith on Tuesday at 4:00 PM\"):\n            • Use \"Search Google Calendar\" to check existing events for conflicts.\n            • If conflicts exist, inform the user and provide alternatives based on availability.\n            • Once the user confirms a time, use \"Create Google Calendar Event\" with final details (title, time, participants, etc.).\n        </Instruction>\n\n        <!-- 2. Updating Events -->\n        <Instruction>\n            When the user requests changes to an existing event (e.g. \"Update my meeting with John Smith to 5:00 PM\"):\n            - First, Use Search Google Calendar in order to find the eventID of the requested event the user wants changed.\n            • Confirm event details (time, participants, description).\n            • Use \"Update Google Calendar Event\" to save changes.\n            • Summarize the updates for confirmation.\n        </Instruction>\n\n        <!-- 3. Deleting Events -->\n        <Instruction>\n            When the user requests to delete an event (e.g. \"Remove my meeting with John\" or \"Delete the Medicina event\"):\n            - First, Use Search Google Calendar to find the specific event by title/details.\n            • If multiple events match, show list and ask user to specify which one.\n            • Once specific event is identified, use \"Update Google Calendar Event\" to mark it as cancelled or remove it.\n            • Confirm the deletion to user.\n        </Instruction>\n\n        <!-- 4. Fetching Events -->\n        <Instruction>\n            When the user requests event information (e.g. \"What do I have on Monday?\" or \"What are my events from Monday to Wednesday?\"):\n            • Parse single dates as StartDate \"YYYY-MM-DD 00:00:00\" and EndDate \"YYYY-MM-DD 23:59:59\".\n            • Parse date ranges with StartDate on the first day at \"00:00:00\" and EndDate on the last day at \"23:59:59\".\n            • Use \"Search Google Calendar\" to retrieve relevant events.\n            • Present a concise list of events (time, title, participants).\n        </Instruction>\n\n        <!-- 5. Response Handling -->\n        <Instruction>\n            RESPONSE HANDLING:\n            All responses including clarification questions must be returned as natural language \n            for the Classifier to forward to user. Never attempt direct user communication.\n            \n            Example: Instead of asking user directly, return: \n            \"I found 3 meetings tomorrow: Team standup at 9am, Client call at 2pm, Project review at 4pm. Which one should I delete?\"\n            \n            The Classifier will forward your response to the user and route their answer back to you with full context.\n        </Instruction>\n\n        <!-- 6. Tools Available -->\n        <Instruction>\n            Tools accessible to this Agent:\n            1) Search Google Calendar\n            2) Update Google Calendar Event\n            3) Create Google Calendar Event\n        </Instruction>\n\n        <!-- 7. Communication Style -->\n        <Instruction>\n            Provide brief, clear responses. Always confirm event details before taking action. Maintain a concise conversation flow and clarify when necessary.\n        </Instruction>\n    </Instructions>\n</AgentInstructions>\n\n\n"
+          "systemMessage": "=<AgentInstructions>\n    <Role>\n        <Name>Event Manager Agent</Name>\n        <Description>Manages calendar events by fetching, creating, and updating entries based on user requests.</Description>\n        <currentDate>{{$now}}</currentDate>\n    </Role>\n\n    <Goal>\n        <Primary>Assist with scheduling, updating, and retrieving calendar events while maintaining clarity and efficiency.</Primary>\n    </Goal>\n\n    <Instructions>\n        <!-- 1. General Scheduling -->\n        <Instruction>\n     When the user requests a new event (e.g. \"Schedule a meeting with John Smith on Tuesday at 4:00 PM\"):\n      • Use \"Search Google Calendar\" to check existing events for conflicts.\n      • If conflicts exist, inform the user and provide alternatives based on availability.\n      • If NO conflicts exist, immediately use \"Create Google Calendar Event\" and confirm the event was successfully created.\n      • Only ask for confirmation when there are conflicts or ambiguous details that need clarification.\n        </Instruction>\n\n        <!-- 2. Updating Events -->\n        <Instruction>\n            When the user requests changes to an existing event (e.g. “Update my meeting with John Smith to 5:00 PM”):\n            - First, Use Search Google Calendar in order to find the eventID of the requested event the user wants changed.\n            • Confirm event details (time, participants, description).\n            • Use \"Update Google Calendar Event\" to save changes.\n            • Summarize the updates for confirmation.\n        </Instruction>\n\n        <!-- 3. Fetching Events -->\n        <Instruction>\n            When the user requests event information (e.g. “What do I have on Monday?” or “What are my events from Monday to Wednesday?”):\n            • Parse single dates as StartDate “YYYY-MM-DD 00:00:00” and EndDate “YYYY-MM-DD 23:59:59”.\n            • Parse date ranges with StartDate on the first day at “00:00:00” and EndDate on the last day at “23:59:59”.\n            • Use \"Search Google Calendar\" to retrieve relevant events.\n            • Present a concise list of events (time, title, participants).\n        </Instruction>\n\n        <!-- 4. Tools Available -->\n        <Instruction>\n            Tools accessible to this Agent:\n            1) Search Google Calendar\n            2) Update Google Calendar Event\n            3) Create Google Calendar Event\n        </Instruction>\n\n        <!-- 5. Communication Style -->\n        <Instruction>\n            Provide brief, clear responses. Always confirm event details before taking action. Maintain a concise conversation flow and clarify when necessary.\n        </Instruction>\n    </Instructions>\n</AgentInstructions>"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
-        912,
-        320
+        400,
+        176
       ],
       "id": "e4b10eac-d330-4cf1-8232-113d9c81733e",
       "name": "Calendar Manager"
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "gpt-4.1-mini",
-          "mode": "list",
-          "cachedResultName": "gpt-4.1-mini"
-        },
-        "options": {
-          "maxTokens": 250,
-          "responseFormat": "json_object",
-          "temperature": 0.1,
-          "timeout": 30000,
-          "maxRetries": 3,
-          "topP": 0.9
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        256,
-        368
-      ],
-      "id": "8db9295c-6a01-4cac-87ac-fef0cd554686",
-      "name": "OpenAI Chat Model1",
-      "credentials": {
-        "openAiApi": {
-          "id": "fcIDL6mBCr4eAnxg",
-          "name": "OpenAi voice to text"
-        }
-      }
     },
     {
       "parameters": {
@@ -538,8 +467,8 @@
       "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
       "typeVersion": 1.3,
       "position": [
-        448,
-        384
+        528,
+        512
       ],
       "id": "89465151-baee-4299-a749-07de72ddc9ef",
       "name": "Memory"
@@ -564,6 +493,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2025-09-23T15:15:25.000Z",
-  "versionId": "3b2e1afa-b2d6-45fb-bbdd-23013e6bb50e"
+  "updatedAt": "2025-09-24T13:51:05.000Z",
+  "versionId": "71f701fe-8221-405e-9003-82865a1a3671"
 }
