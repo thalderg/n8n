@@ -1,0 +1,501 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Calendar Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Calendar Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Calendar Manager",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Events": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram1": {
+      "main": [
+        []
+      ]
+    },
+    "Calendar Manager": {
+      "main": [
+        [
+          {
+            "node": "Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Calendar Manager",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-09-27T09:53:45.635Z",
+  "id": "Hzn11XjtbbsPv2Um",
+  "isArchived": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Productivity Manager",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {},
+        "path": "1105bce1-0ea8-4b50-a87c-f0d0e839d2ed"
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -608,
+        128
+      ],
+      "id": "fab1070b-d642-406d-83e1-9202c5fa8645",
+      "name": "Telegram Trigger",
+      "webhookId": "1105bce1-0ea8-4b50-a87c-f0d0e839d2ed",
+      "credentials": {
+        "telegramApi": {
+          "id": "CtMYqp19WyE0XY9E",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "ff5e1442-1f1a-412e-8b15-437d9cf3b58b"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a6d6da92-8272-4f6f-97be-7b733fc5b6d2",
+                    "leftValue": "={{ $json.message.voice.file_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "voice"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -416,
+        128
+      ],
+      "id": "a0fc23e9-f16a-4351-8076-a66b4c46bade",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "13f27e1a-8d2b-4e19-afe4-ee282c5098a7",
+              "name": "=text",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -176,
+        32
+      ],
+      "id": "e2b62b2c-7254-4031-8257-a8f0273db9dc",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {},
+        "path": "0848e745-ccfd-4203-98f0-154ea83bae8d"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -192,
+        272
+      ],
+      "id": "cd145f72-9e0a-474f-bc75-49bff27116df",
+      "name": "Telegram",
+      "webhookId": "0848e745-ccfd-4203-98f0-154ea83bae8d",
+      "credentials": {
+        "telegramApi": {
+          "id": "CtMYqp19WyE0XY9E",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        32,
+        272
+      ],
+      "id": "c94631af-ca53-4aab-844c-9f674a0e18e1",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "fcIDL6mBCr4eAnxg",
+          "name": "OpenAi voice to text"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxTokens": 250,
+          "temperature": 0.2,
+          "timeout": 45000,
+          "maxRetries": 3,
+          "topP": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        304,
+        512
+      ],
+      "id": "7c24b18a-c0bd-45c9-914c-bd28c44aad62",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "fcIDL6mBCr4eAnxg",
+          "name": "OpenAi voice to text"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {},
+        "path": "72ca9428-0d24-40e5-9428-c7087f0fa679"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1072,
+        176
+      ],
+      "id": "964c4342-d314-4991-b1b3-4762d818c3fb",
+      "name": "Telegram1",
+      "webhookId": "72ca9428-0d24-40e5-9428-c7087f0fa679",
+      "credentials": {
+        "telegramApi": {
+          "id": "CtMYqp19WyE0XY9E",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "giopag81@gmail.com",
+          "mode": "list",
+          "cachedResultName": "giopag81@gmail.com"
+        },
+        "options": {
+          "timeMin": "={{ $fromAI('StartDate','the start date and time for fetching events') }}",
+          "timeMax": "={{ $fromAI('EndDate','the end date and time for fetching events') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.2,
+      "position": [
+        736,
+        496
+      ],
+      "id": "5fa208a8-c19a-420e-996a-9b2cd7811143",
+      "name": "Search Events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "RDxm6PWdrRguEIuu",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Creates Google Calendar Events",
+        "calendar": {
+          "__rl": true,
+          "value": "giopag81@gmail.com",
+          "mode": "list",
+          "cachedResultName": "giopag81@gmail.com"
+        },
+        "start": "={{ $fromAI('StartDate','the start date and time for creating events') }}",
+        "end": "={{ $fromAI('EndDate','the end date and time for creating events') }}",
+        "additionalFields": {
+          "summary": "={{ $fromAI('eventName','the name used for creating new events') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.2,
+      "position": [
+        880,
+        496
+      ],
+      "id": "5c06a7f7-f516-4165-bb13-1c29e950fe71",
+      "name": "Create Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "RDxm6PWdrRguEIuu",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Update Google Calendar Event",
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "giopag81@gmail.com",
+          "mode": "list",
+          "cachedResultName": "giopag81@gmail.com"
+        },
+        "eventId": "={{ $fromAI('eventID','the event ID of the event needing updated') }}",
+        "updateFields": {
+          "end": "={{ $fromAI('updatedEnd','the updated end time and day of the event') }}",
+          "start": "={{ $fromAI('updatedStart','the updated start time and day of the event') }}",
+          "summary": "={{ $fromAI('eventName','the updated name of the event') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.2,
+      "position": [
+        992,
+        496
+      ],
+      "id": "d7191ea2-9b86-4044-9355-dd4979ebebba",
+      "name": "Update Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "RDxm6PWdrRguEIuu",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=<AgentInstructions>\n    <Role>\n        <Name>Event Manager Agent</Name>\n        <Description>Manages calendar events by fetching, creating, and updating entries based on user requests.</Description>\n        <currentDate>{{$now}}</currentDate>\n    </Role>\n\n    <Goal>\n        <Primary>Assist with scheduling, updating, and retrieving calendar events while maintaining clarity and efficiency.</Primary>\n    </Goal>\n\n    <Instructions>\n        <!-- 1. General Scheduling -->\n        <Instruction>\n     When the user requests a new event (e.g. \"Schedule a meeting with John Smith on Tuesday at 4:00 PM\"):\n      • Use \"Search Google Calendar\" to check existing events for conflicts.\n      • If conflicts exist, inform the user and provide alternatives based on availability.\n      • If NO conflicts exist, immediately use \"Create Google Calendar Event\" and confirm the event was successfully created.\n      • Only ask for confirmation when there are conflicts or ambiguous details that need clarification.\n        </Instruction>\n\n        <!-- 2. Updating Events -->\n        <Instruction>\n            When the user requests changes to an existing event (e.g. “Update my meeting with John Smith to 5:00 PM”):\n            - First, Use Search Google Calendar in order to find the eventID of the requested event the user wants changed.\n            • Confirm event details (time, participants, description).\n            • Use \"Update Google Calendar Event\" to save changes.\n            • Summarize the updates for confirmation.\n        </Instruction>\n\n        <!-- 3. Fetching Events -->\n        <Instruction>\n            When the user requests event information (e.g. “What do I have on Monday?” or “What are my events from Monday to Wednesday?”):\n            • Parse single dates as StartDate “YYYY-MM-DD 00:00:00” and EndDate “YYYY-MM-DD 23:59:59”.\n            • Parse date ranges with StartDate on the first day at “00:00:00” and EndDate on the last day at “23:59:59”.\n            • Use \"Search Google Calendar\" to retrieve relevant events.\n            • Present a concise list of events (time, title, participants).\n        </Instruction>\n\n        <!-- 4. Tools Available -->\n        <Instruction>\n            Tools accessible to this Agent:\n            1) Search Google Calendar\n            2) Update Google Calendar Event\n            3) Create Google Calendar Event\n        </Instruction>\n\n        <!-- 5. Communication Style -->\n        <Instruction>\n            Provide brief, clear responses. Always confirm event details before taking action. Maintain a concise conversation flow and clarify when necessary.\n        </Instruction>\n    </Instructions>\n</AgentInstructions>"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        400,
+        176
+      ],
+      "id": "fffaba39-1087-4fec-b360-67c103989123",
+      "name": "Calendar Manager"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{$('Telegram Trigger').item.json.message.chat.id}}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        528,
+        512
+      ],
+      "id": "d7e3a00c-8884-4b26-accf-f99046bf7c42",
+      "name": "Memory"
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "createdAt": "2025-09-27T09:53:45.641Z",
+      "updatedAt": "2025-09-27T09:53:45.641Z",
+      "role": "workflow:owner",
+      "workflowId": "Hzn11XjtbbsPv2Um",
+      "projectId": "rwZmgF8pMPgWdXwq"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-09-27T09:53:45.000Z",
+  "versionId": "d2b2bbce-6ed6-456e-aa43-f6c1c971d468"
+}
