@@ -1,6 +1,6 @@
 {
   "": "",
-  "active": true,
+  "active": false,
   "connections": {
     "Telegram Trigger": {
       "main": [
@@ -130,6 +130,17 @@
           {
             "node": "Calendar Manager",
             "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a task in Todoist": {
+      "ai_tool": [
+        [
+          {
+            "node": "Calendar Manager",
+            "type": "ai_tool",
             "index": 0
           }
         ]
@@ -472,6 +483,24 @@
       ],
       "id": "89465151-baee-4299-a749-07de72ddc9ef",
       "name": "Memory"
+    },
+    {
+      "parameters": {
+        "project": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.todoistTool",
+      "typeVersion": 2.1,
+      "position": [
+        528,
+        384
+      ],
+      "id": "78ec45c2-9212-4244-b0c7-8cd36544bf74",
+      "name": "Create a task in Todoist"
     }
   ],
   "pinData": {},
@@ -493,6 +522,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2025-09-24T13:51:05.000Z",
-  "versionId": "71f701fe-8221-405e-9003-82865a1a3671"
+  "updatedAt": "2025-09-28T18:12:15.000Z",
+  "versionId": "da6fd248-9e07-4cdc-8e97-6896261af585"
 }
