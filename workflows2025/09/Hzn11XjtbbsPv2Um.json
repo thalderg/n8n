@@ -46,7 +46,7 @@
       "main": [
         [
           {
-            "node": "Calendar Manager",
+            "node": "Productivity Manager",
             "type": "main",
             "index": 0
           }
@@ -57,7 +57,7 @@
       "main": [
         [
           {
-            "node": "Calendar Manager",
+            "node": "Productivity Manager",
             "type": "main",
             "index": 0
           }
@@ -68,7 +68,7 @@
       "ai_languageModel": [
         [
           {
-            "node": "Calendar Manager",
+            "node": "Productivity Manager",
             "type": "ai_languageModel",
             "index": 0
           }
@@ -79,7 +79,7 @@
       "ai_tool": [
         [
           {
-            "node": "Calendar Manager",
+            "node": "Productivity Manager",
             "type": "ai_tool",
             "index": 0
           }
@@ -90,7 +90,7 @@
       "ai_tool": [
         [
           {
-            "node": "Calendar Manager",
+            "node": "Productivity Manager",
             "type": "ai_tool",
             "index": 0
           }
@@ -101,7 +101,7 @@
       "ai_tool": [
         [
           {
-            "node": "Calendar Manager",
+            "node": "Productivity Manager",
             "type": "ai_tool",
             "index": 0
           }
@@ -113,44 +113,11 @@
         []
       ]
     },
-    "Calendar Manager": {
-      "main": [
-        [
-          {
-            "node": "Telegram1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "Calendar Manager",
-            "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Create Monthly Goal in Todoist": {
       "ai_tool": [
         [
           {
-            "node": "Calendar Manager",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Create Weekly Goal in Todoist": {
-      "ai_tool": [
-        [
-          {
-            "node": "Calendar Manager",
+            "node": "Productivity Manager",
             "type": "ai_tool",
             "index": 0
           }
@@ -161,7 +128,7 @@
       "ai_tool": [
         [
           {
-            "node": "Calendar Manager",
+            "node": "Productivity Manager",
             "type": "ai_tool",
             "index": 0
           }
@@ -172,7 +139,7 @@
       "ai_tool": [
         [
           {
-            "node": "Calendar Manager",
+            "node": "Productivity Manager",
             "type": "ai_tool",
             "index": 0
           }
@@ -183,7 +150,7 @@
       "ai_tool": [
         [
           {
-            "node": "Calendar Manager",
+            "node": "Productivity Manager",
             "type": "ai_tool",
             "index": 0
           }
@@ -194,7 +161,7 @@
       "ai_tool": [
         [
           {
-            "node": "Calendar Manager",
+            "node": "Productivity Manager",
             "type": "ai_tool",
             "index": 0
           }
@@ -205,7 +172,7 @@
       "ai_tool": [
         [
           {
-            "node": "Calendar Manager",
+            "node": "Productivity Manager",
             "type": "ai_tool",
             "index": 0
           }
@@ -216,7 +183,29 @@
       "ai_tool": [
         [
           {
-            "node": "Calendar Manager",
+            "node": "Productivity Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Productivity Manager": {
+      "main": [
+        [
+          {
+            "node": "Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Weekly Goal in Todoist": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Manager",
             "type": "ai_tool",
             "index": 0
           }
@@ -390,6 +379,7 @@
     },
     {
       "parameters": {
+        "model": "gpt-3.5-turbo",
         "options": {
           "frequencyPenalty": 0.2,
           "maxTokens": 1800,
@@ -455,7 +445,7 @@
       "typeVersion": 1.2,
       "position": [
         960,
-        416
+        464
       ],
       "id": "5fa208a8-c19a-420e-996a-9b2cd7811143",
       "name": "Search Events",
@@ -485,8 +475,8 @@
       "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.2,
       "position": [
-        1072,
-        416
+        1088,
+        464
       ],
       "id": "5c06a7f7-f516-4165-bb13-1c29e950fe71",
       "name": "Create Event",
@@ -518,8 +508,8 @@
       "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.2,
       "position": [
-        1184,
-        416
+        1216,
+        464
       ],
       "id": "d7191ea2-9b86-4044-9355-dd4979ebebba",
       "name": "Update Event",
@@ -532,51 +522,18 @@
     },
     {
       "parameters": {
-        "promptType": "define",
-        "text": "={{ $json.text }}",
-        "hasOutputParser": true,
-        "options": {
-          "systemMessage": "=<AgentInstructions>\n    <Role>\n        <Name>Productivity Manager</Name>\n        <Description>Manages calendar events and tasks with intelligent cross-system synchronization, visual goal tracking, and bidirectional conversions between Google Calendar and Todoist.</Description>\n        <currentDate>{{$now}}</currentDate>\n        \n        <!-- Cross-System Operations -->\n        <Instruction>\n            For synchronization requests: \"Block time for task\" → Get task + Check availability + Create event | \"Convert meeting to task\" → Get event + Create task | \"Event to task\" → Extract event info + Create Todoist task | \"Task to event\" → Extract task info + Create calendar event | Always confirm cross-system changes before execution.\n        </Instruction>\n        <Instruction>\n            CRITICAL: Always use actual tools - never simulate or describe actions:\n            • For task creation: MUST use \"Create Weekly Goal in Todoist\", \"Create Monthly Goal in Todoist\", or \"Create Inbox Task in Todoist\" tools\n            • For task updates: MUST use \"Update a Task in Todoist\" tool  \n            • For calendar events: MUST use \"Search Events\", \"Create Event\", \"Update Event\" tools\n            • Never respond with \"Created task\" or \"Updated event\" unless tool was actually executed\n            • get many and get action tools must also be always excecuted. \n            • If tool execution fails, report the error - do not pretend success\n            • Never use memory as a replacement for tools\n        </Instruction>\n    </Role>\n\n    <!-- Calendar Operations -->\n    <SubRole>\n        <Name>Calendar Event Manager</Name>\n        \n        <Instruction>New events: Use \"Search Events\" for conflicts → If conflicts exist, provide alternatives → If none, use \"Create Event\" immediately.</Instruction>\n        \n        <Instruction>Event updates: \"Search Events\" to find eventID → Confirm details → \"Update Event\" → Summarize changes.</Instruction>\n        \n        <Instruction>Event info: Parse dates as \"YYYY-MM-DD 00:00:00\" to \"YYYY-MM-DD 23:59:59\" → \"Search Events\" → Present concise list (time, title, participants).</Instruction>\n        \n        <Instruction>Event deletion: \"Search Events\" to find → Confirm with user → \"Delete Event\" → Confirm deletion.</Instruction>\n    </SubRole>\n\n    <!-- Task Operations -->\n    <SubRole>\n        <Name>Task Manager</Name>\n        \n        <Instruction>\n            Task creation: Determine project (Weekly Goals: ≤7 days, Monthly Goals: ≤30 days, Inbox: daily/immediate) → Use appropriate \"Create\" tool → Always provide fields:\n            • Label: [\"@work\", \"@urgent\"] (contextual labels)\n            • Content: \"🎯 Task title\" (with emoji: 🎯 objectives, 📈 metrics, 🏆 achievements, 🚀 projects, 💡 ideas, 📋 planning)\n            • Description: Detailed context and approach\n            • DueString: \"today\", \"tomorrow\", \"next Friday\" (natural language)\n            • Priority: 1-4 (1=🔴 urgent, 2=🟡 high, 3=🟢 medium, 4=⚪ low)\n        </Instruction>\n        \n        <Instruction>\n            Task updates: \"Get a task\" with TaskId OR \"Get many tasks\" with Project → For completion: \"Close a task\" with TaskId → For changes: \"Update a Task\" with TaskID + updated fields → Show status with ✅⏳⚠️📅 indicators.\n        </Instruction>\n        \n        <Instruction>Task info: \"Get many tasks\" with Project (\"Weekly Goals\", \"Monthly Goals\", \"Inbox\") → Present with visual indicators and priority levels.</Instruction>\n        \n        <Instruction>Task deletion: Find task via \"Get many tasks\" or \"Get a task\" → Confirm details → \"Delete a task\" with TaskId → Confirm deletion.</Instruction>\n    </SubRole>\n\n    <!-- Response Format -->\n        <Instruction>\n            Response sequence: 1) Execute tool first, 2) Then provide formatted response based on actual tool results\n            • Example: Use \"Create Weekly Goal in Todoist\" → THEN respond \"✅ Created task: 🎯 Complete certification\"\n            • Never provide success confirmation without actual tool execution\n            • If tool fails, explain the error and ask for clarification\n        </Instruction>\n\n    <!-- Tools Verification -->\n        <Instruction>\n            After each tool execution:\n            • Verify the tool returned success confirmation\n            • If tool returns error, troubleshoot or ask user for help\n            • Only confirm success if tool actually succeeded\n            • For task creation, mention the task ID if returned by tool\n        </Instruction>\n\n    <Safety>\n        Confirm before deleting | Ask for clarification on ambiguous requests | Show what will be created/modified before cross-system execution | Verify project existence before task creation.\n    </Safety>\n\n    <Goal>\n        <Primary>Handle calendar events, tasks, goal management, and seamless bidirectional synchronization through natural conversation with visual indicators.</Primary>\n    </Goal>\n\n    <Tools>\n        1) Search Events, 2) Create Event, 3) Update Event, 4) Create Weekly Goal in Todoist, 5) Create Inbox Task in Todoist, 6) Get a task in Todoist, 7) Delete a task in Todoist, 8) Create Monthly Goal in Todoist, 9) Update a Task in Todoist, 10) Get many tasks in Todoist, 11) Close a task in Todoist\n    </Tools>\n</AgentInstructions>"
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 1.7,
-      "position": [
-        400,
-        176
-      ],
-      "id": "fffaba39-1087-4fec-b360-67c103989123",
-      "name": "Calendar Manager"
-    },
-    {
-      "parameters": {
-        "sessionIdType": "customKey",
-        "sessionKey": "={{$('Telegram Trigger').item.json.message.chat.id}}",
-        "contextWindowLength": 10
-      },
-      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
-      "typeVersion": 1.3,
-      "position": [
-        32,
-        512
-      ],
-      "id": "d7e3a00c-8884-4b26-accf-f99046bf7c42",
-      "name": "Memory"
-    },
-    {
-      "parameters": {
         "project": {
           "__rl": true,
           "value": "2360779983",
           "mode": "list",
           "cachedResultName": "Monthly Goals"
         },
-        "labels": "={{ $fromAI('Label','the label names of the task') }}",
+        "labels": "={{ $fromAI('Label') && $fromAI('Label').trim() !== '' ? $fromAI('Label').split(',').map((s) => s.trim()) : undefined }}",
         "content": "={{ $fromAI('Content','the content or objective details of the task') }}",
         "options": {
           "description": "={{ $fromAI('Description','A short description of the task') }}",
           "dueString": "={{ $fromAI('DueString','when the task is due') }}",
-          "priority": "={{ $fromAI('Priority','the priority of the task from 1 to 4') }}"
+          "priority": "={{ $fromAI('Priority','the priority of the task') }}"
         }
       },
       "type": "n8n-nodes-base.todoistTool",
@@ -598,47 +555,16 @@
       "parameters": {
         "project": {
           "__rl": true,
-          "value": "2360780016",
-          "mode": "list",
-          "cachedResultName": "Weekly Goals"
-        },
-        "labels": "={{ $fromAI('Label','the label names of the task') }}",
-        "content": "={{ $fromAI('Content','the content or objective details of the task') }}",
-        "options": {
-          "description": "={{ $fromAI('Description','A short description of the task') }}",
-          "dueString": "={{ $fromAI('DueString','when the task is due') }}",
-          "priority": "={{ $fromAI('Priority','the priority of the task from 1 to 4') }}"
-        }
-      },
-      "type": "n8n-nodes-base.todoistTool",
-      "typeVersion": 2.1,
-      "position": [
-        176,
-        464
-      ],
-      "id": "88df4287-db1f-42cc-8038-a4b0445931f6",
-      "name": "Create Weekly Goal in Todoist",
-      "credentials": {
-        "todoistApi": {
-          "id": "0e5FBGaHXik0sBQC",
-          "name": "Todoist account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "project": {
-          "__rl": true,
           "value": "2360667327",
           "mode": "list",
           "cachedResultName": "Inbox"
         },
-        "labels": "={{ $fromAI('Label','the label names of the task') }}",
+        "labels": "={{ $fromAI('Label') && $fromAI('Label').trim() !== '' ? $fromAI('Label').split(',').map((s) => s.trim()) : undefined }}",
         "content": "={{ $fromAI('Content','the content or objective details of the task') }}",
         "options": {
           "description": "={{ $fromAI('Description','A short description of the task') }}",
           "dueString": "={{ $fromAI('DueString','when the task is due') }}",
-          "priority": "={{ $fromAI('Priority','the priority of the task from 1 to 4') }}"
+          "priority": "={{ $fromAI('Priority','the priority of the task') }}"
         }
       },
       "type": "n8n-nodes-base.todoistTool",
@@ -680,7 +606,7 @@
       "parameters": {
         "operation": "getAll",
         "filters": {
-          "projectId": "={{ $fromAI('Project', 'the name of the project to search from') }}"
+          "projectId": "={{ $fromAI('ProjectID', 'The ID of the project') }}"
         }
       },
       "type": "n8n-nodes-base.todoistTool",
@@ -706,8 +632,8 @@
           "content": "={{ $fromAI('Content','the content or objective details of the task') }}",
           "description": "={{ $fromAI('Description','A short description of the task') }}",
           "dueString": "={{ $fromAI('DueString','when the task is due') }}",
-          "labels": "={{ $fromAI('Label','the label name of the task') }}",
-          "priority": "={{ $fromAI('Priority','the priority of the task from 1 to 4') }}"
+          "labels": "={{ $fromAI('Label') && $fromAI('Label').trim() !== '' ? $fromAI('Label').split(',').map((s) => s.trim()) : undefined }}",
+          "priority": "={{ $fromAI('Priority','the priority of the task from P1 to P4') }}"
         }
       },
       "type": "n8n-nodes-base.todoistTool",
@@ -764,6 +690,54 @@
           "name": "Todoist account"
         }
       }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "=<AgentInstructions>\n    <Role>\n        <Name>Productivity Manager</Name>\n        <Description>Manages calendar events and tasks with intelligent cross-system synchronization, visual goal tracking, and bidirectional conversions between Google Calendar and Todoist.</Description>\n        <currentDate>{{$now}}</currentDate>\n        \n        <!-- Cross-System Operations -->\n        <Instruction>\n            For synchronization requests: \"Block time for task\" → Get task + Check availability + Create event | \"Convert meeting to task\" → Get event + Create task | \"Event to task\" → Extract event info + Create Todoist task | \"Task to event\" → Extract task info + Create calendar event | Always confirm cross-system changes before execution.\n        </Instruction>\n        <Instruction>\n            CRITICAL: Always use actual tools - never simulate or describe actions:\n            • For task creation: MUST use \"Create Weekly Goal in Todoist\", \"Create Monthly Goal in Todoist\", or \"Create Inbox Task in Todoist\" tools\n            • For task updates: MUST use \"Update a Task in Todoist\" tool  \n            • For calendar events: MUST use \"Search Events\", \"Create Event\", \"Update Event\" tools\n            • Never respond with \"Created task\" or \"Updated event\" unless tool was actually executed\n            • get many and get action tools must also be always excecuted. \n            • If tool execution fails, report the error - do not pretend success\n            • Never use memory as a replacement for tools\n        </Instruction>\n    </Role>\n\n    <!-- Calendar Operations -->\n    <SubRole>\n        <Name>Calendar Event Manager</Name>\n        \n        <Instruction>New events: Use \"Search Events\" for conflicts → If conflicts exist, provide alternatives → If none, use \"Create Event\" immediately.</Instruction>\n        \n        <Instruction>Event updates: \"Search Events\" to find eventID → Confirm details → \"Update Event\" → Summarize changes.</Instruction>\n        \n        <Instruction>Event info: Parse dates as \"YYYY-MM-DD 00:00:00\" to \"YYYY-MM-DD 23:59:59\" → \"Search Events\" → Present concise list (time, title, participants).</Instruction>\n        \n        <Instruction>Event deletion: \"Search Events\" to find → Confirm with user → \"Delete Event\" → Confirm deletion.</Instruction>\n    </SubRole>\n\n    <!-- Task Operations -->\n    <SubRole>\n        <Name>Task Manager</Name>\n        \n        <Instruction>\n            Task creation: Determine project (Weekly Goals: ≤7 days, Monthly Goals: ≤30 days, Inbox: daily/immediate) → Use appropriate \"Create\" tool → Always provide fields:\n            • Label: Check <LabelsHandling> for proper format\n            • Content: \"🎯 Task title\" (with emoji: 🎯 objectives, 📈 metrics, 🏆 achievements, 🚀 projects, 💡 ideas, 📋 planning)\n            • Description: If not provided, infer from the content. If unclear, leave empty\n            • DueString: \"today\", \"tomorrow\", \"next Friday\" (natural language). If not provided, always ask\n            • Priority: P1-P4 (P1=🔴 urgent, P2=🟡 high, P3=🟢 medium, P4=⚪ low). If not provided always ask\n              Priority mapping (API uses reversed numbering from web app):\n                • For urgent tasks → Priority: 4 (equivalent to P1 🔴)\n                • For high priority → Priority: 3 (equivalent to P2 🟡)  \n                • For medium priority → Priority: 2 (equivalent to P3 🟢)\n                • For normal/low → Priority: 1 (equivalent to P4 ⚪)\n        </Instruction>\n        \n        <Instruction>\n            Task updates: \"Get a task\" with TaskId OR \"Get many tasks\" with Project → For completion: \"Close a task\" with TaskId → For changes: \"Update a Task\" with TaskID + updated fields → Show status with ✅⏳⚠️📅 indicators.\n        </Instruction>\n        <Instruction>\n            Task info: \n            • \"Show me my inbox\" → Use \"Get many tasks\" from Inbox project  \n            • \"What's in my inbox\" → Get Todoist Inbox tasks\n            • Never assume they mean email inbox\"Get many tasks\" → Reference <ProjectIDs> to provide correct ProjectID value → Present with visual indicators and priority levels.\n        </Instruction>\n        \n        <Instruction>\n            Task deletion: Find task via \"Get many tasks\" or \"Get a task\" → Confirm details → \"Delete a task\" with TaskId → Confirm deletion.\n        </Instruction>\n\n        <ProjectIDs>\n            • Weekly Goals: \"6f26m8fgVWX954hr\"\n            • Monthly Goals: \"6f26m4h5fVvr2m9c\"  \n            • Inbox: \"\"\n        </ProjectIDs>\n\n        <LabelsHandling>\n            <!-- Due to n8n Todoist node limitations, use conditional comma-separated format -->\n        \n            <WhenToApplyLabels>\n                Apply labels only when clearly inferable from task content:\n                • Work-related content → \"work\"\n                • Personal/family content → \"personal\"  \n                • Time-critical (today/tomorrow) → \"urgent\"\n                • Regular habits → \"routine\"\n                • Requires phone calls → \"phone\"\n                • Computer/digital work → \"computer\"\n                • Shopping/errands → \"errands\"\n                • Waiting for others → \"waiting\"\n            </WhenToApplyLabels>\n            \n            <LabelFormat>\n                • Multiple labels: \"Label\": \"work,urgent,computer\"\n                • Single label: \"Label\": \"personal\"\n                • No clear labels: \"Label\": \"\"\n            </LabelFormat>\n            \n            <Examples>\n                • \"Call dentist appointment\" → \"Label\": \"personal,phone\"\n                • \"Finish quarterly report by Friday\" → \"Label\": \"work,urgent,computer\"  \n                • \"Buy groceries\" → \"Label\": \"personal,errands\"\n                • \"Some unclear task\" → \"Label\": \"\"\n            </Examples>\n        </LabelsHandling>\n    </SubRole>\n\n    <!-- Response Format -->\n        <Instruction>\n            Response sequence: 1) Execute tool first, 2) Then provide formatted response based on actual tool results\n            • Example: Use \"Create Weekly Goal in Todoist\" → THEN respond \"✅ Created task: 🎯 Complete certification\"\n            • Never provide success confirmation without actual tool execution\n            • If tool fails, explain the error and ask for clarification\n        </Instruction>\n\n    <!-- Tools Verification -->\n        <Instruction>\n            After each tool execution:\n            • Verify the tool returned success confirmation\n            • If tool returns error, troubleshoot or ask user for help\n            • Only confirm success if tool actually succeeded\n            • For task creation, mention the task ID if returned by tool\n        </Instruction>\n\n    <Safety>\n        Confirm before deleting | Ask for clarification on ambiguous requests | Show what will be created/modified before cross-system execution | Verify project existence before task creation.\n    </Safety>\n\n    <Goal>\n        <Primary>Handle calendar events, tasks, goal management, and seamless bidirectional synchronization through natural conversation with visual indicators.</Primary>\n    </Goal>\n\n    <Tools>\n        1) Search Events, 2) Create Event, 3) Update Event, 4) Create Weekly Goal in Todoist, 5) Create Inbox Task in Todoist, 6) Get a task in Todoist, 7) Delete a task in Todoist, 8) Create Monthly Goal in Todoist, 9) Update a Task in Todoist, 10) Get many tasks in Todoist, 11) Close a task in Todoist\n    </Tools>\n</AgentInstructions>"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        400,
+        176
+      ],
+      "id": "fffaba39-1087-4fec-b360-67c103989123",
+      "name": "Productivity Manager"
+    },
+    {
+      "parameters": {
+        "project": {
+          "__rl": true,
+          "value": "2360780016",
+          "mode": "list",
+          "cachedResultName": "Weekly Goals"
+        },
+        "labels": "={{ $fromAI('Label') && $fromAI('Label').trim() !== '' ? $fromAI('Label').split(',').map((s) => s.trim()) : undefined }}",
+        "content": "={{ $fromAI('Content','the content or objective details of the task') }}",
+        "options": {
+          "description": "={{ $fromAI('Description','A short description of the task') }}",
+          "dueString": "={{ $fromAI('DueString','when the task is due') }}",
+          "priority": "={{ $fromAI('Priority','the priority of the task') }}"
+        }
+      },
+      "type": "n8n-nodes-base.todoistTool",
+      "typeVersion": 2.1,
+      "position": [
+        176,
+        464
+      ],
+      "id": "88df4287-db1f-42cc-8038-a4b0445931f6",
+      "name": "Create Weekly Goal in Todoist",
+      "credentials": {
+        "todoistApi": {
+          "id": "0e5FBGaHXik0sBQC",
+          "name": "Todoist account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -785,6 +759,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2025-09-29T16:45:22.000Z",
-  "versionId": "f87b554f-42ef-4eda-9cb8-24af6dd44a7a"
+  "updatedAt": "2025-09-30T14:56:58.000Z",
+  "versionId": "490630cb-fe85-4a1f-921a-bfc1790ac308"
 }
