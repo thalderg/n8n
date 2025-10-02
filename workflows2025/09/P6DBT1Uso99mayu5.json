@@ -134,17 +134,6 @@
           }
         ]
       ]
-    },
-    "Create a task in Todoist": {
-      "ai_tool": [
-        [
-          {
-            "node": "Calendar Manager",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
   "createdAt": "2025-09-16T10:15:28.675Z",
@@ -483,24 +472,6 @@
       ],
       "id": "89465151-baee-4299-a749-07de72ddc9ef",
       "name": "Memory"
-    },
-    {
-      "parameters": {
-        "project": {
-          "__rl": true,
-          "mode": "list",
-          "value": ""
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.todoistTool",
-      "typeVersion": 2.1,
-      "position": [
-        528,
-        384
-      ],
-      "id": "78ec45c2-9212-4244-b0c7-8cd36544bf74",
-      "name": "Create a task in Todoist"
     }
   ],
   "pinData": {},
@@ -522,6 +493,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2025-09-28T18:12:15.000Z",
-  "versionId": "da6fd248-9e07-4cdc-8e97-6896261af585"
+  "updatedAt": "2025-10-02T13:41:15.000Z",
+  "versionId": "234d2f40-ad94-45b9-b7d9-741401b1120c"
 }
