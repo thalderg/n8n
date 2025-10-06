@@ -1,0 +1,767 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Productivity Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Productivity Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Productivity Manager",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Events": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram1": {
+      "main": [
+        []
+      ]
+    },
+    "Create Monthly Goal in Todoist": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Inbox Task in Todoist": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a task in Todoist": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many tasks in Todoist": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a Task in Todoist": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a task in Todoist": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Close a task in Todoist": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Productivity Manager": {
+      "main": [
+        [
+          {
+            "node": "Telegram1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Weekly Goal in Todoist": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Manager",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-10-06T09:56:34.648Z",
+  "id": "WHBxwz9Q2hU6tews",
+  "isArchived": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Productivity Manager 2.0",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {},
+        "path": "c1f84551-2b6d-4c83-ba8e-4a0d4cd9e16d"
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -608,
+        128
+      ],
+      "id": "c8a4e514-98da-4497-adab-a45f0232571b",
+      "name": "Telegram Trigger",
+      "webhookId": "c1f84551-2b6d-4c83-ba8e-4a0d4cd9e16d",
+      "credentials": {
+        "telegramApi": {
+          "id": "CtMYqp19WyE0XY9E",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    },
+                    "id": "ff5e1442-1f1a-412e-8b15-437d9cf3b58b"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a6d6da92-8272-4f6f-97be-7b733fc5b6d2",
+                    "leftValue": "={{ $json.message.voice.file_id }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "exists",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "voice"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -416,
+        128
+      ],
+      "id": "4e590501-360e-41cb-8a8f-f86a8aa47647",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "13f27e1a-8d2b-4e19-afe4-ee282c5098a7",
+              "name": "=text",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -176,
+        32
+      ],
+      "id": "f12648fe-1d45-4889-b538-06ff157cd114",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {},
+        "path": "60c85e24-127b-4166-9353-28e9dbe6fac4"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        -192,
+        272
+      ],
+      "id": "52d8cf4b-f883-4141-9689-b911fbedc667",
+      "name": "Telegram",
+      "webhookId": "60c85e24-127b-4166-9353-28e9dbe6fac4",
+      "credentials": {
+        "telegramApi": {
+          "id": "CtMYqp19WyE0XY9E",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        32,
+        272
+      ],
+      "id": "7e651691-3750-4a11-99e6-e1df6cf0c80e",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "fcIDL6mBCr4eAnxg",
+          "name": "OpenAi voice to text"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4.1-mini",
+        "options": {
+          "frequencyPenalty": 0.2,
+          "maxTokens": 1800,
+          "presencePenalty": 0,
+          "temperature": 0.1,
+          "timeout": 45000,
+          "maxRetries": 3,
+          "topP": 0.9
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        -96,
+        512
+      ],
+      "id": "f7e00225-e210-4d57-ae04-93eab306a2fe",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "fcIDL6mBCr4eAnxg",
+          "name": "OpenAi voice to text"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {},
+        "path": "1334d25c-b055-431f-88bf-f2e5be92a2ed"
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1072,
+        176
+      ],
+      "id": "7c32ffcd-8b28-416f-8248-a06ce4b5f836",
+      "name": "Telegram1",
+      "webhookId": "1334d25c-b055-431f-88bf-f2e5be92a2ed",
+      "credentials": {
+        "telegramApi": {
+          "id": "CtMYqp19WyE0XY9E",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "giopag81@gmail.com",
+          "mode": "list",
+          "cachedResultName": "giopag81@gmail.com"
+        },
+        "options": {
+          "timeMin": "={{ $fromAI('StartDate','the start date and time for fetching events') }}",
+          "timeMax": "={{ $fromAI('EndDate','the end date and time for fetching events') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.2,
+      "position": [
+        1040,
+        464
+      ],
+      "id": "dadb92b1-8e9d-4945-bda7-89013ccea873",
+      "name": "Search Events",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "RDxm6PWdrRguEIuu",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Creates Google Calendar Events",
+        "calendar": {
+          "__rl": true,
+          "value": "giopag81@gmail.com",
+          "mode": "list",
+          "cachedResultName": "giopag81@gmail.com"
+        },
+        "start": "={{ $fromAI('StartDate','the start date and time for creating events') }}",
+        "end": "={{ $fromAI('EndDate','the end date and time for creating events') }}",
+        "additionalFields": {
+          "summary": "={{ $fromAI('eventName','the name used for creating new events') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.2,
+      "position": [
+        1168,
+        464
+      ],
+      "id": "dab8ae43-46e7-4de7-bc6c-7c41d0ab1a45",
+      "name": "Create Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "RDxm6PWdrRguEIuu",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Update Google Calendar Event",
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "giopag81@gmail.com",
+          "mode": "list",
+          "cachedResultName": "giopag81@gmail.com"
+        },
+        "eventId": "={{ $fromAI('eventID','the event ID of the event needing updated') }}",
+        "updateFields": {
+          "end": "={{ $fromAI('updatedEnd','the updated end time and day of the event') }}",
+          "start": "={{ $fromAI('updatedStart','the updated start time and day of the event') }}",
+          "summary": "={{ $fromAI('eventName','the updated name of the event') }}"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.2,
+      "position": [
+        1296,
+        464
+      ],
+      "id": "0f40fafe-3403-4afa-ba1f-a1c41ee146b0",
+      "name": "Update Event",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "RDxm6PWdrRguEIuu",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "project": {
+          "__rl": true,
+          "value": "2360779983",
+          "mode": "list",
+          "cachedResultName": "Monthly Goals"
+        },
+        "labels": "={{ $fromAI('Label') && $fromAI('Label').trim() !== '' ? $fromAI('Label').split(',').map((s) => s.trim()) : undefined }}",
+        "content": "={{ $fromAI('Content','the content or objective details of the task') }}",
+        "options": {
+          "description": "={{ $fromAI('Description','A short description of the task') }}",
+          "dueString": "={{ $fromAI('DueString','when the task is due') }}",
+          "priority": "={{ $fromAI('Priority','the priority of the task') }}"
+        }
+      },
+      "type": "n8n-nodes-base.todoistTool",
+      "typeVersion": 2.1,
+      "position": [
+        272,
+        592
+      ],
+      "id": "ce243fd4-9145-4fd6-a989-8af12ba22186",
+      "name": "Create Monthly Goal in Todoist",
+      "credentials": {
+        "todoistApi": {
+          "id": "0e5FBGaHXik0sBQC",
+          "name": "Todoist account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "project": {
+          "__rl": true,
+          "value": "2360667327",
+          "mode": "list",
+          "cachedResultName": "Inbox"
+        },
+        "labels": "={{ $fromAI('Label') && $fromAI('Label').trim() !== '' ? $fromAI('Label').split(',').map((s) => s.trim()) : undefined }}",
+        "content": "={{ $fromAI('Content','the content or objective details of the task') }}",
+        "options": {
+          "description": "={{ $fromAI('Description','A short description of the task') }}",
+          "dueString": "={{ $fromAI('DueString','when the task is due') }}",
+          "priority": "={{ $fromAI('Priority','the priority of the task') }}"
+        }
+      },
+      "type": "n8n-nodes-base.todoistTool",
+      "typeVersion": 2.1,
+      "position": [
+        368,
+        464
+      ],
+      "id": "e606c5ab-84df-4bf2-95a0-06dd67808b05",
+      "name": "Create Inbox Task in Todoist",
+      "credentials": {
+        "todoistApi": {
+          "id": "0e5FBGaHXik0sBQC",
+          "name": "Todoist account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "taskId": "={{ $fromAI('TaskId', 'The ID of the task to retrieve') }}"
+      },
+      "type": "n8n-nodes-base.todoistTool",
+      "typeVersion": 2.1,
+      "position": [
+        576,
+        464
+      ],
+      "id": "76a21016-d3f3-4c99-ad0f-c5c51baf570c",
+      "name": "Get a task in Todoist",
+      "credentials": {
+        "todoistApi": {
+          "id": "0e5FBGaHXik0sBQC",
+          "name": "Todoist account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "filters": {
+          "projectId": "={{ $fromAI('ProjectID', 'The ID of the project') }}"
+        }
+      },
+      "type": "n8n-nodes-base.todoistTool",
+      "typeVersion": 2.1,
+      "position": [
+        656,
+        576
+      ],
+      "id": "b1a1c967-433e-4ebc-9aaa-dcde289963c7",
+      "name": "Get many tasks in Todoist",
+      "credentials": {
+        "todoistApi": {
+          "id": "0e5FBGaHXik0sBQC",
+          "name": "Todoist account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "taskId": "={{ $fromAI ('TaskID', 'The ID of the task to update') }}",
+        "updateFields": {
+          "content": "={{ $fromAI('Content','the content or objective details of the task') }}",
+          "description": "={{ $fromAI('Description','A short description of the task') }}",
+          "dueString": "={{ $fromAI('DueString','when the task is due') }}",
+          "labels": "={{ $fromAI('Label') && $fromAI('Label').trim() !== '' ? $fromAI('Label').split(',').map((s) => s.trim()) : undefined }}",
+          "priority": "={{ $fromAI('Priority','the priority of the task from P1 to P4') }}"
+        }
+      },
+      "type": "n8n-nodes-base.todoistTool",
+      "typeVersion": 2.1,
+      "position": [
+        480,
+        576
+      ],
+      "id": "60598a06-c651-45c5-aecc-de53dc4c28e6",
+      "name": "Update a Task in Todoist",
+      "credentials": {
+        "todoistApi": {
+          "id": "0e5FBGaHXik0sBQC",
+          "name": "Todoist account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "taskId": "={{ $fromAI('TaskId', 'The ID of the task to delete') }}"
+      },
+      "type": "n8n-nodes-base.todoistTool",
+      "typeVersion": 2.1,
+      "position": [
+        736,
+        464
+      ],
+      "id": "a9bf9e0c-3df6-482c-830d-5afb0a3281de",
+      "name": "Delete a task in Todoist",
+      "credentials": {
+        "todoistApi": {
+          "id": "0e5FBGaHXik0sBQC",
+          "name": "Todoist account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "close",
+        "taskId": "={{ $fromAI('TaskId', 'The ID of the task to close') }}"
+      },
+      "type": "n8n-nodes-base.todoistTool",
+      "typeVersion": 2.1,
+      "position": [
+        848,
+        560
+      ],
+      "id": "491a809f-4ca1-4f59-8da2-28842b7614bd",
+      "name": "Close a task in Todoist",
+      "credentials": {
+        "todoistApi": {
+          "id": "0e5FBGaHXik0sBQC",
+          "name": "Todoist account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "options": {
+          "systemMessage": "=<AgentInstructions>\n    <Role>\n        <Name>Productivity Manager</Name>\n        <Description>Always respond in English. Manages calendar events and tasks with intelligent cross-system synchronization, visual goal tracking, and bidirectional conversions between Google Calendar and Todoist.</Description>\n        <currentDate>{{$now}}</currentDate>\n        \n        <!-- Cross-System Operations -->\n        <Instruction>\n            For synchronization requests: \"Block time for task\" → Get task + Check availability + Create event | \"Convert meeting to task\" → Get event + Create task | \"Event to task\" → Extract event info + Create Todoist task | \"Task to event\" → Extract task info + Create calendar event | Always confirm cross-system changes before execution.\n        </Instruction>\n        <Instruction>\n            CRITICAL: Always use actual tools - never simulate or describe actions:\n            • For task creation: MUST use \"Create Weekly Goal in Todoist\", \"Create Monthly Goal in Todoist\", or \"Create Inbox Task in Todoist\" tools\n            • For task updates: MUST use \"Update a Task in Todoist\" tool  \n            • For calendar events: MUST use \"Search Events\", \"Create Event\", \"Update Event\" tools\n            • Never respond with \"Created task\" or \"Updated event\" unless tool was actually executed\n            • get many and get action tools must also be always excecuted. \n            • If tool execution fails, report the error - do not pretend success\n            • Never use memory as a replacement for tools\n        </Instruction>\n    </Role>\n\n    <!-- Calendar Operations -->\n    <SubRole>\n        <Name>Calendar Event Manager</Name>\n        \n        <Instruction>New events: Use \"Search Events\" for conflicts → If conflicts exist, provide alternatives → If none, use \"Create Event\" immediately.</Instruction>\n        \n        <Instruction>Event updates: \"Search Events\" to find eventID → Confirm details → \"Update Event\" → Summarize changes.</Instruction>\n        \n        <Instruction>Event info: Parse dates as \"YYYY-MM-DD 00:00:00\" to \"YYYY-MM-DD 23:59:59\" → \"Search Events\" → Present concise list (time, title, participants).</Instruction>\n        \n        <Instruction>Event deletion: \"Search Events\" to find → Confirm with user → \"Delete Event\" → Confirm deletion.</Instruction>\n    </SubRole>\n\n    <!-- Task Operations -->\n    <SubRole>\n        <Name>Task Manager</Name>\n        \n        <Instruction>\n            Task creation: Determine project (Weekly Goals: ≤7 days, Monthly Goals: ≤30 days, Inbox: daily/immediate) → Use appropriate \"Create\" tool → Always provide fields:\n            • Label: Check <LabelsHandling> for proper format\n            • Content: \"🎯 Task title\" (with emoji: 🎯 objectives, 📈 metrics, 🏆 achievements, 🚀 projects, 💡 ideas, 📋 planning)\n            • Description: If not provided, infer from the content. If unclear, leave empty\n            • DueString: \"today\", \"tomorrow\", \"next Friday\" (natural language). If not provided, always ask\n            • Priority: P1-P4 (P1=🔴 urgent, P2=🟡 high, P3=🟢 medium, P4=⚪ low). If not provided always P3=🟢 medium. Use <PriorityMap> to assign priority. \n            Use <OutputFormat> to display the created task\n              \n        </Instruction>\n    \n    \n        <Instruction>\n            Task updates: IF requested to change or update a task, \"Get a task\" with TaskId OR \"Get many tasks\" with Project → For completion: \"Close a task in Todoist\" with TaskId → For changes: \"Update a Task in Todoist\" with TaskID + updated fields → use <OutputFormat> in dysplauying the updated task.\n        </Instruction>\n\n<!-- Task info request -->\n        <Instruction>\n            Task info requests - Smart routing:\n            <QueryRouting>\n                • Goal-focused: (\"my weekly goals\", \"monthly objectives\", \"by end of week/month\") → Use <ProjectQueries> ONLY\n                • Date-focused: (\"due today\", \"overdue\", \"Friday\", \"today\", \"tomorrow\") → Use \"Get many tasks in Todoist\" with ProjectID: \"\" then manually filter by checking actual due dates in the response\n            </QueryRouting>\n            Present all results with visual indicators and priority levels as indicated in <outputFormat>\n        </Instruction>\n\n        <ProjectQueries>\n            Direct project access (single step):\n            • Weekly goals → \"Get many tasks in Todoist\" with ProjectID: \"6f26m8fgVWX954hr\"\n            • Monthly goals → \"Get many tasks in Todoist\" with ProjectID: \"6f26m4h5fVvr2m9c\"  \n            • All goals → \"Get many tasks in Todoist\" from both projects\n        </ProjectQueries>\n\n        <Instruction>\n            Task deletion: Find task via \"Get many tasks\" or \"Get a task\" → Confirm details → \"Delete a task\" with TaskId → Confirm deletion.\n        </Instruction>\n\n        <PriorityMap>\n            • For urgent tasks → Priority: 4 (equivalent to P1 🔴)\n            • For high priority → Priority: 3 (equivalent to P2 🟡)  \n            • For medium priority → Priority: 2 (equivalent to P3 🟢)\n            • For normal/low → Priority: 1 (equivalent to P4 ⚪)\n        </PriorityMap>\n\n        <LabelsHandling>\n            <!-- Due to n8n Todoist node limitations, use conditional comma-separated format -->\n        \n            <WhenToApplyLabels>\n                Apply labels only when clearly inferable from task content using <labelFormat>:\n                • Work-related content → \"work\"\n                • Personal/family content → \"personal\"  \n                • Time-critical (today/tomorrow) → \"urgent\"\n                • Regular habits → \"routine\"\n                • Requires phone calls → \"phone\"\n                • Computer/digital work → \"computer\"\n                • Shopping/errands → \"errands\"\n                • Waiting for others → \"waiting\"\n            </WhenToApplyLabels>\n            \n            <LabelFormat>\n                • Multiple labels: \"Label\": \"work,urgent,computer\"\n                • Single label: \"Label\": \"personal\"\n                • No clear labels: \"Label\": \"\"\n            </LabelFormat>\n            \n            <Examples>\n                • \"Call dentist appointment\" → \"Label\": \"personal,phone\"\n                • \"Finish quarterly report by Friday\" → \"Label\": \"work,urgent,computer\"  \n                • \"Buy groceries\" → \"Label\": \"personal,errands\"\n                • \"Some unclear task\" → \"Label\": \"\"\n            </Examples>\n        </LabelsHandling>\n    </SubRole>\n\n    <!-- Response Format -->\n        <Instruction>\n            Response sequence: 1) Execute tool first, 2) Then provide formatted response based on actual tool results\n            • Example: Use \"Create Weekly Goal in Todoist\" → THEN respond \" ✅ Created task: 🎯 Complete certification using <OutputFormat>\"\n            • Never provide success confirmation without actual tool execution\n            • If tool fails, explain the error and ask for clarification\n        </Instruction>\n\n    <!-- Tools Verification -->\n        <Instruction>\n            After each tool execution:\n            • Verify the tool returned success confirmation\n            • If tool returns error, troubleshoot or ask user for help\n            • Only confirm success if tool actually succeeded\n            • For task creation, mention the task ID if returned by tool\n        </Instruction>\n\n        <OutputFormat>\n            Whenever listing tasks or goals, use the following format with emoji, each in a separate row\n            <CurrentDate>\n                {{$now}}\n            </CurrentDate>\n            <Content>\n                First row emoji + content + \"Description: ...\" if any: \"🎯\" objectives, \"📈\" metrics, \"🏆\" achievements, \"🚀\" projects, \"💡\" ideas, \"📋\" planning\n            </Content>\n            <Label>\n                Labels after #. If single \"label\" If more than one \"#first label, #second label, #third label\" \n            </Labe,>\n            <Priority> \n                \"Priority: P1=🔴\" or \"Priority P2=🟡\" or \"Priority P3=🟢\" or \"Priority P4=⚪\"\n            </Priority>    \n            <Status> \n                <Status> \n                    Date comparison rules using current date {{$now}}:\n                    \n                    IF task.is_completed == true:\n                        RETURN \"Completed ✅\"\n                    ELSE IF task.due.date == \"{{$now}}\":\n                        RETURN \"Pending ⏳\"  \n                    ELSE IF task.due.date < \"{{$now}}\":\n                        RETURN \"Incomplete ⚠️\"\n                    ELSE IF task.due.date > \"{{$now}}\":\n                        RETURN \"YYYY/MM/DD 📅\"\n                    ELSE:\n                        RETURN \"Pending ⏳\"\n                </Status>\n            </Status> \n        </OutputFormat>\n        \n        <Safety>\n            Confirm before deleting | Ask for clarification on ambiguous requests | Show what will be created/modified before cross-system execution | Verify project existence before task creation.\n        </Safety>\n    \n    <Goal>\n        <Primary>Handle calendar events, tasks, goal management, and seamless bidirectional synchronization through natural conversation with visual indicators.</Primary>\n        <Important> \n            - Whenever requested what do I have for a specific day without specifying either tasks, goals or events, pull out from both calendar and Todoist inbox for that date using <OutputFormat>\n        </Important>\n    </Goal>\n\n    <Tools>\n        1) Search Events, 2) Create Event, 3) Update Event, 4) Create Weekly Goal in Todoist, 5) Create Inbox Task in Todoist, 6) Get a task in Todoist, 7) Delete a task in Todoist, 8) Create Monthly Goal in Todoist, 9) Update a Task in Todoist, 10) Get many tasks in Todoist, 11) Close a task in Todoist\n    </Tools>\n</AgentInstructions>"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        400,
+        176
+      ],
+      "id": "529c5367-7617-457d-bf14-0ef0d97e7324",
+      "name": "Productivity Manager"
+    },
+    {
+      "parameters": {
+        "project": {
+          "__rl": true,
+          "value": "2360780016",
+          "mode": "list",
+          "cachedResultName": "Weekly Goals"
+        },
+        "labels": "={{ $fromAI('Label') && $fromAI('Label').trim() !== '' ? $fromAI('Label').split(',').map((s) => s.trim()) : undefined }}",
+        "content": "={{ $fromAI('Content','the content or objective details of the task') }}",
+        "options": {
+          "description": "={{ $fromAI('Description','A short description of the task') }}",
+          "dueString": "={{ $fromAI('DueString','when the task is due') }}",
+          "priority": "={{ $fromAI('Priority','the priority of the task') }}"
+        }
+      },
+      "type": "n8n-nodes-base.todoistTool",
+      "typeVersion": 2.1,
+      "position": [
+        176,
+        464
+      ],
+      "id": "693b57f2-ad2c-43b6-8404-3730d141484b",
+      "name": "Create Weekly Goal in Todoist",
+      "credentials": {
+        "todoistApi": {
+          "id": "0e5FBGaHXik0sBQC",
+          "name": "Todoist account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "createdAt": "2025-10-06T09:56:34.657Z",
+      "updatedAt": "2025-10-06T09:56:34.657Z",
+      "role": "workflow:owner",
+      "workflowId": "WHBxwz9Q2hU6tews",
+      "projectId": "rwZmgF8pMPgWdXwq"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2025-10-06T09:56:34.000Z",
+  "versionId": "20b32f6f-1e76-4a6f-bf3e-0a74da615685"
+}
