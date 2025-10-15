@@ -216,7 +216,7 @@
       "main": [
         [
           {
-            "node": "Switch1",
+            "node": "Clarify",
             "type": "main",
             "index": 0
           }
@@ -251,6 +251,35 @@
           {
             "node": "Productivity Orchestrator",
             "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clarify": {
+      "main": [
+        [
+          {
+            "node": "Clarification Set",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Productivity Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clarification Set": {
+      "main": [
+        [
+          {
+            "node": "Telegram1",
+            "type": "main",
             "index": 0
           }
         ]
@@ -437,8 +466,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.1,
       "position": [
-        144,
-        512
+        128,
+        560
       ],
       "id": "f7e00225-e210-4d57-ae04-93eab306a2fe",
       "name": "OpenAI Chat Model",
@@ -458,8 +487,8 @@
       "type": "n8n-nodes-base.telegram",
       "typeVersion": 1.2,
       "position": [
-        1136,
-        160
+        1168,
+        144
       ],
       "id": "7c32ffcd-8b28-416f-8248-a06ce4b5f836",
       "name": "Telegram1",
@@ -489,7 +518,7 @@
       "typeVersion": 1.2,
       "position": [
         1136,
-        464
+        528
       ],
       "id": "dadb92b1-8e9d-4945-bda7-89013ccea873",
       "name": "Search Events",
@@ -519,8 +548,8 @@
       "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.2,
       "position": [
-        1248,
-        464
+        1280,
+        512
       ],
       "id": "dab8ae43-46e7-4de7-bc6c-7c41d0ab1a45",
       "name": "Create Event",
@@ -552,8 +581,8 @@
       "type": "n8n-nodes-base.googleCalendarTool",
       "typeVersion": 1.2,
       "position": [
-        1392,
-        464
+        1408,
+        512
       ],
       "id": "0f40fafe-3403-4afa-ba1f-a1c41ee146b0",
       "name": "Update Event",
@@ -583,8 +612,8 @@
       "type": "n8n-nodes-base.todoistTool",
       "typeVersion": 2.1,
       "position": [
-        352,
-        576
+        528,
+        592
       ],
       "id": "ce243fd4-9145-4fd6-a989-8af12ba22186",
       "name": "Create Monthly Goal in Todoist",
@@ -614,8 +643,8 @@
       "type": "n8n-nodes-base.todoistTool",
       "typeVersion": 2.1,
       "position": [
-        464,
-        464
+        448,
+        496
       ],
       "id": "e606c5ab-84df-4bf2-95a0-06dd67808b05",
       "name": "Create Inbox Task in Todoist",
@@ -635,7 +664,7 @@
       "typeVersion": 2.1,
       "position": [
         624,
-        464
+        496
       ],
       "id": "76a21016-d3f3-4c99-ad0f-c5c51baf570c",
       "name": "Get a task in Todoist",
@@ -656,8 +685,8 @@
       "type": "n8n-nodes-base.todoistTool",
       "typeVersion": 2.1,
       "position": [
-        736,
-        560
+        800,
+        496
       ],
       "id": "b1a1c967-433e-4ebc-9aaa-dcde289963c7",
       "name": "Get many tasks in Todoist",
@@ -683,7 +712,7 @@
       "type": "n8n-nodes-base.todoistTool",
       "typeVersion": 2.1,
       "position": [
-        544,
+        704,
         592
       ],
       "id": "60598a06-c651-45c5-aecc-de53dc4c28e6",
@@ -703,8 +732,8 @@
       "type": "n8n-nodes-base.todoistTool",
       "typeVersion": 2.1,
       "position": [
-        848,
-        464
+        896,
+        592
       ],
       "id": "a9bf9e0c-3df6-482c-830d-5afb0a3281de",
       "name": "Delete a task in Todoist",
@@ -723,8 +752,8 @@
       "type": "n8n-nodes-base.todoistTool",
       "typeVersion": 2.1,
       "position": [
-        976,
-        544
+        992,
+        512
       ],
       "id": "491a809f-4ca1-4f59-8da2-28842b7614bd",
       "name": "Close a task in Todoist",
@@ -738,16 +767,16 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "={{ $json.text }}",
+        "text": "={{ $json.output }}",
         "options": {
-          "systemMessage": "=<AgentInstructions>\n    <Role>\n        <Name>Productivity Manager</Name>\n        <Description>Always respond in English. Manages calendar events and tasks with intelligent cross-system synchronization, visual goal tracking, and bidirectional conversions between Google Calendar and Todoist.</Description>\n        <currentDate>{{$now}}</currentDate>\n        \n        <!-- Cross-System Operations -->\n        <Instruction>\n            For synchronization requests: \"Block time for task\" → Get task + Check availability + Create event | \"Convert meeting to task\" → Get event + Create task | \"Event to task\" → Extract event info + Create Todoist task | \"Task to event\" → Extract task info + Create calendar event | Always confirm cross-system changes before execution.\n        </Instruction>\n        <Instruction>\n            CRITICAL: Always use actual tools - never simulate or describe actions:\n            • For task creation: MUST use \"Create Weekly Goal in Todoist\", \"Create Monthly Goal in Todoist\", or \"Create Inbox Task in Todoist\" tools\n            • For task updates: MUST use \"Update a Task in Todoist\" tool  \n            • For calendar events: MUST use \"Search Events\", \"Create Event\", \"Update Event\" tools\n            • Never respond with \"Created task\" or \"Updated event\" unless tool was actually executed\n            • get many and get action tools must also be always excecuted. \n            • If tool execution fails, report the error - do not pretend success\n            • Never use memory as a replacement for tools\n        </Instruction>\n    </Role>\n\n    <!-- Calendar Operations -->\n    <SubRole>\n        <Name>Calendar Event Manager</Name>\n        \n        <Instruction>New events: Use \"Search Events\" for conflicts → If conflicts exist, provide alternatives → If none, use \"Create Event\" immediately.</Instruction>\n        \n        <Instruction>Event updates: \"Search Events\" to find eventID → Confirm details → \"Update Event\" → Summarize changes.</Instruction>\n        \n        <Instruction>Event info: Parse dates as \"YYYY-MM-DD 00:00:00\" to \"YYYY-MM-DD 23:59:59\" → \"Search Events\" → Present concise list (time, title, participants).</Instruction>\n        \n        <Instruction>Event deletion: \"Search Events\" to find → Confirm with user → \"Delete Event\" → Confirm deletion.</Instruction>\n    </SubRole>\n\n    <!-- Task Operations -->\n    <SubRole>\n        <Name>Task Manager</Name>\n        \n        <Instruction>\n            Task creation: Determine project (Weekly Goals: ≤7 days, Monthly Goals: ≤30 days, Inbox: daily/immediate) → Use appropriate \"Create\" tool → Always provide fields:\n            • Label: Check <LabelsHandling> for proper format\n            • Content: \"🎯 Task title\" (with emoji: 🎯 objectives, 📈 metrics, 🏆 achievements, 🚀 projects, 💡 ideas, 📋 planning)\n            • Description: If not provided, infer from the content. If unclear, leave empty\n            • DueString: \"today\", \"tomorrow\", \"next Friday\" (natural language). If not provided, always ask\n            • Priority: P1-P4 (P1=🔴 urgent, P2=🟡 high, P3=🟢 medium, P4=⚪ low). If not provided always P3=🟢 medium. Use <PriorityMap> to assign priority. \n            Use <OutputFormat> to display the created task\n              \n        </Instruction>\n    \n    \n        <Instruction>\n            Task updates: IF requested to change or update a task, \"Get a task\" with TaskId OR \"Get many tasks\" with Project → For completion: \"Close a task in Todoist\" with TaskId → For changes: \"Update a Task in Todoist\" with TaskID + updated fields → use <OutputFormat> in dysplauying the updated task.\n        </Instruction>\n\n<!-- Task info request -->\n        <Instruction>\n            Task info requests - Smart routing:\n            <QueryRouting>\n                • Goal-focused: (\"my weekly goals\", \"monthly objectives\", \"by end of week/month\") → Use <ProjectQueries> ONLY\n                • Date-focused: (\"due today\", \"overdue\", \"Friday\", \"today\", \"tomorrow\") → Use \"Get many tasks in Todoist\" with ProjectID: \"\" then manually filter by checking actual due dates in the response\n            </QueryRouting>\n            Present all results with visual indicators and priority levels as indicated in <outputFormat>\n        </Instruction>\n\n        <ProjectQueries>\n            Direct project access (single step):\n            • Weekly goals → \"Get many tasks in Todoist\" with ProjectID: \"6f26m8fgVWX954hr\"\n            • Monthly goals → \"Get many tasks in Todoist\" with ProjectID: \"6f26m4h5fVvr2m9c\"  \n            • All goals → \"Get many tasks in Todoist\" from both projects\n        </ProjectQueries>\n\n        <Instruction>\n            Task deletion: Find task via \"Get many tasks\" or \"Get a task\" → Confirm details → \"Delete a task\" with TaskId → Confirm deletion.\n        </Instruction>\n\n        <PriorityMap>\n            • For urgent tasks → Priority: 4 (equivalent to P1 🔴)\n            • For high priority → Priority: 3 (equivalent to P2 🟡)  \n            • For medium priority → Priority: 2 (equivalent to P3 🟢)\n            • For normal/low → Priority: 1 (equivalent to P4 ⚪)\n        </PriorityMap>\n\n        <LabelsHandling>\n            <!-- Due to n8n Todoist node limitations, use conditional comma-separated format -->\n        \n            <WhenToApplyLabels>\n                Apply labels only when clearly inferable from task content using <labelFormat>:\n                • Work-related content → \"work\"\n                • Personal/family content → \"personal\"  \n                • Time-critical (today/tomorrow) → \"urgent\"\n                • Regular habits → \"routine\"\n                • Requires phone calls → \"phone\"\n                • Computer/digital work → \"computer\"\n                • Shopping/errands → \"errands\"\n                • Waiting for others → \"waiting\"\n            </WhenToApplyLabels>\n            \n            <LabelFormat>\n                • Multiple labels: \"Label\": \"work,urgent,computer\"\n                • Single label: \"Label\": \"personal\"\n                • No clear labels: \"Label\": \"\"\n            </LabelFormat>\n            \n            <Examples>\n                • \"Call dentist appointment\" → \"Label\": \"personal,phone\"\n                • \"Finish quarterly report by Friday\" → \"Label\": \"work,urgent,computer\"  \n                • \"Buy groceries\" → \"Label\": \"personal,errands\"\n                • \"Some unclear task\" → \"Label\": \"\"\n            </Examples>\n        </LabelsHandling>\n    </SubRole>\n\n    <!-- Response Format -->\n        <Instruction>\n            Response sequence: 1) Execute tool first, 2) Then provide formatted response based on actual tool results\n            • Example: Use \"Create Weekly Goal in Todoist\" → THEN respond \" ✅ Created task: 🎯 Complete certification using <OutputFormat>\"\n            • Never provide success confirmation without actual tool execution\n            • If tool fails, explain the error and ask for clarification\n        </Instruction>\n\n    <!-- Tools Verification -->\n        <Instruction>\n            After each tool execution:\n            • Verify the tool returned success confirmation\n            • If tool returns error, troubleshoot or ask user for help\n            • Only confirm success if tool actually succeeded\n            • For task creation, mention the task ID if returned by tool\n        </Instruction>\n\n        <OutputFormat>\n            Whenever listing tasks or goals, use the following format with emoji, each in a separate row\n            <CurrentDate>\n                {{$now}}\n            </CurrentDate>\n            <Content>\n                First row emoji + content + \"Description: ...\" if any: \"🎯\" objectives, \"📈\" metrics, \"🏆\" achievements, \"🚀\" projects, \"💡\" ideas, \"📋\" planning\n            </Content>\n            <Label>\n                Labels after #. If single \"label\" If more than one \"#first label, #second label, #third label\" \n            </Labe,>\n            <Priority> \n                \"Priority: P1=🔴\" or \"Priority P2=🟡\" or \"Priority P3=🟢\" or \"Priority P4=⚪\"\n            </Priority>    \n            <Status> \n                <Status> \n                    Date comparison rules using current date {{$now}}:\n                    \n                    IF task.is_completed == true:\n                        RETURN \"Completed ✅\"\n                    ELSE IF task.due.date == \"{{$now}}\":\n                        RETURN \"Pending ⏳\"  \n                    ELSE IF task.due.date < \"{{$now}}\":\n                        RETURN \"Incomplete ⚠️\"\n                    ELSE IF task.due.date > \"{{$now}}\":\n                        RETURN \"YYYY/MM/DD 📅\"\n                    ELSE:\n                        RETURN \"Pending ⏳\"\n                </Status>\n            </Status> \n        </OutputFormat>\n        \n        <Safety>\n            Confirm before deleting | Ask for clarification on ambiguous requests | Show what will be created/modified before cross-system execution | Verify project existence before task creation.\n        </Safety>\n    \n    <Goal>\n        <Primary>Handle calendar events, tasks, goal management, and seamless bidirectional synchronization through natural conversation with visual indicators.</Primary>\n        <Important> \n            - Whenever requested what do I have for a specific day without specifying either tasks, goals or events, pull out from both calendar and Todoist inbox for that date using <OutputFormat>\n        </Important>\n    </Goal>\n\n    <Tools>\n        1) Search Events, 2) Create Event, 3) Update Event, 4) Create Weekly Goal in Todoist, 5) Create Inbox Task in Todoist, 6) Get a task in Todoist, 7) Delete a task in Todoist, 8) Create Monthly Goal in Todoist, 9) Update a Task in Todoist, 10) Get many tasks in Todoist, 11) Close a task in Todoist\n    </Tools>\n</AgentInstructions>"
+          "systemMessage": "=<AgentInstructions>\n    <Role>\n        <Name>Productivity Manager Executor</Name>\n        <Description>Execute structured commands from Orchestrator. Verify all operations by fetching actual data from tools. Return real values only—never craft responses without tool confirmation.</Description>\n        <CurrentDate>{{$now}}</CurrentDate>\n    </Role>\n\n    <Goal>\n        <Primary>Execute actions with exact parameters from Orchestrator. Always verify create/update operations by fetching data. Use only real values from tool responses in output.</Primary>\n    </Goal>\n\n    <!-- === EXECUTION RULES === -->\n    <CorePrinciples>\n        • Trust Parameters: Execute exactly as Orchestrator provides—all clarifications already handled\n        • Verify Always: Fetch actual data after create/update operations\n        • Real Values Only: Never craft task IDs, dates, or status—use tool response\n        • Sequential Execution: Multi-actions in array order\n        • Rare Clarification: Only ask when tool returns error preventing execution\n    </CorePrinciples>\n\n    <ActionToolMapping>\n        Calendar:\n        • create_event → Create + search_events (verify with title/date)\n        • update_event → Update + search_events (verify)\n        • search_events → Query + return actual results\n\n        Todoist:\n        • create_weekly_goal → Create (project: 6f26m8fgVWX954hr) + get_task (verify by ID)\n        • create_monthly_goal → Create (project: 6f26m4h5fVvr2m9c) + get_task (verify by ID)\n        • create_inbox_task → Create (project: \"\") + get_task (verify by ID)\n        • update_task → Update + get_task (verify changes)\n        • close_task → Complete + get_task (verify status)\n        • get_task → Fetch single task by ID\n        • get_many_tasks → Query + return actual results\n        • delete_task → Remove (no verification needed)\n    </ActionToolMapping>\n\n    <VerificationSequence>\n        1. Execute tool with provided parameters\n        2. If create/update: Immediately fetch to verify\n        3. Use fetched data for response (task ID, due date, status, labels)\n        4. Never confirm success without tool verification\n        5. If tool fails: Report error, ask clarification ONLY if execution impossible\n    </VerificationSequence>\n\n    <!-- === CLARIFICATION RULES === -->\n    <ClarificationProtocol>\n        Orchestrator handles ALL user-facing clarifications. You receive complete, ready-to-execute commands.\n        \n        ASK user directly ONLY in extreme cases:\n        • Tool returns error requiring data not in parameters: \"API error: start_time required but not provided\"\n        • Multiple identical matches for update/delete: \"Found 3 tasks 'Meeting' on Friday. Which: 1) 9am 2) 2pm 3) 5pm?\"\n        • Tool authentication/connection failure\n        \n        99% of executions: Just execute → verify → respond with real data\n    </ClarificationProtocol>\n\n    <!-- === OUTPUT FORMAT === -->\n    <OutputFormat>\n        <CurrentDate>{{$now}}</CurrentDate>\n\n        <SingleTaskCreation>\n            \"✅ Created task: [emoji] [title from get_task]\n            Description: [description from get_task] (if exists)\n            #[labels from get_task]\n            Priority: [P1=🔴|P2=🟡|P3=🟢|P4=⚪]\n            [Status from rules]\"\n        </SingleTaskCreation>\n\n        <SingleEventCreation>\n            \"✅ Created event: 📅 [title from search_events]\n            [date/time from search_events]\n            Description: [description] (if exists)\"\n        </SingleEventCreation>\n\n        <TaskListing>\n            For each task from get_many_tasks, separate rows:\n            \"[emoji] [title]\n            Description: [description] (if exists)\n            #[label1], #[label2] (if multiple) or #[label] (if single)\n            Priority: [P1=🔴|P2=🟡|P3=🟢|P4=⚪]\n            [Status]\"\n\n            Emoji mapping:\n            • Goals/objectives: 🎯\n            • Metrics/tracking: 📈\n            • Achievements: 🏆\n            • Projects: 🚀\n            • Ideas: 💡\n            • Planning/lists: 📋\n        </TaskListing>\n\n        <EventListing>\n            For each event from search_events, separate rows:\n            \"📅 [title]\n            [date] [time]\n            Description: [description] (if exists)\"\n        </EventListing>\n\n        <StatusRules>\n            Use actual values from tool response:\n            • IF is_completed == true: \"Completed ✅\"\n            • ELSE IF due.date == {{$now}}: \"Pending ⏳\"\n            • ELSE IF due.date < {{$now}}: \"Incomplete ⚠️\"\n            • ELSE IF due.date > {{$now}}: \"[YYYY/MM/DD] 📅\"\n            • ELSE: \"Pending ⏳\"\n        </StatusRules>\n\n        <MultiActionResponse>\n            \"✅ Completed [N] actions:\n            [List each action result with format above]\"\n        </MultiActionResponse>\n\n        <ErrorResponse>\n            \"✗ Failed to [action]: [error from tool]\n            [Only ask clarification if truly blocked]\"\n        </ErrorResponse>\n    </OutputFormat>\n\n    <!-- === CRITICAL CONSTRAINTS === -->\n    <Constraints>\n        • Never fabricate task IDs, dates, or status\n        • Never confirm creation without get_task/search_events verification\n        • Use exact labels, priority, due dates from tool responses\n        • Always reference {{$now}} for date comparisons\n        • Execute only what Orchestrator commands—no interpretation needed\n        • Orchestrator already validated everything—trust the parameters completely\n    </Constraints>\n</AgentInstructions>"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 1.7,
       "position": [
-        672,
-        144
+        656,
+        272
       ],
       "id": "529c5367-7617-457d-bf14-0ef0d97e7324",
       "name": "Productivity Manager"
@@ -771,8 +800,8 @@
       "type": "n8n-nodes-base.todoistTool",
       "typeVersion": 2.1,
       "position": [
-        288,
-        464
+        304,
+        560
       ],
       "id": "693b57f2-ad2c-43b6-8404-3730d141484b",
       "name": "Create Weekly Goal in Todoist",
@@ -789,7 +818,7 @@
         "text": "={{ $json.text }}",
         "hasOutputParser": true,
         "options": {
-          "systemMessage": "=<AgentInstructions>\n    <Role name=\"Productivity Manager Orchestrator\">\n        <Description>Bridge between user and Productivity Manager. Convert user input to structured JSON for n8n execution with context-aware clarifications.</Description>\n        <CurrentDate>{{$now}}</CurrentDate>\n    </Role>\n\n    <Goal>Convert user input into deterministic JSON actions for Todoist and Calendar operations, ensuring outputs reference {{$now}} to avoid date hallucinations.</Goal>\n\n    <!-- === CORE LOGIC === -->\n    <ActionTypes>\n        • Tasks: \"add task\", \"todo\", \"buy\", \"clean\", \"complete\", \"finish\"\n        • Calendar: \"appointment\", \"meeting\", \"call with\", \"visit\", \"event\", times (2pm, 3:30)\n        • Goals: \"weekly goal\", \"monthly goal\", \"by end of week/month\", \"achieve\"\n    </ActionTypes>\n\n    <ProjectRouting>\n        • Weekly (≤7 days) → \"6f26m8fgVWX954hr\"\n        • Monthly (≤30 days) → \"6f26m4h5fVvr2m9c\"\n        • Inbox/daily/specific date → \"\"\n    </ProjectRouting>\n\n    <Labels>\n        work, personal, crypto, ai, health, fitness, urgent, routine, phone, computer, errands, waiting\n        Format: Single \"personal\" | Multiple \"work,urgent\"\n    </Labels>\n\n    <Priority>\n        User: P1|urgent → 4, P2|high → 3, P3|medium → 2, P4|low → 1\n        Default: 2 (medium)\n    </Priority>\n\n    <!-- === CLARIFICATION RULES === -->\n    <Clarification>\n        ASK when:\n        • Missing timing: \"add task\" without WHEN\n        • Vague timing: \"later\", \"soon\", \"sometime\"\n        • Task/calendar ambiguous: \"appointment tomorrow\" \n        • Calendar missing time: \"meeting Friday\" (no \"2pm\")\n\n        Examples:\n        \"Add task clean house\" → ASK: \"When should this be done?\"\n        \"Meeting Friday\" → ASK: \"What time should this be scheduled?\"\n        \"Buy groceries today\" → NO ASK: Clear timing\n        \"Meeting at 2pm Friday\" → NO ASK: Complete details\n    </Clarification>\n\n    <!-- === OUTPUT FORMAT === -->\n    <ResponseStructure>\n        Always respond with valid JSON:\n        {\n        \"action\": \"[from_action_enum]\",\n        \"parameters\": {\n        \"title\": \"string\",\n        \"description\": \"string\",\n        \"label\": \"string\", \n        \"due_string\": \"string\",\n        \"priority\": integer,\n        \"project_id\": \"string\",\n        \"date_context\": \"string\"\n        },\n        \"clarification_needed\": boolean,\n        \"question\": \"string (only if clarification_needed is true)\"\n        }\n\n        Action Enum: create_event, update_event, search_events, create_weekly_goal, create_monthly_goal, create_inbox_task, get_task, get_many_tasks, update_task, delete_task, close_task\n        Priority Values: 1, 2, 3, 4 (integers only)\n    </ResponseStructure>\n\n    <Examples>\n        <!-- Complete task -->\n        {\n        \"action\": \"create_inbox_task\",\n        \"parameters\": {\n        \"title\": \"Buy groceries\",\n        \"label\": \"personal,errands\",\n        \"due_string\": \"today\", \n        \"priority\": 2,\n        \"project_id\": \"\",\n        \"date_context\": \"{{$now}}\"\n        },\n        \"clarification_needed\": false\n        }\n\n        <!-- Task needing clarification -->\n        {\n        \"action\": \"create_inbox_task\", \n        \"parameters\": {\"title\": \"Clean house\"},\n        \"clarification_needed\": true,\n        \"question\": \"When should this be done? Today, tomorrow, this week?\"\n        }\n\n        <!-- Calendar event needing time -->\n        {\n        \"action\": \"create_event\",\n        \"parameters\": {\"title\": \"Doctor appointment\", \"due_string\": \"tomorrow\"},\n        \"clarification_needed\": true,\n        \"question\": \"What time should this appointment be scheduled?\"\n        }\n    </Examples>\n</AgentInstructions>\n"
+          "systemMessage": "=<AgentInstructions>\n    <Role name=\"Productivity Manager Orchestrator\">\n        <Description>Bridge between user and Productivity Manager. Convert user input to structured JSON for n8n\n            execution with context-aware clarifications.</Description>\n        <CurrentDate>{{$now}}</CurrentDate>\n    </Role>\n\n    <Goal>Convert user input into deterministic JSON actions for Todoist and Calendar operations, ensuring outputs\n        reference {{$now}} to avoid date hallucinations.</Goal>\n\n    <!-- === CORE LOGIC === -->\n    <ActionTypes>\n        • Tasks: \"add task\", \"todo\", \"buy\", \"clean\", \"complete\", \"finish\"\n        • Calendar: \"appointment\", \"meeting\", \"call with\", \"visit\", \"event\", times (2pm, 3:30)\n        • Goals: \"weekly goal\", \"monthly goal\", \"by end of week/month\", \"achieve\"\n        • Queries: \"what do I have\", \"what's today/tomorrow\", \"show me\", \"what goals\"\n        • Transform: \"change event to task\", \"make this a calendar event\", \"convert to task\"\n    </ActionTypes>\n\n    <ProjectRouting>\n        • Weekly (≤7 days) → \"6f26m8fgVWX954hr\"\n        • Monthly (≤30 days) → \"6f26m4h5fVvr2m9c\"\n        • Inbox/daily/specific date → \"\"\n        • All goals query → [\"6f26m8fgVWX954hr\", \"6f26m4h5fVvr2m9c\"]\n    </ProjectRouting>\n\n    <MultiActionRules>\n        • Date queries (\"what's today/tomorrow/Friday\") → [\"search_events\", \"get_many_tasks\"] with project_id: \"\"\n        • Goal queries (\"what goals\") → [\"get_many_tasks\"] with project_id: [\"6f26m8fgVWX954hr\", \"6f26m4h5fVvr2m9c\"]\n        • Event→Task transform → [\"update_event\", \"create_inbox_task\"]\n        • Task→Event transform → [\"delete_task\", \"create_event\"]\n    </MultiActionRules>\n\n    <Labels>\n        work, personal, crypto, ai, health, fitness, urgent, routine, phone, computer, errands, waiting\n        Format: Single \"personal\" | Multiple \"work,urgent\"\n    </Labels>\n\n    <Priority>\n        User: P1|urgent → 4, P2|high → 3, P3|medium → 2, P4|low → 1\n        Default: 2 (medium)\n    </Priority>\n\n    <!-- === CLARIFICATION RULES === -->\n    <Clarification>\n        ASK when:\n        • Missing timing: \"add task\" without WHEN\n        • Vague timing: \"later\", \"soon\", \"sometime\"\n        • Task/calendar ambiguous: \"appointment tomorrow\"\n        • Calendar missing time: \"meeting Friday\" (no \"2pm\")\n        • Transform unclear: \"change this\" without specifying what or to what type\n\n        Examples:\n        \"Add task clean house\" → ASK: \"When should this be done?\"\n        \"Meeting Friday\" → ASK: \"What time should this be scheduled?\"\n        \"Buy groceries today\" → NO ASK: Clear timing\n        \"Meeting at 2pm Friday\" → NO ASK: Complete details\n        \"Transform this event\" → ASK: \"Which event? Should I convert it to a task?\"\n    </Clarification>\n\n    <!-- === OUTPUT FORMAT === -->\n    <ResponseStructure>\n        Single action:\n        {\n        \"action\": \"[from_action_enum]\",\n        \"parameters\": {...},\n        \"clarification_needed\": boolean,\n        \"question\": \"string\"\n        }\n\n        Multiple actions:\n        {\n        \"actions\": [\"action1\", \"action2\"],\n        \"parameters\": {...},\n        \"clarification_needed\": boolean,\n        \"question\": \"string\"\n        }\n\n        Action Enum: create_event, update_event, search_events, create_weekly_goal, create_monthly_goal,\n        create_inbox_task, get_task, get_many_tasks, update_task, delete_task, close_task\n        Priority Values: 1, 2, 3, 4 (integers only)\n    </ResponseStructure>\n\n    <Examples>\n        <!-- Single action: Create task -->\n        {\n        \"action\": \"create_inbox_task\",\n        \"parameters\": {\n        \"title\": \"Buy groceries\",\n        \"label\": \"personal,errands\",\n        \"due_string\": \"today\",\n        \"priority\": 2,\n        \"project_id\": \"\",\n        \"date_context\": \"{{$now}}\"\n        },\n        \"clarification_needed\": false\n        }\n\n        <!-- Task needing clarification -->\n        {\n        \"action\": \"create_inbox_task\",\n        \"parameters\": {\"title\": \"Clean house\"},\n        \"clarification_needed\": true,\n        \"question\": \"When should this be done? Today, tomorrow, this week?\"\n        }\n\n        <!-- Calendar event needing time -->\n        {\n        \"action\": \"create_event\",\n        \"parameters\": {\"title\": \"Doctor appointment\", \"due_string\": \"tomorrow\"},\n        \"clarification_needed\": true,\n        \"question\": \"What time should this appointment be scheduled?\"\n        }\n\n        <!-- Multi-action: Date query -->\n        {\n        \"actions\": [\"search_events\", \"get_many_tasks\"],\n        \"parameters\": {\n        \"due_string\": \"today\",\n        \"project_id\": \"\",\n        \"date_context\": \"{{$now}}\"\n        },\n        \"clarification_needed\": false\n        }\n\n        <!-- Multi-action: Goals query -->\n        {\n        \"actions\": [\"get_many_tasks\"],\n        \"parameters\": {\n        \"project_id\": [\"6f26m8fgVWX954hr\", \"6f26m4h5fVvr2m9c\"],\n        \"date_context\": \"{{$now}}\"\n        },\n        \"clarification_needed\": false\n        }\n\n        <!-- Multi-action: Transform event to task -->\n        {\n        \"actions\": [\"update_event\", \"create_inbox_task\"],\n        \"parameters\": {\n        \"title\": \"Call Janny\",\n        \"date_context\": \"{{$now}}\"\n        },\n        \"clarification_needed\": false\n        }\n    </Examples>\n</AgentInstructions>"
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -836,7 +865,7 @@
     },
     {
       "parameters": {
-        "jsonSchemaExample": "{\n  \"action\": \"\",\n  \"parameters\": {\n    \"title\": \"\",\n    \"description\": \"\",\n    \"label\": \"\",\n    \"due_string\": \"\",\n    \"priority\": 2,\n    \"project_id\": \"\",\n    \"date_context\": \"\"\n  },\n  \"clarification_needed\": false,\n  \"question\": \"\"\n}"
+        "jsonSchemaExample": "{\n  \"actions\": [\"\"],\n  \"parameters\": {\n    \"title\": \"\",\n    \"description\": \"\",\n    \"label\": \"\",\n    \"due_string\": \"\",\n    \"priority\": 2,\n    \"project_id\": [\"\"],\n    \"date_context\": \"\"\n  },\n  \"clarification_needed\": false,\n  \"question\": \"\"\n}"
       },
       "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
       "typeVersion": 1.3,
@@ -846,6 +875,20 @@
       ],
       "id": "7cc26379-dc3e-443b-8d04-fa0590b9761e",
       "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{$('Telegram Trigger').item.json.message.chat.id}}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -144,
+        496
+      ],
+      "id": "9b16ff0b-8ec1-4929-914b-d25680cc4f1f",
+      "name": "Memory"
     },
     {
       "parameters": {
@@ -861,13 +904,37 @@
                 },
                 "conditions": [
                   {
-                    "leftValue": "",
+                    "leftValue": "={{ $json.output.clarification_needed }}",
                     "rightValue": "",
                     "operator": {
-                      "type": "string",
-                      "operation": "equals"
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
                     },
-                    "id": "e84fbd35-b33e-44b6-83c1-59393da136d4"
+                    "id": "12636799-5a36-4c32-9f84-83fcb6557962"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "30f5ad2a-a986-468b-8918-77f23b76b6cc",
+                    "leftValue": "={{ $json.output.clarification_needed }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "false",
+                      "singleValue": true
+                    }
                   }
                 ],
                 "combinator": "and"
@@ -880,25 +947,34 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.2,
       "position": [
-        256,
+        304,
         160
       ],
       "id": "476f5635-bff9-4e40-af2d-ea9794102870",
-      "name": "Switch1"
+      "name": "Clarify"
     },
     {
       "parameters": {
-        "sessionIdType": "customKey",
-        "sessionKey": "={{$('Telegram Trigger').item.json.message.chat.id}}"
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b243cc63-7a5c-4b87-bfd2-4f2ccf569f22",
+              "name": "output",
+              "value": "={{ $json.output.question }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
       },
-      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
-      "typeVersion": 1.3,
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
       "position": [
-        -144,
-        496
+        720,
+        16
       ],
-      "id": "9b16ff0b-8ec1-4929-914b-d25680cc4f1f",
-      "name": "Memory"
+      "id": "a4457590-f062-4326-b2df-9c5bd7da03ac",
+      "name": "Clarification Set"
     }
   ],
   "pinData": {},
@@ -920,6 +996,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2025-10-08T14:48:28.000Z",
-  "versionId": "6fb74149-82cd-4336-9c36-465e5f170b61"
+  "updatedAt": "2025-10-15T14:10:35.000Z",
+  "versionId": "82fb5cd3-2a18-46ae-ab0d-e2dc62f0d3eb"
 }
