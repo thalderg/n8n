@@ -60,7 +60,7 @@
   },
   "createdAt": "2025-05-30T09:00:42.341Z",
   "id": "6QJQ3cx1W2O8o82u",
-  "isArchived": false,
+  "isArchived": true,
   "meta": null,
   "name": "My workflow 2",
   "nodes": [
@@ -391,6 +391,6 @@
     }
   ],
   "triggerCount": 0,
-  "updatedAt": "2025-05-30T09:00:42.000Z",
-  "versionId": "42561643-44d1-4d6b-b72f-6cc3dda5f880"
+  "updatedAt": "2025-10-27T12:42:43.000Z",
+  "versionId": "0e665af8-3b79-4c48-b291-4253d1c7c5ce"
 }
