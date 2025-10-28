@@ -1425,7 +1425,25 @@
       }
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "Schedule Trigger": [
+      {
+        "json": {
+          "timestamp": "2025-10-27T00:00:47.008+01:00",
+          "Readable date": "October 27th 2025, 12:00:47 am",
+          "Readable time": "12:00:47 am",
+          "Day of week": "Monday",
+          "Year": "2025",
+          "Month": "October",
+          "Day of month": "27",
+          "Hour": "00",
+          "Minute": "00",
+          "Second": "47",
+          "Timezone": "Europe/Warsaw (UTC+01:00)"
+        }
+      }
+    ]
+  },
   "repo_name": "n8n",
   "repo_owner": "thalderg",
   "repo_path": "workflows",
@@ -1469,6 +1487,6 @@
     }
   ],
   "triggerCount": 1,
-  "updatedAt": "2025-08-28T10:49:38.000Z",
-  "versionId": "d99cf8f9-fb2f-4e3a-9800-c686978e1a98"
+  "updatedAt": "2025-10-27T11:28:50.000Z",
+  "versionId": "e75ef940-56cb-420b-bb82-ae91fd6740f8"
 }
