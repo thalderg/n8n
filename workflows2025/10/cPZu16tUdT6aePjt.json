@@ -1,0 +1,1801 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "Topic": {
+      "main": [
+        [
+          {
+            "node": "Query Refiner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Refiner": {
+      "main": [
+        [
+          {
+            "node": "Wikistyle",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikistyle": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "stringify json",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "stringify json": {
+      "main": [
+        [
+          {
+            "node": "Research Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research Manager": {
+      "main": [
+        [
+          {
+            "node": "Splits Outline",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RAS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Splits Outline": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Aggregate2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "search citation #",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "search citation #": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Research Ops",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAS": {
+      "main": [
+        [
+          {
+            "node": "create topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research Ops": {
+      "main": [
+        [
+          {
+            "node": "create HTML snippet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "aggregation_system": {
+      "ai_tool": [
+        [
+          {
+            "node": "Research Ops",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "creates citations",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Aggregate3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "citation_finder": {
+      "ai_tool": [
+        [
+          {
+            "node": "Research Ops",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate2": {
+      "main": [
+        [
+          {
+            "node": "set researchID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "set researchID": {
+      "main": [
+        [
+          {
+            "node": "research",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "research": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "creates PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "creates PDF": {
+      "main": [
+        [
+          {
+            "node": "downloads PDF1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "citations to HTML snippet link": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate3": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "citations to HTML snippet link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "downloads PDF1": {
+      "main": [
+        [
+          {
+            "node": "Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "research_model": {
+      "ai_tool": [
+        [
+          {
+            "node": "Research Ops",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "model 1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Query Refiner",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "model 2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Wikistyle",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "model 3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Research Manager",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s/o 1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Query Refiner",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s/o 2": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Wikistyle",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s/o 3": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Research Manager",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "model 4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "RAS",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "model 5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Research Ops",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s/o 4": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "RAS",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "s/o 5": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Research Ops",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-10-27T12:46:33.178Z",
+  "id": "cPZu16tUdT6aePjt",
+  "isArchived": false,
+  "meta": null,
+  "name": "Research Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Deep Research",
+        "formDescription": "Starting point for deep research.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Topic of research",
+              "placeholder": "Gut microbiome and happiness link",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        -2224,
+        464
+      ],
+      "id": "a1ad86e9-9546-43c3-8c55-6108f131e231",
+      "name": "Topic",
+      "webhookId": "b12eddda-924f-4674-bb81-a82e8847ab1d"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Topic of research:\n{{ $json['Topic of research'] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=<AgentInstructions>\n\n    <Role>\n        <Name>Search Query Refiner Agent</Name>\n        <Description>\n            This agent refines a user's topic into five targeted, high-quality search queries for deep research.\n            It returns the queries in a JSON structure that includes the original topic.\n            The agent must remain strictly focused on the user's stated topic and avoid introducing \n            unrelated or tangential concepts.\n        </Description>\n    </Role>\n\n    <Goal>\n        <Primary>\n            To provide five well-crafted, distinct, and highly relevant search queries based solely on the user’s stated topic. These search queries you create must be geared towards doing deep research on the subject as if someone was typing these questions or statements into a search engine in order to conduct research.\n        </Primary>\n    </Goal>\n\n    <Instructions>\n        <Instruction>\n            1. Identify the exact concepts or keywords in the user's topic. Do NOT introduce new or tangential themes (e.g., \"mental health,\" \"diet,\" \"exercise,\" or other related fields) unless the user explicitly includes them in their topic.\n        </Instruction>\n        <Instruction>\n            2. Avoid generalizing or substituting terms that alter the user’s focus. If the user specifically says \"happiness,\" do not broaden it to \"mental health\" or \"mood\" unless explicitly stated.\n        </Instruction>\n        <Instruction>\n            3. Generate exactly five unique search queries. Each query should reflect:\n               - The main keywords from the user’s input\n               - Minor variations or synonyms that preserve the same narrow focus\n               - No additional angles or expansions unless requested\n        </Instruction>\n        <Instruction>\n            4. Output the final result as JSON, containing:\n               {\n                 \"topic\": \"USER_INPUT_TOPIC\",\n                 \"searchQueries\": [\n                   \"QUERY_1\",\n                   \"QUERY_2\",\n                   \"QUERY_3\",\n                   \"QUERY_4\",\n                   \"QUERY_5\"\n                 ]\n               }\n        </Instruction>\n        <Instruction>\n            5. The agent must respect the user's desired research scope and avoid adding context or terms that \n               deviate from the original question or topic.\n        </Instruction>\n    </Instructions>\n\n    <Examples>\n        <Example>\n            <UserInput>\n                gut microbiome link to happiness\n            </UserInput>\n            <AgentOutput>\n                {\n                  \"topic\": \"gut microbiome link to happiness\",\n                  \"searchQueries\": [\n                    \"gut microbiome link to happiness research studies\",\n                    \"gut microbial composition and happiness correlation\",\n                    \"gut bacteria influence on happiness levels evidence\",\n                    \"bacterial diversity and reported happiness direct link\",\n                    \"latest findings gut microbiome happiness association\"\n                  ]\n                }\n            </AgentOutput>\n        </Example>\n        \n        <Example>\n            <UserInput>\n                Creative writing with AI\n            </UserInput>\n            <AgentOutput>\n                {\n                  \"topic\": \"Creative writing with AI\",\n                  \"searchQueries\": [\n                    \"AI creative writing tools\",\n                    \"artificial intelligence creative writing innovations\",\n                    \"AI-assisted fiction writing techniques\",\n                    \"exploring generative AI for creative writing\",\n                    \"case studies AI-driven creative storytelling\"\n                  ]\n                }\n            </AgentOutput>\n        </Example>\n\n        <Example>\n            <UserInput>\n                quantum computing hardware\n            </UserInput>\n            <AgentOutput>\n                {\n                  \"topic\": \"quantum computing hardware\",\n                  \"searchQueries\": [\n                    \"quantum computing hardware architecture\",\n                    \"latest developments in quantum processors\",\n                    \"superconducting qubits hardware advancements\",\n                    \"ion trap quantum computing devices\",\n                    \"scalability challenges quantum hardware research\"\n                  ]\n                }\n            </AgentOutput>\n        </Example>\n\n        <Example>\n            <UserInput>\n                big data in retail\n            </UserInput>\n            <AgentOutput>\n                {\n                  \"topic\": \"big data in retail\",\n                  \"searchQueries\": [\n                    \"big data retail analytics best practices\",\n                    \"customer insights from big data in retail\",\n                    \"big data-driven inventory management retail\",\n                    \"big data solutions for e-commerce personalization\",\n                    \"trends in big data adoption retail sector\"\n                  ]\n                }\n            </AgentOutput>\n        </Example>\n\n        <Example>\n            <UserInput>\n                self-driving car sensors\n            </UserInput>\n            <AgentOutput>\n                {\n                  \"topic\": \"self-driving car sensors\",\n                  \"searchQueries\": [\n                    \"lidar vs radar technology in self-driving cars\",\n                    \"self-driving car sensors real-time data processing\",\n                    \"sensor fusion methods for autonomous vehicles\",\n                    \"advancements in self-driving car camera systems\",\n                    \"emerging self-driving sensor technologies market analysis\"\n                  ]\n                }\n            </AgentOutput>\n        </Example>\n\n    </Examples>\n\n</AgentInstructions>\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -1984,
+        464
+      ],
+      "id": "05842e97-f696-4d0f-9a57-83d237cadf37",
+      "name": "Query Refiner"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=<AgentInstructions>\n\n    <Role>\n        <Name>Outline & Scope Agent</Name>\n        <Description>\n            This agent receives a single topic (and may optionally consider the refined search queries\n            for additional context). It then produces a detailed, logically structured Wikipedia-style\n            outline for an article on that topic, dividing the content into sections and subsections.\n        </Description>\n    </Role>\n\n    <Goal>\n        <Primary>\n            To generate a comprehensive outline that covers the essential aspects of the topic while\n            adhering to a Wikipedia-style structure. The outline should be specific enough to guide\n            further research and drafting but not include any completed text content.\n        </Primary>\n    </Goal>\n\n    <Instructions>\n        <Instruction>\n            1. Parse the JSON input from the previous agent to understand:\n               - topic: The user’s topic (required).\n               - searchQueries: An optional array of queries for extra context or subtopics.\n            </Instruction>\n        <Instruction>\n            2. Build a Wikipedia-style outline with top-level sections and subheadings. Consider the\n               following common sections as a foundation, then adapt to the specific topic:\n               - Introduction\n               - Background / Historical Context\n               - Core Concepts or Mechanisms\n               - Key Research Findings or Main Body (subdivided as needed)\n               - Applications / Relevance\n               - Challenges / Controversies\n               - Future Directions\n               - Conclusion\n            </Instruction>\n        <Instruction>\n            3. Do not include actual research content in the outline—just a hierarchical structure\n               (section titles and brief notes/points for each section).\n            </Instruction>\n        <Instruction>\n            4. Make sure each section is clearly labeled and logically flows from background to more\n               advanced or specialized details.\n            </Instruction>\n        <Instruction>\n            5. Format your final output in JSON as shown below. Use this schema:\n               {\n                 \"topic\": \"<TOPIC>\",\n                 \"outline\": [\n                   {\n                     \"sectionTitle\": \"<SECTION_NAME>\",\n                     \"sectionPoints\": [\n                       \"Brief bullet or phrase describing what belongs in this section\",\n                       \"Another bullet/point\"\n                     ],\n                     \"subSections\": [\n                       {\n                         \"subSectionTitle\": \"<SUBSECTION_NAME>\",\n                         \"subSectionPoints\": [\n                           \"Brief bullet/phrase for sub-subtopic\"\n                         ]\n                       }\n                     ]\n                   }\n                 ]\n               }\n            </Instruction>\n        <Instruction>\n            6. Keep the content focused on the user’s exact topic. Refer to the refined queries if they\n               provide helpful hints on potential subtopics, but do not force every query into the outline.\n            </Instruction>\n    </Instructions>\n\n    <Examples>\n        <Example>\n            <UserInput>\n                {\n                  \"topic\": \"iodine effects on the brain\",\n                  \"searchQueries\": [\n                    \"iodine effects on brain development research studies\",\n                    \"iodine influence on cognitive function and brain health\",\n                    \"iodine deficiency impact on brain structure\",\n                    \"mechanisms of iodine action in neural tissue\",\n                    \"iodine supplementation and brain neurochemistry outcomes\"\n                  ]\n                }\n            </UserInput>\n            <AgentOutput>\n                {\n                  \"topic\": \"iodine effects on the brain\",\n                  \"outline\": [\n                    {\n                      \"sectionTitle\": \"Introduction\",\n                      \"sectionPoints\": [\n                        \"Overview of iodine and its general role in human biology\",\n                        \"Why the brain specifically needs iodine\",\n                        \"Brief statement on significance of iodine in neurological processes\"\n                      ],\n                      \"subSections\": []\n                    },\n                    {\n                      \"sectionTitle\": \"Background and Historical Context\",\n                      \"sectionPoints\": [\n                        \"Early discoveries linking iodine to brain health\",\n                        \"Historical usage of iodine supplements\",\n                        \"Previous misconceptions or overlooked aspects in research\"\n                      ],\n                      \"subSections\": []\n                    },\n                    {\n                      \"sectionTitle\": \"Mechanisms of Iodine Action in the Brain\",\n                      \"sectionPoints\": [\n                        \"Physiological processes: how iodine is transported and utilized\",\n                        \"Role in hormone regulation (e.g., thyroid hormones) and neural development\"\n                      ],\n                      \"subSections\": [\n                        {\n                          \"subSectionTitle\": \"Iodine and Brain Development\",\n                          \"subSectionPoints\": [\n                            \"Key developmental stages influenced by iodine\",\n                            \"Potential impact of deficiency on cognitive outcomes\"\n                          ]\n                        }\n                      ]\n                    },\n                    {\n                      \"sectionTitle\": \"Key Research Findings\",\n                      \"sectionPoints\": [\n                        \"Major studies on iodine deficiency and cognitive function\",\n                        \"Recent findings on iodine supplementation outcomes\",\n                        \"Gaps in current research and conflicting results\"\n                      ],\n                      \"subSections\": []\n                    },\n                    {\n                      \"sectionTitle\": \"Practical Implications\",\n                      \"sectionPoints\": [\n                        \"Public health recommendations related to iodine intake\",\n                        \"Dietary sources and supplementation guidelines\",\n                        \"Preventive measures against deficiency\"\n                      ],\n                      \"subSections\": []\n                    },\n                    {\n                      \"sectionTitle\": \"Challenges and Controversies\",\n                      \"sectionPoints\": [\n                        \"Debates over optimal iodine intake levels\",\n                        \"Potential risks of excessive iodine consumption\"\n                      ],\n                      \"subSections\": []\n                    },\n                    {\n                      \"sectionTitle\": \"Future Directions\",\n                      \"sectionPoints\": [\n                        \"Areas of research that need further exploration\",\n                        \"Innovations in monitoring iodine status\",\n                        \"Potential clinical trials and large-scale studies\"\n                      ],\n                      \"subSections\": []\n                    },\n                    {\n                      \"sectionTitle\": \"Conclusion\",\n                      \"sectionPoints\": [\n                        \"Summary of iodine’s vital role in brain health\",\n                        \"Call to action for continued research or public awareness\"\n                      ],\n                      \"subSections\": []\n                    }\n                  ]\n                }\n            </AgentOutput>\n        </Example>\n    </Examples>\n\n</AgentInstructions>\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -1616,
+        560
+      ],
+      "id": "266b49e2-4feb-4bbb-9200-bdc1924312b4",
+      "name": "Wikistyle"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        -1248,
+        480
+      ],
+      "id": "7b1ba0d3-eb65-4cb0-b4ef-088c2e73d877",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "output"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -1104,
+        480
+      ],
+      "id": "aeebd231-108d-412c-a713-6bebfe8affdd",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Topic, Queries, Outline:\n{{ $json.stringified }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=<AgentInstructions>\n\n    <Role>\n        <Name>Research Manager</Name>\n        <Description>\n            The Research Manager is responsible for receiving the article outline, dividing it into sections or subsections, and assigning these portions to one or more Research Assistants. It then collects their outputs for the next stage in the pipeline.\n        </Description>\n    </Role>\n\n    <Goal>\n        <Primary>\n            To orchestrate and oversee the distribution of research tasks among multiple Research Assistants, ensuring each section or sub-section is adequately researched and delivered in a standardized format.\n        </Primary>\n    </Goal>\n\n    <Instructions>\n        <Instruction>\n            1. Parse the outline (JSON) to identify each main section and any sub-sections.\n        </Instruction>\n        <Instruction>\n            2. For each section or sub-section, create a research task that includes:\n               - sectionTitle (e.g., \"Introduction\")\n               - any relevant search queries\n               - instructions or bullet points from the outline \n                 (e.g., \"Explain the significance of the topic,\" \"Summarize major findings,\" etc.)\n            </Instruction>\n        <Instruction>\n            3. Send each task to the appropriate Research Assistant, providing them the necessary context \n               (sectionTitle, instructions, relevant queries) so they can conduct research and produce a \n               draft (JSON format: sectionTitle, text, references).\n        </Instruction>\n        <Instruction>\n            4. Collect each Research Assistant's JSON output and merge it, preserving the order of sections \n               from the original outline for the next stage (e.g., Draft Editor).\n        </Instruction>\n        <Instruction>\n            5. Do not perform the actual research or write the content yourself; your role is strictly to coordinate tasks among the Research Assistants.\n        </Instruction>\n    </Instructions>\n\n    <Examples>\n        <Example>\n            <UserInput>\n                {\n                  \"topic\": \"effects of ashwagandha on cortisol levels\",\n                  \"outline\": [\n                    {\n                      \"sectionTitle\": \"Introduction\",\n                      \"sectionPoints\": [\n                        \"Overview of ashwagandha and its traditional use\",\n                        \"Brief introduction to cortisol\",\n                        \"Significance of ashwagandha-cortisol research\"\n                      ],\n                      \"subSections\": []\n                    },\n                    {\n                      \"sectionTitle\": \"Key Research Findings\",\n                      \"sectionPoints\": [\"Major clinical trial outcomes\", \"Any meta-analyses findings\"],\n                      \"subSections\": [\n                        {\n                          \"subSectionTitle\": \"Clinical Trials\",\n                          \"subSectionPoints\": [\"Study design\", \"Dosage\", \"Statistical outcomes\"]\n                        },\n                        {\n                          \"subSectionTitle\": \"Meta-analyses\",\n                          \"subSectionPoints\": [\"Aggregated results\", \"Limitations\"]\n                        }\n                      ]\n                    }\n                  ],\n                  \"searchQueries\": [\n                    \"clinical trials assessing ashwagandha impact on cortisol levels\",\n                    \"ashwagandha supplementation influence on cortisol response\"\n                  ]\n                }\n            </UserInput>\n            <AgentOutput>\n                {\n                  \"topic\": \"effects of ashwagandha on cortisol levels\",\n                  \"citationCount\": 0,\n                  \"researchTasks\": [\n                    {\n                      \"sectionTitle\": \"Introduction\",\n                      \"queries\": [\n                        \"ashwagandha supplementation influence on cortisol response\"\n                      ],\n                      \"instructions\": [\n                        \"Overview of ashwagandha and its traditional use\",\n                        \"Brief introduction to cortisol\",\n                        \"Significance of ashwagandha-cortisol research\"\n                      ]\n                    },\n                    {\n                      \"sectionTitle\": \"Key Research Findings\",\n                      \"subSectionTitle\": \"Clinical Trials\",\n                      \"queries\": [\n                        \"clinical trials assessing ashwagandha impact on cortisol levels\"\n                      ],\n                      \"instructions\": [\n                        \"Study design, dosage, and statistical outcomes\",\n                        \"Major clinical trial outcomes\"\n                      ]\n                    },\n                    {\n                      \"sectionTitle\": \"Key Research Findings\",\n                      \"subSectionTitle\": \"Meta-analyses\",\n                      \"queries\": [\n                        \"ashwagandha supplementation influence on cortisol response\"\n                      ],\n                      \"instructions\": [\n                        \"Aggregated results and limitations\",\n                        \"Any meta-analyses findings\"\n                      ]\n                    }\n                  ]\n                }\n            </AgentOutput>\n        </Example>\n    </Examples>\n\n</AgentInstructions>"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -800,
+        480
+      ],
+      "id": "83f5a9e8-9205-47d0-9b25-63c86a1ab696",
+      "name": "Research Manager",
+      "retryOnFail": true,
+      "maxTries": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    stringified: JSON.stringify($json)\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        480
+      ],
+      "id": "b132b0cf-6d4e-4b09-ba5e-0c11f6e3f1ab",
+      "name": "stringify json"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "=output.researchTasks",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        480
+      ],
+      "id": "28cef043-8ef9-4a2b-9072-ad57d3a88133",
+      "name": "Splits Outline"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -256,
+        480
+      ],
+      "id": "4e0acb02-7f4a-4b13-b2af-6f220ac18815",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appOQ1v5OpcKHTBUN",
+          "mode": "list",
+          "cachedResultName": "Research Agent",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblMKRk8KcKNAqLAo",
+          "mode": "list",
+          "cachedResultName": "Research Papers",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN/tblMKRk8KcKNAqLAo"
+        },
+        "filterByFormula": "=({Topic} = '{{ $json.output.topic }}')",
+        "returnAll": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        432
+      ],
+      "id": "fa9d5c8f-f695-4fdf-88e1-e24ed0daa599",
+      "name": "search citation #"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appOQ1v5OpcKHTBUN",
+          "mode": "list",
+          "cachedResultName": "Research Agent",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblMKRk8KcKNAqLAo",
+          "mode": "list",
+          "cachedResultName": "Research Papers",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN/tblMKRk8KcKNAqLAo"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Topic": "={{ $json.output.Topic }}",
+            "Topic Outline": "={{ $json.output.topicOutline }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Topic",
+              "displayName": "Topic",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Topic Outline",
+              "displayName": "Topic Outline",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Snippet",
+              "displayName": "Snippet",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "HTML Sections",
+              "displayName": "HTML Sections",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Citations",
+              "displayName": "Citations",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "citationCount",
+              "displayName": "citationCount",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "ResearchID",
+              "displayName": "ResearchID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9fa6a9d8-bbeb-4ab6-ac31-cf8bbdb4109b",
+      "name": "create topic",
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "aR2eRiONnse3ODUc",
+          "name": "Airtable Personal Access Token account 3"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        208,
+        560
+      ],
+      "id": "fbf6db83-a48b-4c9a-8e93-70fe7c6420fd",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "output.researchTasks"
+            },
+            {
+              "fieldToAggregate": "Topic"
+            },
+            {
+              "fieldToAggregate": "id"
+            },
+            {
+              "fieldToAggregate": "citationCount"
+            },
+            {
+              "fieldToAggregate": "ResearchID",
+              "renameField": true,
+              "outputFieldName": "researchNumber"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        384,
+        560
+      ],
+      "id": "3fe719c2-36d0-49e7-a4ed-c65a2c081045",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Current Citations:{{ $json.citationCount[0] }}\n\nTopic of Research:{{ $json.Topic[0] }}\n\nSection of Research:{{ $json.researchTasks[0].sectionTitle }}\n\nSection Search Query:{{ $json.researchTasks[0].queries[0] }}\n\nSection Outline:{{ $json.researchTasks[0].instructions }}\n\nResearch Number: {{ $json.researchNumber[0] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=Role:\nYou are a Research Agent. \n\nYou get information from the User Input and the aggregation_system_tool to send to the research_tool. Once you have the research from the research tool, your job is to properly format the data into a JSON object.\n\n<Example flow>\n\nUser input: \nTopic of Research:iodine as a power supplement\n\nSection of Research:Introduction\n\nSection Search Query: iodine supplementation impact on energy and power performance\n\nSection Outline: Overview of iodine and its traditional roles in human health,Introduction to iodine as a potential power supplement,Significance of exploring iodine for energy and physical performance\n\nResearch Agent:\n- First, searches airtable aggregation_system_tool to find the topicOutline from this specific record to send to the research tool. Then sends data over.\n\n</Example flow>\n\n\nOnce you recieve the research from the research agent you are to output five JSON objects: \"HTML Body\" with a nicely structured HTML body and also a \"Citations\" array with numbered citations in the actual value of the JSON object not just numbered in the key. You are to use the current citation count in order to accomplish this. The current Citation count is: {{ $json.citationCount[0] }}. Next, you need to create a subtitle for each section and outp[ut that to sectionSubTitle. The next thing you need to send is this recordID:{{ $json.id[0] }}. The last thing is the section name:{{ $json.researchTasks[0].sectionTitle }}. Here's an input output example of your JSON object:\n\n<Example flow>\nInput from research tool:\n```json\\n{\\n  \"research\": {\\n    \"researchHTML\": \"<p>Water-only fasting, defined as the consumption of nothing but water for a set period, represents a unique form of dietary intervention that has garnered significant attention in both historical and clinical contexts. Traditionally practiced in various cultures for spiritual and health-related purposes, water-only fasting has evolved into a subject of modern scientific inquiry with particular focus on its extended applications. Extended water-only fasting, which includes fasting durations beyond 20 days, is of particular interest due to its potential to profoundly influence metabolic, cellular, and hormonal processes, while also posing unique challenges and risks [pubmed.ncbi.nlm.nih.gov](https://pubmed.ncbi.nlm.nih.gov/29455546/).</p><p>The purpose of exploring extended water-only fasting is twofold: firstly, to understand its physiological and clinical impacts beyond the widely studied short-term fasting protocols, and secondly, to delineate its benefits and associated hazards in a controlled and medically supervised environment. Clinical research has begun to shed light on the safety, metabolic adaptations, and potential therapeutic effects associated with prolonged fasting periods, offering insights that might be critical in developing standardized fasting protocols for health improvement [bmccomplementmedtherapies.biomedcentral.com](https://bmccomplementmedtherapies.biomedcentral.com/articles/10.1186/s12906-018-2136-6). Furthermore, ongoing investigations continue to evaluate how extended fasting correlates with systemic detoxification, regeneration, and overall metabolic regulation, thereby fostering a deeper understanding of its comprehensive role in health management [onlinelibrary.wiley.com](https://onlinelibrary.wiley.com/doi/pdfdirect/10.1002/ctm2.502).</p>\",\\n    \"citations\": [\\n      \"[pubmed.ncbi.nlm.nih.gov](https://pubmed.ncbi.nlm.nih.gov/29455546/)\",\\n      \"[bmccomplementmedtherapies.biomedcentral.com](https://bmccomplementmedtherapies.biomedcentral.com/articles/10.1186/s12906-018-2136-6)\",\\n      \"[onlinelibrary.wiley.com](https://onlinelibrary.wiley.com/doi/pdfdirect/10.1002/ctm2.502)\"\\n    ]\\n  }\\n}\\n```\n\n\nYour expected output:\n{\n  \"HTML Body\": \"<p>Water-only fasting, defined as the consumption of nothing but water for a set period, represents a unique form of dietary intervention that has garnered significant attention in both historical and clinical contexts. Traditionally practiced in various cultures for spiritual and health-related purposes, water-only fasting has evolved into a subject of modern scientific inquiry with particular focus on its extended applications. Extended water-only fasting, which includes fasting durations beyond 20 days, is of particular interest due to its potential to profoundly influence metabolic, cellular, and hormonal processes, while also posing unique challenges and risks [1].</p><p>The purpose of exploring extended water-only fasting is twofold: firstly, to understand its physiological and clinical impacts beyond the widely studied short-term fasting protocols, and secondly, to delineate its benefits and associated hazards in a controlled and medically supervised environment. Clinical research has begun to shed light on the safety, metabolic adaptations, and potential therapeutic effects associated with prolonged fasting periods, offering insights that might be critical in developing standardized fasting protocols for health improvement [2]. Furthermore, ongoing investigations continue to evaluate how extended fasting correlates with systemic detoxification, regeneration, and overall metabolic regulation, thereby fostering a deeper understanding of its comprehensive role in health management [3].</p>\",\n  \"recordID\": \"recordID Here\",\n  \"sectionName\": \"Introduction\",\n  \"sectionSubTitle\": \"Exploring water only fasting and it's deep healing benfits.\",\n  \"Citations\": [\n    \"1. https://pubmed.ncbi.nlm.nih.gov/29455546/\",\n    \"2. https://bmccomplementmedtherapies.biomedcentral.com/articles/10.1186/s12906-018-2136-6\",\n    \"3. https://onlinelibrary.wiley.com/doi/pdfdirect/10.1002/ctm2.502\"\n  ]\n}\n\n</Example flow>\n\nEnsure that you use the currentCitation tool, in order to mitigate any duplicates from being added. Also, if you notice an HTML body comes back with a citation like \"researchHTML here [5]\", but \"5\" is the same URL as \"2\" then recite the \"researchHTML citation to [2] and do not process the duplicate citation as a new citation. in the 'citations array'."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        544,
+        560
+      ],
+      "id": "a668965a-ed14-4364-95b8-0550f90ea348",
+      "name": "Research Ops",
+      "retryOnFail": true,
+      "maxTries": 2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=Your job is to structure outputs using JSON.\n\nWhen provided with an input JSON that contains keys like \"topic\" and \"researchTasks\", extract the \"topic\" as the value for \"Topic\".\n\nFor the \"topicOutline\", combine the information from each research task into a single plain text block.\n\nEach section should be formatted as: \"Section X: [Section Title] - [description]\" on its own new line, where X is the section number. Don't include the /n, that's just for you to understand when to enter down.\n\nAvoid using array formats; the entire outline should be one value in the JSON output.\n\nStructure the final output as a JSON object with exactly two keys: \"Topic\" and \"topicOutline\".\"\n\n{\n\"Topic\":\"Topic Here\",\n\"topicOutline\":\"Outline of section in nice text block here\"\n}\n\nExample Input:\n[Object: {\"topic\": \"healing with water only fasting\", \"researchTasks\": [{\"sectionTitle\": \"Introduction\", \"queries\": [\"water only fasting benefits on health and healing\"], \"instructions\": [\"Definition of water only fasting\", \"Overview of healing concepts related to fasting\", \"Purpose and significance of water only fasting in health and healing\"], \"subSectionTitle\": \"\"},{\"sectionTitle\": \"Background and Historical Context\", \"queries\": [\"evidence based healing with water only fasting protocols\"], \"instructions\": [\"Historical use of fasting in various cultures and medicine\", \"Evolution of fasting practices into modern therapeutic approaches\", \"Overview of traditional vs. contemporary perspectives on water only fasting\"], \"subSectionTitle\": \"\"},{\"sectionTitle\": \"Mechanisms of Healing During Water Only Fasting\", \"queries\": [\"mechanisms behind healing during water only fasting\"], \"instructions\": [\"Biological processes involved in fasting-induced healing\", \"Detoxification, autophagy, and metabolic changes\", \"Immune system modulation and inflammation reduction\"], \"subSectionTitle\": \"\"},{\"sectionTitle\": \"Mechanisms of Healing During Water Only Fasting\", \"queries\": [\"clinical studies on healing effects of water only fasting\"], \"instructions\": [\"Role of metabolic shifts and ketone production\", \"Impact on cellular repair and regeneration\", \"Biochemical markers and hormonal changes during fasting\"], \"subSectionTitle\": \"Clinical Mechanisms and Evidence\"},{\"sectionTitle\": \"Evidence-Based Research and Clinical Studies\", \"queries\": [\"clinical studies on healing effects of water only fasting\"], \"instructions\": [\"Overview of clinical studies on water only fasting and healing\", \"Presentation of key research findings and methodologies\", \"Analysis of short-term and long-term outcomes in healing\"], \"subSectionTitle\": \"\"},{\"sectionTitle\": \"Evidence-Based Research and Clinical Studies\", \"queries\": [\"long term outcomes of healing with water only fasting\"], \"instructions\": [\"Summary of major evidence-based studies and protocols\", \"Comparative effectiveness of water only fasting versus other fasting methods\", \"Critical evaluation of study limitations and challenges\"], \"subSectionTitle\": \"Detailed Review of Clinical Studies\"},{\"sectionTitle\": \"Applications, Benefits, and Practical Implications\", \"queries\": [\"water only fasting benefits on health and healing\"], \"instructions\": [\"Potential health benefits including detoxification and tissue repair\", \"Therapeutic applications in chronic disease management\", \"Guidelines and protocols for safe water only fasting practices\"], \"subSectionTitle\": \"\"},{\"sectionTitle\": \"Challenges, Risks, and Controversies\", \"queries\": [\"evidence based healing with water only fasting protocols\"], \"instructions\": [\"Potential risks and side effects of water only fasting\", \"Controversies over long-term impacts and clinical safety\", \"Critical perspectives on the evidence basis for healing claims\"], \"subSectionTitle\": \"\"},{\"sectionTitle\": \"Future Directions\", \"queries\": [\"long term outcomes of healing with water only fasting\"], \"instructions\": [\"Identifying gaps in current research on water only fasting\", \"Emerging methodologies for further clinical trials\", \"Integration of fasting protocols into mainstream healthcare and personalized medicine\"], \"subSectionTitle\": \"\"},{\"sectionTitle\": \"Conclusion\", \"queries\": [\"water only fasting benefits on health and healing\"], \"instructions\": [\"Summary of key insights on healing with water only fasting\", \"Overall implications for health and medical practice\", \"Call for continued research and informed application of water only fasting protocols\"], \"subSectionTitle\": \"\"}]}]\n\n\nExample Output:\n{ \"Topic\": \"healing with water only fasting\", \"topicOutline\": \"Section 1: Introduction - Definition of water only fasting; overview of healing concepts related to fasting; purpose and significance of water only fasting in health and healing.\\nSection 2: Background and Historical Context - Historical use of fasting in various cultures and medicine; evolution of fasting practices into modern therapeutic approaches; overview of traditional versus contemporary perspectives on water only fasting.\\nSection 3: Mechanisms of Healing During Water Only Fasting - Exploration of the biological processes involved in fasting-induced healing, including detoxification, autophagy, metabolic changes, and immune system modulation with inflammation reduction.\\nSection 4: Mechanisms of Healing During Water Only Fasting (Clinical Mechanisms and Evidence) - Discussion of metabolic shifts and ketone production, the impact on cellular repair and regeneration, and examination of biochemical markers and hormonal changes during fasting.\\nSection 5: Evidence-Based Research and Clinical Studies - Overview of clinical studies on water only fasting and healing, presentation of key research findings and methodologies, and analysis of short-term and long-term healing outcomes.\\nSection 6: Evidence-Based Research and Clinical Studies (Detailed Review of Clinical Studies) - Summary of major evidence-based studies and protocols, comparative analysis of water only fasting versus other fasting methods, and critical evaluation of study limitations and challenges.\\nSection 7: Applications, Benefits, and Practical Implications - Consideration of potential health benefits including detoxification and tissue repair, therapeutic applications in chronic disease management, and guidelines for safe water only fasting practices.\\nSection 8: Challenges, Risks, and Controversies - Examination of potential risks and side effects, controversies regarding long-term impacts and clinical safety, and critical perspectives on the evidence supporting healing claims.\\nSection 9: Future Directions - Identification of gaps in current research on water only fasting, exploration of emerging methodologies for further clinical trials, and integration of fasting protocols into mainstream healthcare and personalized medicine.\\nSection 10: Conclusion - Summary of key insights on healing with water only fasting, overall implications for health and medical practice, and a call for continued research and informed application of water only fasting protocols.\" }"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -400,
+        64
+      ],
+      "id": "fe9bb125-3f32-4bad-b23c-507cbc577aa4",
+      "name": "RAS",
+      "notesInFlow": true,
+      "notes": "Rotating Aggregation System"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "aggregation_system_tool for getting topicOutline and citations.",
+        "authentication": "airtableOAuth2Api",
+        "base": {
+          "__rl": true,
+          "value": "appOQ1v5OpcKHTBUN",
+          "mode": "list",
+          "cachedResultName": "Research Agent",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblMKRk8KcKNAqLAo",
+          "mode": "list",
+          "cachedResultName": "Research Papers",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN/tblMKRk8KcKNAqLAo"
+        },
+        "id": "={{ $('Aggregate1').item.json.id[0] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        688,
+        848
+      ],
+      "id": "94e10825-fb16-4f33-94fb-8a60b565e18c",
+      "name": "aggregation_system"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appOQ1v5OpcKHTBUN",
+          "mode": "list",
+          "cachedResultName": "Research Agent",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblQKQCKyA3srMxrB",
+          "mode": "list",
+          "cachedResultName": "HTML Sections",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN/tblQKQCKyA3srMxrB"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "HTML body": "={{ $json.output[\"HTML Body\"] }}",
+            "Research Papers": "={{ [ $json.output.recordID ] }}",
+            "Section name": "={{ $json.output.sectionName }}",
+            "Sub title": "={{ $json.output.sectionSubTitle }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "Section name",
+              "displayName": "Section name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Sub title",
+              "displayName": "Sub title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "HTML body",
+              "displayName": "HTML body",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Research Papers",
+              "displayName": "Research Papers",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ResearchID",
+              "displayName": "ResearchID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Last Modified",
+              "displayName": "Last Modified",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Citations",
+              "displayName": "Citations",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Source (from Citations)",
+              "displayName": "Source (from Citations)",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Citations 2",
+              "displayName": "Citations 2",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1040,
+        528
+      ],
+      "id": "3b4f9e52-8511-4c54-87ef-37e1453f65f6",
+      "name": "create HTML snippet"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.Citations",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        768
+      ],
+      "id": "9df9ce49-9cd7-44a4-a782-1b7b2b2041f7",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Finds duplicate citations and numbers.",
+        "authentication": "airtableOAuth2Api",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appOQ1v5OpcKHTBUN",
+          "mode": "list",
+          "cachedResultName": "Research Agent",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblAxXeE5FeOWRFCH",
+          "mode": "list",
+          "cachedResultName": "Citations",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN/tblAxXeE5FeOWRFCH"
+        },
+        "filterByFormula": "=({ResearchID} = '{{ $json.ResearchID }}')",
+        "options": {
+          "fields": [
+            "Source"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.airtableTool",
+      "typeVersion": 2.1,
+      "position": [
+        832,
+        848
+      ],
+      "id": "af32df4a-6837-4e62-bbf8-f0dc2c00c750",
+      "name": "citation_finder"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "fields.ResearchID[0]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        0,
+        208
+      ],
+      "id": "608f9379-2b86-4255-91c5-a8ca691b2967",
+      "name": "Aggregate2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f373f7e1-b89a-4092-ba0a-01de6039ce4c",
+              "name": "ResearchID[0][0]",
+              "value": "={{ $json.ResearchID[0][0] }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        208
+      ],
+      "id": "1f54485f-5b41-465a-8975-a7f39f94b996",
+      "name": "set researchID"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "appOQ1v5OpcKHTBUN",
+          "mode": "list",
+          "cachedResultName": "Research Agent",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblQKQCKyA3srMxrB",
+          "mode": "list",
+          "cachedResultName": "HTML Sections",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN/tblQKQCKyA3srMxrB"
+        },
+        "filterByFormula": "=({ResearchID} = '{{ $json.ResearchID}}')",
+        "options": {},
+        "sort": {
+          "property": [
+            {
+              "field": "Last Modified"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        384,
+        208
+      ],
+      "id": "30f73775-ba0c-48af-8f27-b0340b2e07e0",
+      "name": "research"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Helper function: trims each line and joins them with actual newline characters.\nfunction toTrimmed(str) {\n  return str\n    .split('\\n')\n    .map(line => line.trim())\n    .filter(line => line !== '')\n    .join('\\n');\n}\n\n// Extract the header title from the \"Calculation\" field in the first record.\nconst headerTitle = items[0].json[\"Calculation\"] || \"Research Report\";\n\n// Process each input item to build content sections.\nconst sections = items.map(item => {\n  // Build a citation map from the \"Citation Individual\" field.\n  let citationMap = {};\n  const citationsString = item.json[\"Citation Individual\"];\n  if (citationsString) {\n    // Regex to capture citations in the format: \"1. https://...\"\n    const regex = /(\\d+)\\.\\s*(https?:\\/\\/\\S+)/g;\n    let match;\n    while ((match = regex.exec(citationsString)) !== null) {\n      // Remove any trailing comma from the captured URL.\n      citationMap[match[1]] = match[2].replace(/,$/, '');\n    }\n  }\n  \n  // Process the HTML body: replace occurrences of [number] with a linked citation.\n  let htmlBody = item.json[\"HTML body\"];\n  htmlBody = htmlBody.replace(/\\[(\\d+)\\]/g, (match, p1) => {\n    if (citationMap[p1]) {\n      return `<a href=\"${citationMap[p1]}\" target=\"_blank\">[${p1}]</a>`;\n    }\n    return match;\n  });\n  \n  // Build the section HTML using Section name, Sub title (if present), and the processed HTML body.\n  let sectionHTML = `<div class=\"section\">\\n`;\n  sectionHTML += `<h2>${item.json[\"Section name\"]}</h2>\\n`;\n  if (item.json[\"Sub title\"]) {\n    sectionHTML += `<h3>${item.json[\"Sub title\"]}</h3>\\n`;\n  }\n  sectionHTML += htmlBody + '\\n';\n  sectionHTML += `</div>`;\n  \n  return {\n    sectionHTML,\n    citationMap\n  };\n});\n\n// Merge all citation maps from all sections into one global citation map.\nconst globalCitations = {};\nsections.forEach(sec => {\n  for (const key in sec.citationMap) {\n    globalCitations[key] = sec.citationMap[key];\n  }\n});\n\n// Build the main content HTML: start with the header title from the Calculation field, then all sections.\nlet content = `<h1>${headerTitle}</h1>\\n`;\nsections.forEach(sec => {\n  content += sec.sectionHTML + '\\n\\n';\n});\n\n// Build the References section with a page break before it and make the \"References\" text bigger.\nlet referencesHTML = `<p style=\"page-break-before: always; font-size: 28px;\"><strong>References</strong></p>\\n<div class=\"references\">\\n`;\nfor (const num in globalCitations) {\n  referencesHTML += `<p>[${num}] <a href=\"${globalCitations[num]}\" target=\"_blank\">${globalCitations[num]}</a></p>\\n`;\n}\nreferencesHTML += `</div>\\n`;\ncontent += referencesHTML;\n\n// Define the CSS with custom styling for the References section.\nconst cssContent = `<style>\nbody {\n  font-family: Arial, sans-serif;\n  line-height: 1.2;\n  padding: 20px;\n  white-space: pre-wrap; /* Ensures that newline characters are rendered */\n}\nh1 {\n  font-size: 36px;\n  color: #333;\n  margin-bottom: 10px;\n}\nh2 {\n  font-size: 22px;\n  color: #777;\n  margin-bottom: 10px;\n}\nh3 {\n  font-size: 20px;\n  color: #444;\n  margin-bottom: 10px;\n}\np {\n  font-size: 16px;\n  color: #222;\n  line-height: 1.6;\n  margin: 10px 0;\n}\n.section {\n  margin-bottom: 30px;\n  border-bottom: 1px solid #ccc;\n  padding-bottom: 15px;\n}\n/* Custom styling for the References section */\n.references {\n  margin: 0;\n  padding: 0;\n}\n.references p {\n  margin: 2px 0;\n  font-size: 14px;\n  font-style: italic;\n}\n</style>`;\n\n// Build the final output object.\nconst output = {\n  body: toTrimmed(content),\n  css: toTrimmed(cssContent),\n  data: {\n    name: \"This is a title\"\n  },\n  settings: {\n    paper_size: \"A4\",\n    orientation: \"1\",\n    header_font_size: \"9px\",\n    margin_top: \"40\",\n    margin_right: \"10\",\n    margin_bottom: \"40\",\n    margin_left: \"10\",\n    print_background: \"1\",\n    displayHeaderFooter: true,\n    // Remove header/footer content to eliminate page numbers and the date.\n    custom_header: \"\",\n    custom_footer: \"\"\n  }\n};\n\n// Return the output as a stringified JSON so that the PDF API receives valid JSON.\nreturn [{ json: { data: JSON.stringify(output) } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        208
+      ],
+      "id": "04182a92-f649-4aad-90b2-0f6db246a22a",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://rest-us.apitemplate.io/v2/create-pdf-from-html",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-API-KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.data }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        784,
+        208
+      ],
+      "id": "82fbd81f-d1df-4d35-95cb-5a480428fbd0",
+      "name": "creates PDF"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.download_url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        992,
+        208
+      ],
+      "id": "f891febc-b80e-45ee-b87b-b3d7da52732c",
+      "name": "downloads PDF1"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appOQ1v5OpcKHTBUN",
+          "mode": "list",
+          "cachedResultName": "Research Agent",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblAxXeE5FeOWRFCH",
+          "mode": "list",
+          "cachedResultName": "Citations",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN/tblAxXeE5FeOWRFCH"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Source": "={{ $json[\"output.Citations\"] }}",
+            "Research Papers": "={{ [ $json.output.recordID ] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Research Papers",
+              "displayName": "Research Papers",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "ResearchID",
+              "displayName": "ResearchID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "HTML Sections",
+              "displayName": "HTML Sections",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1312,
+        592
+      ],
+      "id": "6e4246c8-4021-49ee-97f9-fb47e07cc5da",
+      "name": "creates citations"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appOQ1v5OpcKHTBUN",
+          "mode": "list",
+          "cachedResultName": "Research Agent",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblQKQCKyA3srMxrB",
+          "mode": "list",
+          "cachedResultName": "HTML Sections",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN/tblQKQCKyA3srMxrB"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Citation Individual": "={{ $json.commaSeparatedCitations }}",
+            "Sub title": "={{ $json.firstSubTitle }}"
+          },
+          "matchingColumns": [
+            "Sub title"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Section name",
+              "displayName": "Section name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Sub title",
+              "displayName": "Sub title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "HTML body",
+              "displayName": "HTML body",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Research Papers",
+              "displayName": "Research Papers",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "ResearchID",
+              "displayName": "ResearchID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Last Modified",
+              "displayName": "Last Modified",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            },
+            {
+              "id": "Citations",
+              "displayName": "Citations",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "array",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "Citation Individual",
+              "displayName": "Citation Individual",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1600,
+        880
+      ],
+      "id": "da1fb56a-f2bc-4a78-ad70-6bd8252330c0",
+      "name": "citations to HTML snippet link"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "output.Citations"
+            },
+            {
+              "fieldToAggregate": "output.sectionSubTitle"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1280,
+        768
+      ],
+      "id": "35fb806e-4f82-478d-8b14-1237a23ad3a7",
+      "name": "Aggregate3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Retrieve our arrays from $json\nconst citationsArray = $json.Citations;\nconst subtitlesArray = $json.sectionSubTitle;\n\n// Convert Citations to a comma-separated string\nconst commaSeparatedCitations = citationsArray.join(', ');\n\n// Get the first item from the subtitles array\nconst firstSubTitle = subtitlesArray[0];\n\n// Return both in a single output item\nreturn [\n  {\n    commaSeparatedCitations,\n    firstSubTitle\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        832
+      ],
+      "id": "df04b79c-dbfe-429f-b66b-a13d6984bc15",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "name": "research_tool",
+        "description": "Call this tool to send and receive research data.",
+        "workflowId": {
+          "__rl": true,
+          "value": "QtvAheEnjhGcaGcR",
+          "mode": "list",
+          "cachedResultName": "Life of Drake — Advanced Search"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "topicOfresearch": "={{ $('Aggregate1').item.json.Topic[0] }}",
+            "searchQuery": "={{ $('Aggregate1').item.json.researchTasks[0].queries[0] }}",
+            "citationCount": "={{ $('Aggregate1').item.json.citationCount[0] }}",
+            "currentResearchSection": "={{ $('Aggregate1').item.json.researchTasks[0].sectionTitle }}",
+            "sectionOutline": "={{ $fromAI('topicOutline','the topic outline from the aggregation_system_tool on airtable') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "topicOfresearch",
+              "displayName": "topicOfresearch",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "citationCount",
+              "displayName": "citationCount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "searchQuery",
+              "displayName": "searchQuery",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "currentResearchSection",
+              "displayName": "currentResearchSection",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "sectionOutline",
+              "displayName": "sectionOutline",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "previousSection",
+              "displayName": "previousSection",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        528,
+        848
+      ],
+      "id": "dd617432-2550-4807-a17e-569f5ae9f2ec",
+      "name": "research_model"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "appOQ1v5OpcKHTBUN",
+          "mode": "list",
+          "cachedResultName": "Research Agent",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tblKsXNZo0UYiWW9F",
+          "mode": "list",
+          "cachedResultName": "PDFs",
+          "cachedResultUrl": "https://airtable.com/appOQ1v5OpcKHTBUN/tblKsXNZo0UYiWW9F"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "PDF": "={{ $json.download_url }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date Published",
+              "displayName": "Date Published",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "dateTime",
+              "readOnly": false,
+              "removed": true
+            },
+            {
+              "id": "PDF",
+              "displayName": "PDF",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1232,
+        208
+      ],
+      "id": "fcf052fd-06bc-4f3e-b5aa-40f6054c29ce",
+      "name": "Airtable"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -1984,
+        752
+      ],
+      "id": "d38a4c62-e531-425c-ac33-f0f85472062b",
+      "name": "model 1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -1616,
+        784
+      ],
+      "id": "330dc5dc-010b-435c-93c0-cc727ba59e12",
+      "name": "model 2"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -848,
+        688
+      ],
+      "id": "8277a4d1-0f88-4e07-b299-1fafc3bf25f0",
+      "name": "model 3"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n                    \"topic\": \"Photobiomodulation for shoulder pain\",\n                    \"searchQueries\": [\n                        \"photobiomodulation shoulder pain systematic review\",\n                        \"photobiomodulation therapy rotator cuff injuries RCT\",\n                        \"low-level laser therapy LLLT outcomes for shoulder rehabilitation\",\n                        \"photobiomodulation shoulder pain clinical guidelines\",\n                        \"photobiomodulation shoulder injury pain management case studies\"\n                    ]\n                }"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -1824,
+        720
+      ],
+      "id": "cd4aff6f-4aa8-46a2-94e9-d3bec23c6691",
+      "name": "s/o 1"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n                  \"topic\": \"iodine effects on the brain\",\n                  \"outline\": [\n                    {\n                      \"sectionTitle\": \"Introduction\",\n                      \"sectionPoints\": [\n                        \"Overview of iodine and its general role in human biology\",\n                        \"Why the brain specifically needs iodine\",\n                        \"Brief statement on significance of iodine in neurological processes\"\n                      ],\n                      \"subSections\": []\n                    },\n                    {\n                      \"sectionTitle\": \"Background and Historical Context\",\n                      \"sectionPoints\": [\n                        \"Early discoveries linking iodine to brain health\",\n                        \"Historical usage of iodine supplements\",\n                        \"Previous misconceptions or overlooked aspects in research\"\n                      ],\n                      \"subSections\": []\n                    },\n                    {\n                      \"sectionTitle\": \"Mechanisms of Iodine Action in the Brain\",\n                      \"sectionPoints\": [\n                        \"Physiological processes: how iodine is transported and utilized\",\n                        \"Role in hormone regulation (e.g., thyroid hormones) and neural development\"\n                      ],\n                      \"subSections\": [\n                        {\n                          \"subSectionTitle\": \"Iodine and Brain Development\",\n                          \"subSectionPoints\": [\n                            \"Key developmental stages influenced by iodine\",\n                            \"Potential impact of deficiency on cognitive outcomes\"\n                          ]\n                        }\n                      ]\n                    },\n                    {\n                      \"sectionTitle\": \"Key Research Findings\",\n                      \"sectionPoints\": [\n                        \"Major studies on iodine deficiency and cognitive function\",\n                        \"Recent findings on iodine supplementation outcomes\",\n                        \"Gaps in current research and conflicting results\"\n                      ],\n                      \"subSections\": []\n                    },\n                    {\n                      \"sectionTitle\": \"Practical Implications\",\n                      \"sectionPoints\": [\n                        \"Public health recommendations related to iodine intake\",\n                        \"Dietary sources and supplementation guidelines\",\n                        \"Preventive measures against deficiency\"\n                      ],\n                      \"subSections\": []\n                    },\n                    {\n                      \"sectionTitle\": \"Challenges and Controversies\",\n                      \"sectionPoints\": [\n                        \"Debates over optimal iodine intake levels\",\n                        \"Potential risks of excessive iodine consumption\"\n                      ],\n                      \"subSections\": []\n                    },\n                    {\n                      \"sectionTitle\": \"Future Directions\",\n                      \"sectionPoints\": [\n                        \"Areas of research that need further exploration\",\n                        \"Innovations in monitoring iodine status\",\n                        \"Potential clinical trials and large-scale studies\"\n                      ],\n                      \"subSections\": []\n                    },\n                    {\n                      \"sectionTitle\": \"Conclusion\",\n                      \"sectionPoints\": [\n                        \"Summary of iodine’s vital role in brain health\",\n                        \"Call to action for continued research or public awareness\"\n                      ],\n                      \"subSections\": []\n                    }\n                  ]\n                }"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -1440,
+        784
+      ],
+      "id": "5957592c-6522-48fe-9958-fb3a8e3bac12",
+      "name": "s/o 2"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n                  \"topic\": \"effects of ashwagandha on cortisol levels\",\n                  \"researchTasks\": [\n                    {\n                      \"sectionTitle\": \"Introduction\",\n                      \"queries\": [\n                        \"ashwagandha supplementation influence on cortisol response\"\n                      ],\n                      \"instructions\": [\n                        \"Overview of ashwagandha and its traditional use\",\n                        \"Brief introduction to cortisol\",\n                        \"Significance of ashwagandha-cortisol research\"\n                      ]\n                    },\n                    {\n                      \"sectionTitle\": \"Key Research Findings\",\n                      \"subSectionTitle\": \"Clinical Trials\",\n                      \"queries\": [\n                        \"clinical trials assessing ashwagandha impact on cortisol levels\"\n                      ],\n                      \"instructions\": [\n                        \"Study design, dosage, and statistical outcomes\",\n                        \"Major clinical trial outcomes\"\n                      ]\n                    },\n                    {\n                      \"sectionTitle\": \"Key Research Findings\",\n                      \"subSectionTitle\": \"Meta-analyses\",\n                      \"queries\": [\n                        \"ashwagandha supplementation influence on cortisol response\"\n                      ],\n                      \"instructions\": [\n                        \"Aggregated results and limitations\",\n                        \"Any meta-analyses findings\"\n                      ]\n                    }\n                  ]\n                }"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -560,
+        688
+      ],
+      "id": "ceb2c336-3a80-498e-9dba-037dbd0f2e22",
+      "name": "s/o 3"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -448,
+        272
+      ],
+      "id": "bb842f7e-996a-49d6-bc6d-bc5a4ac11c95",
+      "name": "model 4"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        368,
+        848
+      ],
+      "id": "13531808-9745-4858-bfec-3922f231643b",
+      "name": "model 5"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\"Topic\":\"Topic Here\",\n\"topicOutline\":\"Outline of section in nice text block here\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -208,
+        272
+      ],
+      "id": "e6c1913d-8143-46f0-a5e5-41afc96f79c7",
+      "name": "s/o 4"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"HTML Body\": \"<p>Water-only fasting, defined as the consumption of nothing but water for a set period, represents a unique form of dietary intervention that has garnered significant attention in both historical and clinical contexts. Traditionally practiced in various cultures for spiritual and health-related purposes, water-only fasting has evolved into a subject of modern scientific inquiry with particular focus on its extended applications. Extended water-only fasting, which includes fasting durations beyond 20 days, is of particular interest due to its potential to profoundly influence metabolic, cellular, and hormonal processes, while also posing unique challenges and risks [1].</p><p>The purpose of exploring extended water-only fasting is twofold: firstly, to understand its physiological and clinical impacts beyond the widely studied short-term fasting protocols, and secondly, to delineate its benefits and associated hazards in a controlled and medically supervised environment. Clinical research has begun to shed light on the safety, metabolic adaptations, and potential therapeutic effects associated with prolonged fasting periods, offering insights that might be critical in developing standardized fasting protocols for health improvement [2]. Furthermore, ongoing investigations continue to evaluate how extended fasting correlates with systemic detoxification, regeneration, and overall metabolic regulation, thereby fostering a deeper understanding of its comprehensive role in health management [3].</p>\",\n  \"recordID\": \"recordID Here\",\n  \"sectionName\": \"section name here\",\n  \"sectionSubTitle\": \"more info on topic\",\n  \"Citations\": [\n    \"1. https://pubmed.ncbi.nlm.nih.gov/29455546/\",\n    \"2. https://bmccomplementmedtherapies.biomedcentral.com/articles/10.1186/s12906-018-2136-6\",\n    \"3. https://onlinelibrary.wiley.com/doi/pdfdirect/10.1002/ctm2.502\"\n  ]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        848
+      ],
+      "id": "7b29ed80-c87f-41fb-9f56-7eb5d1bc6893",
+      "name": "s/o 5"
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "createdAt": "2025-10-27T12:46:33.182Z",
+      "updatedAt": "2025-10-27T12:46:33.182Z",
+      "role": "workflow:owner",
+      "workflowId": "cPZu16tUdT6aePjt",
+      "projectId": "rwZmgF8pMPgWdXwq"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-10-27T12:55:57.000Z",
+  "versionId": "2a3d8c48-a0f0-48ef-9f29-67055e0c3531"
+}
