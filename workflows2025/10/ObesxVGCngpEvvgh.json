@@ -1,0 +1,186 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "Workflow Input Trigger": {
+      "main": [
+        [
+          {
+            "node": "stringify outline",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "stringify outline": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-10-27T12:58:39.291Z",
+  "id": "ObesxVGCngpEvvgh",
+  "isArchived": false,
+  "meta": null,
+  "name": "Advanced Search",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "jsonExample",
+        "jsonExample": "{\n\"topicOfresearch\": \"drinking and how it affects financial status\",\n\"citationCount\":0,\n\"searchQuery\":\"drinking impact on financial status studies\",\n\"currentResearchSection\":\"Introduction\",\n\"sectionOutline\":\"[FROM aggregation_system_tool]\"\n}"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        304,
+        -192
+      ],
+      "id": "c9d2686f-462b-493b-a7c0-81fe088a9ee2",
+      "name": "Workflow Input Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer "
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"perplexity/sonar\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a research assistant providing structured responses in JSON format. You are just doing a part of the research. Here's the outline:{{ $json.sectionOutlineString[0] }}Your responsibility is the {{ $('Workflow Input Trigger').item.json.currentResearchSection }} section. You are to search the web and find a minimum of 3 citations to back your research. You are to output two JSON objects: \\\"researchHTML\\\" and \\\"citations\\\".\\\\n\\\\nFor \\\"researchHTML\\\", you must provide 3-5 detailed paragraphs going in depth on your section. Provide bracket links (e.g., \\\"[1]\\\") when citing information in your research.\\\\n\\\\nYour starting citation number depends on the citationCount. If the citationCount is 0, for example, you would start from 1 and keep counting onwards. Provide HTML output for the \\\"researchHTML\\\" JSON object. Start your citation numbering based on the provided citationCount.\\\\n\\\\nExample Output:\\\\n\\\\n```json\\\\n{\\\\n  \\\"researchHTML\\\": \\\"<p>Smiling has been shown to improve mood by releasing endorphins, which are natural mood enhancers [1]. Additionally, smiling can reduce stress levels by lowering cortisol production [2]. Engaging in regular smiling can lead to improved overall mental health and increased life satisfaction [3].</p>\\\",\\\\n  \\\"citations\\\": [\\\\n    \\\"[1] https://www.example.com/study1\\\",\\\\n    \\\"[2] https://www.example.com/study2\\\",\\\\n    \\\"[3] https://www.example.com/study3\\\"\\\\n  ]\\\\n}\\\\n```\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Based on your current research section, the citation count: {{ $json.citationCount[0] }} and this search query, searchQuery: {{ $('Workflow Input Trigger').item.json.searchQuery }}. Do the research in the requested format and try to have it be in line with your section of the outline and only cover your topics. If you can't find search queries on the given search query, find similar citations that support the section.\"\n    }\n  ],\n  \"response_format\": {\n    \"type\": \"json_schema\",\n    \"json_schema\": {\n      \"name\": \"research_topic\",\n      \"strict\": true,\n      \"schema\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"researchHTML\": {\n            \"type\": \"string\",\n            \"description\": \"Formatted HTML content summarizing the research.\"\n          },\n          \"citations\": {\n            \"type\": \"array\",\n            \"description\": \"A list of sources used for the research.\",\n            \"items\": {\n              \"type\": \"string\"\n            }\n          }\n        },\n        \"required\": [\"researchHTML\", \"citations\"],\n        \"additionalProperties\": false\n      }\n    }\n  }\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1216,
+        -208
+      ],
+      "id": "06439947-e0c6-40bd-91dd-7fe3be35ae18",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        816,
+        -208
+      ],
+      "id": "8fcdab06-179c-4bf5-9f23-ea1c0f12da97",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "sectionOutlineString"
+            },
+            {
+              "fieldToAggregate": "topicOfresearch"
+            },
+            {
+              "fieldToAggregate": "citationCount"
+            },
+            {
+              "fieldToAggregate": "searchQuery"
+            },
+            {
+              "fieldToAggregate": "currentResearchSection"
+            },
+            {
+              "fieldToAggregate": "sectionOutline"
+            },
+            {
+              "fieldToAggregate": "previousSection"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        -208
+      ],
+      "id": "b5c287aa-6af6-411b-9e9b-8c1830bd1a18",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get input data from previous nodes\nconst sectionOutline = $json.sectionOutline || \"\";\n\n// Convert to a JSON-safe string (escaping newlines)\nconst sectionOutlineString = sectionOutline.replace(/\\n/g, \"\\\\n\");\n\n// Output the formatted string\nreturn [{ sectionOutlineString }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -352
+      ],
+      "id": "cbc81e12-e123-4861-aa3d-743507249317",
+      "name": "stringify outline"
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "createdAt": "2025-10-27T12:58:39.296Z",
+      "updatedAt": "2025-10-27T12:58:39.296Z",
+      "role": "workflow:owner",
+      "workflowId": "ObesxVGCngpEvvgh",
+      "projectId": "rwZmgF8pMPgWdXwq"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-10-27T12:58:39.000Z",
+  "versionId": "fe6e5a92-2054-4de5-a286-5eaeb6d20c49"
+}
