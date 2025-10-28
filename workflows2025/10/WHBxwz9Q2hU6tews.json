@@ -905,7 +905,7 @@
                 },
                 "conditions": [
                   {
-                    "leftValue": "={{ $json.output.clarification_needed }}",
+                    "leftValue": "={{ $json.output.to_user }}",
                     "rightValue": "",
                     "operator": {
                       "type": "boolean",
@@ -929,7 +929,7 @@
                 "conditions": [
                   {
                     "id": "30f5ad2a-a986-468b-8918-77f23b76b6cc",
-                    "leftValue": "={{ $json.output.clarification_needed }}",
+                    "leftValue": "={{ $json.output.to_user }}",
                     "rightValue": "",
                     "operator": {
                       "type": "boolean",
@@ -997,6 +997,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2025-10-23T10:54:44.000Z",
-  "versionId": "4faf5164-397a-4fd9-a1b6-dea378422a11"
+  "updatedAt": "2025-10-27T17:27:52.000Z",
+  "versionId": "4f337a88-01a9-4250-9c26-a025057705dc"
 }
