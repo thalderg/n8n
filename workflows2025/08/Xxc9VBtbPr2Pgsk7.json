@@ -218,7 +218,7 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "name": "Crypto Twitter Scraper",
+  "name": "Crypto_X_Scraper",
   "nodes": [
     {
       "parameters": {
@@ -380,7 +380,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1504,
+        1472,
         -64
       ],
       "id": "bd7d7a77-2157-4664-a99e-c5fa30628ba6",
@@ -1487,6 +1487,6 @@
     }
   ],
   "triggerCount": 1,
-  "updatedAt": "2025-10-27T11:28:50.000Z",
-  "versionId": "e75ef940-56cb-420b-bb82-ae91fd6740f8"
+  "updatedAt": "2025-10-28T11:00:42.000Z",
+  "versionId": "3176e549-35d2-40ed-b01a-c5be2afbf55e"
 }
