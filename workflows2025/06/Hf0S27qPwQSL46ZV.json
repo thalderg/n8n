@@ -212,7 +212,7 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "name": "Twitter Generator",
+  "name": "AI_X_Scraper",
   "nodes": [
     {
       "parameters": {
@@ -1441,6 +1441,6 @@
   },
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2025-10-23T12:09:33.000Z",
-  "versionId": "56686de6-f05e-43a6-9baf-d51e46f99343"
+  "updatedAt": "2025-10-28T11:01:02.000Z",
+  "versionId": "1f7602d3-42fd-4a27-b9aa-5412545e027c"
 }
