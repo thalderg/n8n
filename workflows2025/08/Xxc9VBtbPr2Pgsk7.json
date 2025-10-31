@@ -2,17 +2,6 @@
   "": "",
   "active": true,
   "connections": {
-    "Topic Generator": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Topics",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Edit Fields": {
       "main": [
         [
@@ -124,7 +113,7 @@
       "main": [
         [
           {
-            "node": "Topic Generator",
+            "node": "Call 'Crypto Topics'",
             "type": "main",
             "index": 0
           }
@@ -210,6 +199,17 @@
           }
         ]
       ]
+    },
+    "Call 'Crypto Topics'": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "createdAt": "2025-08-05T12:18:21.291Z",
@@ -220,19 +220,6 @@
   },
   "name": "Crypto_X_Scraper",
   "nodes": [
-    {
-      "parameters": {
-        "jsCode": "// Create array of topics\nconst topics = [\"from:aixbt_agent\",\"from:GCcookeHQ\", \"from:Zeneca\", \"from:waleswoosh\", \"from:beast_ico\", \"from:GCcookeHQ\", \"from:s4mmyEth\", \"from:0xNairolf\", \"from:cookiedotfun\", \"from:PizzinoMichael\", \"from:0xDith\", \"from:GCcookeHQ\",\"from:aixbt_agent\",\"from:tri_sigma_\", \"from:Route2FI\", \"from:milesdeutscher\", \"from:PixOnChain\", \"from:Defi0xJeff\", \"from:ZssBecker\", \"from:Axel_bitblaze69\", \"from:waleswoosh\", \"from:Zeneca\", \"from:iamDCinvestor\"];\n// Return as array of objects\nreturn topics.map(topic => ({\n  json: {\n    topic: topic\n  }\n}));"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -96,
-        -240
-      ],
-      "id": "a6b85ec6-d582-420e-8ed3-e265b24512c9",
-      "name": "Topic Generator"
-    },
     {
       "parameters": {
         "assignments": {
@@ -1423,6 +1410,30 @@
           "name": "Google Sheets account"
         }
       }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "0EyBOf0axlCox1sp",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/0EyBOf0axlCox1sp",
+          "cachedResultName": "My project — Crypto Topics"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {}
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -192,
+        -224
+      ],
+      "id": "e1f30a6d-968c-4570-9fa9-2c8ceca88093",
+      "name": "Call 'Crypto Topics'"
     }
   ],
   "pinData": {
@@ -1487,6 +1498,6 @@
     }
   ],
   "triggerCount": 1,
-  "updatedAt": "2025-10-28T11:00:42.000Z",
-  "versionId": "3176e549-35d2-40ed-b01a-c5be2afbf55e"
+  "updatedAt": "2025-10-30T09:54:17.000Z",
+  "versionId": "61241fcc-bf03-43bf-9c3d-c76dd01839d7"
 }
