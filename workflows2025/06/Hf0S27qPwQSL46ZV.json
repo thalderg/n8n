@@ -1469,7 +1469,9 @@
       ]
     },
     "node:Schedule Trigger1": {
-      "recurrenceRules": []
+      "recurrenceRules": [
+        303
+      ]
     }
   },
   "tags": [],
