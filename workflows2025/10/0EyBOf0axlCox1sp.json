@@ -1,0 +1,71 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Topic Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-10-30T09:48:56.911Z",
+  "id": "0EyBOf0axlCox1sp",
+  "isArchived": false,
+  "meta": null,
+  "name": "Crypto Topics",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -640,
+        -96
+      ],
+      "id": "a0442c24-e915-4db8-82e9-26fa7ee2bd36",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Create array of topics\nconst topics = [\"from:aixbt_agent\",\"from:GCcookeHQ\", \"from:Zeneca\", \"from:waleswoosh\", \"from:beast_ico\", \"from:GCcookeHQ\", \"from:s4mmyEth\", \"from:0xNairolf\", \"from:cookiedotfun\", \"from:PizzinoMichael\", \"from:0xDith\", \"from:GCcookeHQ\",\"from:aixbt_agent\",\"from:tri_sigma_\", \"from:Route2FI\", \"from:milesdeutscher\", \"from:PixOnChain\", \"from:Defi0xJeff\", \"from:ZssBecker\", \"from:Axel_bitblaze69\", \"from:waleswoosh\", \"from:Zeneca\", \"from:iamDCinvestor\"];\n// Return as array of objects\nreturn topics.map(topic => ({\n  json: {\n    topic: topic\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        -96
+      ],
+      "id": "3fdad271-a55b-406b-b672-4489ca4b4b87",
+      "name": "Topic Generator"
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "createdAt": "2025-10-30T09:48:56.915Z",
+      "updatedAt": "2025-10-30T09:48:56.915Z",
+      "role": "workflow:owner",
+      "workflowId": "0EyBOf0axlCox1sp",
+      "projectId": "rwZmgF8pMPgWdXwq"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-10-30T09:50:10.000Z",
+  "versionId": "278717d2-1a31-4584-8a64-a522a5b17bc0"
+}
