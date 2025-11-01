@@ -489,8 +489,8 @@
       "type": "@n8n/n8n-nodes-langchain.toolThink",
       "typeVersion": 1.1,
       "position": [
-        -240,
-        480
+        48,
+        448
       ],
       "id": "780f1250-c3dd-4539-b38c-37fd2e706c70",
       "name": "Think"
@@ -499,9 +499,9 @@
       "parameters": {
         "model": {
           "__rl": true,
-          "value": "o3-mini",
+          "value": "gpt-4.1",
           "mode": "list",
-          "cachedResultName": "o3-mini"
+          "cachedResultName": "gpt-4.1"
         },
         "options": {}
       },
@@ -547,8 +547,8 @@
       "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
       "typeVersion": 1.1,
       "position": [
-        -368,
-        480
+        -320,
+        496
       ],
       "id": "2a8299ce-0c37-4193-b3c8-7c8da83e1fff",
       "name": "X KOL Vector Store Tool"
@@ -58980,6 +58980,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-10-30T14:56:28.000Z",
-  "versionId": "83c5abd6-be0d-4f83-8d46-551d4f0ffbad"
+  "updatedAt": "2025-10-31T10:38:15.000Z",
+  "versionId": "fd9f0fd5-6f6a-4a34-9f83-3ddedcb43529"
 }
