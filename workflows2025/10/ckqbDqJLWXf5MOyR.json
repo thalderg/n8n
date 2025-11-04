@@ -470,8 +470,8 @@
       "type": "@n8n/n8n-nodes-langchain.toolThink",
       "typeVersion": 1.1,
       "position": [
-        48,
-        448
+        -16,
+        496
       ],
       "id": "780f1250-c3dd-4539-b38c-37fd2e706c70",
       "name": "Think"
@@ -577,7 +577,7 @@
       "typeVersion": 1.2,
       "position": [
         -16,
-        96
+        112
       ],
       "id": "04584445-9a6d-4d22-a392-dab1f835ae65",
       "name": "Embedding 3-small1",
@@ -58925,6 +58925,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-11-01T10:47:50.000Z",
-  "versionId": "9b43cd75-a33c-425f-a970-29326389ad1b"
+  "updatedAt": "2025-11-03T09:13:54.000Z",
+  "versionId": "61cac7d9-4dd3-457b-90ea-7413f823a1e3"
 }
