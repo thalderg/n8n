@@ -2,17 +2,6 @@
   "": "",
   "active": true,
   "connections": {
-    "Topic Generator1": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Topics1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Edit Fields1": {
       "main": [
         [
@@ -124,7 +113,7 @@
       "main": [
         [
           {
-            "node": "Topic Generator1",
+            "node": "Call 'AI KOLs and Topics'",
             "type": "main",
             "index": 0
           }
@@ -210,6 +199,17 @@
           }
         ]
       ]
+    },
+    "Call 'AI KOLs and Topics'": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Topics1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "createdAt": "2025-06-03T12:41:27.079Z",
@@ -220,19 +220,6 @@
   },
   "name": "AI_X_Scraper",
   "nodes": [
-    {
-      "parameters": {
-        "jsCode": "// Create array of topics\nconst topics = [\"n8n -FREE\", \"from:JulianGoldieSEO\", \"from:boringmarketer\", \"from:EXM7777\"];\n// Return as array of objects\nreturn topics.map(topic => ({\n  json: {\n    topic: topic\n  }\n}));"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -1680,
-        976
-      ],
-      "id": "44c3a55d-da09-4faa-a350-ec08a8b7740e",
-      "name": "Topic Generator1"
-    },
     {
       "parameters": {
         "assignments": {
@@ -930,8 +917,8 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
       "position": [
-        -2064,
-        816
+        -2112,
+        944
       ],
       "id": "e6be4306-1e9b-4af9-8567-4d57d30c61d1",
       "name": "Schedule Trigger1"
@@ -1426,6 +1413,30 @@
           "name": "Google Sheets account"
         }
       }
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "S6n2cmAtmBGJAHYv",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/S6n2cmAtmBGJAHYv",
+          "cachedResultName": "My project — AI KOLs and Topics"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {}
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -1856,
+        944
+      ],
+      "id": "8c2392fb-c001-4364-8c21-582d5905e40b",
+      "name": "Call 'AI KOLs and Topics'"
     }
   ],
   "pinData": {
@@ -1470,12 +1481,12 @@
     },
     "node:Schedule Trigger1": {
       "recurrenceRules": [
-        307
+        309
       ]
     }
   },
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2025-10-29T09:27:40.000Z",
-  "versionId": "ab33893f-9c19-4b55-97c0-9bd607fc516f"
+  "updatedAt": "2025-11-05T11:44:57.000Z",
+  "versionId": "0bdc79e6-060d-429d-ac91-9adf1c2a5850"
 }
