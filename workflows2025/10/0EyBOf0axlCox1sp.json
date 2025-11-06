@@ -18,7 +18,7 @@
   "id": "0EyBOf0axlCox1sp",
   "isArchived": false,
   "meta": null,
-  "name": "Crypto Topics",
+  "name": "Crypto KOL accounts",
   "nodes": [
     {
       "parameters": {
@@ -66,6 +66,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-10-30T09:50:10.000Z",
-  "versionId": "278717d2-1a31-4584-8a64-a522a5b17bc0"
+  "updatedAt": "2025-11-05T11:41:31.000Z",
+  "versionId": "d239137d-ba09-4584-966f-39780ed11db2"
 }
