@@ -1,0 +1,71 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Topic Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-11-05T11:42:08.526Z",
+  "id": "S6n2cmAtmBGJAHYv",
+  "isArchived": false,
+  "meta": null,
+  "name": "AI KOLs and Topics",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -640,
+        -96
+      ],
+      "id": "09ed1482-f615-429c-9437-9b2b4db708c6",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Create array of topics\nconst topics = [\"n8n -FREE\", \"from:JulianGoldieSEO\", \"from:boringmarketer\", \"from:EXM7777\"];\n// Return as array of objects\nreturn topics.map(topic => ({\n  json: {\n    topic: topic\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -368,
+        -96
+      ],
+      "id": "8a624a3c-56d9-4e06-99e0-50aa32511029",
+      "name": "Topic Generator"
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "createdAt": "2025-11-05T11:42:08.531Z",
+      "updatedAt": "2025-11-05T11:42:08.531Z",
+      "role": "workflow:owner",
+      "workflowId": "S6n2cmAtmBGJAHYv",
+      "projectId": "rwZmgF8pMPgWdXwq"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-05T11:43:00.000Z",
+  "versionId": "a9f3ddad-896d-4923-a0c1-cf929372f8b6"
+}
