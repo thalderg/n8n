@@ -35,7 +35,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// Create array of topics\nconst topics = [\"from:aixbt_agent\",\"from:GCcookeHQ\", \"from:Zeneca\", \"from:waleswoosh\", \"from:beast_ico\", \"from:GCcookeHQ\", \"from:s4mmyEth\", \"from:0xNairolf\", \"from:cookiedotfun\", \"from:PizzinoMichael\", \"from:0xDith\", \"from:GCcookeHQ\",\"from:aixbt_agent\",\"from:tri_sigma_\", \"from:Route2FI\", \"from:milesdeutscher\", \"from:PixOnChain\", \"from:Defi0xJeff\", \"from:ZssBecker\", \"from:Axel_bitblaze69\", \"from:waleswoosh\", \"from:Zeneca\", \"from:iamDCinvestor\"];\n// Return as array of objects\nreturn topics.map(topic => ({\n  json: {\n    topic: topic\n  }\n}));"
+        "jsCode": "// Create array of topics\nconst topics = [\"from:beast_ico\", \"from:s4mmyEth\", \"from:0xNairolf\", \"from:cookiedotfun\", \"from:0xDith\", \"from:GCcookeHQ\", \"from:aixbt_agent\", \"from:tri_sigma_\", \"from:Route2FI\", \"from:milesdeutscher\", \"from:PixOnChain\", \"from:Defi0xJeff\", \"from:ZssBecker\", \"from:Axel_bitblaze69\", \"from:iamDCinvestor\", \"from:waleswoosh\", \"from:Zeneca\"];\n// Return as array of objects\nreturn topics.map(topic => ({\n  json: {\n    topic: topic\n  }\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -66,6 +66,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-11-05T11:41:31.000Z",
-  "versionId": "d239137d-ba09-4584-966f-39780ed11db2"
+  "updatedAt": "2025-11-06T12:40:53.000Z",
+  "versionId": "d45d6c86-3986-46ec-9100-7316bc30ce61"
 }
