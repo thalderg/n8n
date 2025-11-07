@@ -109,25 +109,7 @@
       "main": [
         [
           {
-            "node": "Loop Over  Sheet Name",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Loop Over  Sheet Name": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Topic",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Call 'RAG'",
+            "node": "Add Fields",
             "type": "main",
             "index": 0
           }
@@ -149,7 +131,7 @@
       "main": [
         [
           {
-            "node": "Wait",
+            "node": "Aggregate",
             "type": "main",
             "index": 0
           }
@@ -189,17 +171,6 @@
         ]
       ]
     },
-    "Remove Duplicates": {
-      "main": [
-        [
-          {
-            "node": "Supabase Vector Store",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Execute Workflow Trigger": {
       "main": [
         [
@@ -211,11 +182,148 @@
         ]
       ]
     },
-    "Call 'RAG'": {
+    "Has Error": {
       "main": [
         [
           {
-            "node": "Loop Over  Sheet Name",
+            "node": "Loop Over Sheet Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Sheet Name": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Topic",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "XRAG Load",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Has Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "XRAG Load": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Sheet Name",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Fields": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Sheet Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Duplicates": {
+      "main": [
+        [
+          {
+            "node": "If New",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Inserted": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "All duplicates": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If New": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "All duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Inserted",
             "type": "main",
             "index": 0
           }
@@ -249,8 +357,8 @@
       "type": "@n8n/n8n-nodes-langchain.chatTrigger",
       "typeVersion": 1.3,
       "position": [
-        -1312,
-        608
+        -304,
+        1344
       ],
       "id": "72132196-62a1-4010-973c-d3c2ce900a62",
       "name": "When chat message received",
@@ -266,8 +374,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        -544,
-        768
+        352,
+        1536
       ],
       "id": "4074bf7a-fdc4-44cb-bc75-e3d1e8f9be66",
       "name": "AI Agent"
@@ -277,8 +385,8 @@
       "type": "@n8n/n8n-nodes-langchain.toolThink",
       "typeVersion": 1.1,
       "position": [
-        16,
-        608
+        1360,
+        1280
       ],
       "id": "780f1250-c3dd-4539-b38c-37fd2e706c70",
       "name": "Think"
@@ -296,8 +404,8 @@
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.2,
       "position": [
-        -704,
-        544
+        176,
+        1120
       ],
       "id": "82c11fbc-8881-4537-8ba2-4f8ca7d61879",
       "name": "GPT-5",
@@ -315,8 +423,8 @@
       "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
       "typeVersion": 1.3,
       "position": [
-        -528,
-        528
+        480,
+        1136
       ],
       "id": "140168bb-078c-4b42-a795-e64f62e24c60",
       "name": "Postgres Chat Memory",
@@ -345,8 +453,8 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
       "typeVersion": 1.3,
       "position": [
-        -368,
-        576
+        848,
+        1040
       ],
       "id": "559c0504-8032-4d6e-a500-4b74dc26228a",
       "name": "Supabase Vector Store1",
@@ -364,8 +472,8 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
       "typeVersion": 1.2,
       "position": [
-        -560,
-        688
+        672,
+        1200
       ],
       "id": "4a4bcc53-f5de-4e52-aa43-f3c85a7b15be",
       "name": "Embedding 3-small",
@@ -424,7 +532,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -720,
+        -704,
         -112
       ],
       "id": "bec2a9cd-9a7e-4bf0-b974-d37b497f7557",
@@ -432,29 +540,16 @@
     },
     {
       "parameters": {
-        "options": {}
-      },
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        -384,
-        -112
-      ],
-      "id": "58b79bec-f559-414d-8b8c-d6e77076ac1e",
-      "name": "Loop Over  Sheet Name"
-    },
-    {
-      "parameters": {
-        "content": "# 📋 Workflow Logic\n\n## For each topic:\n### - Loop over corresponding **sheet name**\n### - Add data to **Supabase**\n---\n\n## Flow:\n### 1. Topic → Sheet mapping\n### 2. Query Google Sheets one sheet at a time\n### 3. Insert into Supabase\n---\n\n## 🔄 Loop Over Topics \n### processes one topic at a time\n\n## 🔄  Loop Over sheet Name\n### processes one sheet name at a time under the main topic google sheet",
-        "height": 1216,
-        "width": 2416,
-        "color": 6
+        "content": "# 📋 Workflow RAG load Logic\n\n## For each topic:\n### - Loop over corresponding **sheet name**\n### - Add data to **Supabase**\n---\n\n## Flow:\n### 1. Topic → Sheet mapping\n### 2. Query Google Sheets one sheet at a time. each sheet is an account or topic from X\n### 3. Insert into Supabase\n---\n\n## 🔄 Loop Over Topics \n### processes one topic at a time\n\n## 🔄  Loop Over sheet Name\n### processes one sheet name at a time calling the Subworkflow",
+        "height": 544,
+        "width": 704,
+        "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1904,
-        -768
+        -1664,
+        -960
       ],
       "id": "60ad1f7d-03bc-43eb-b0a9-aefcaf67fe33",
       "name": "Sticky Note"
@@ -464,7 +559,7 @@
         "authentication": "serviceAccount",
         "documentId": {
           "__rl": true,
-          "value": "={{ $(\"Loop Over Topic\").item.json.sheetId }}",
+          "value": "={{ $json.sheet_id }}",
           "mode": "id"
         },
         "sheetName": {
@@ -477,8 +572,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        448,
-        624
+        -1456,
+        496
       ],
       "id": "4e0ea7db-0015-490b-913d-90d5b0c28dbe",
       "name": "Get row(s) in sheet",
@@ -505,8 +600,8 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
       "typeVersion": 1.3,
       "position": [
-        976,
-        544
+        -736,
+        416
       ],
       "id": "c43eff4f-f5cb-4378-837d-d081872b080d",
       "name": "Supabase Vector Store",
@@ -651,7 +746,7 @@
               },
               {
                 "name": "main_topic",
-                "value": "={{ $(\"Loop Over Topic\").item.json.mainTopic }}"
+                "value": "={{ $(\"Execute Workflow Trigger\").item.json.main_topic }}"
               }
             ]
           }
@@ -660,8 +755,8 @@
       "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
       "typeVersion": 1.1,
       "position": [
-        912,
-        880
+        -544,
+        640
       ],
       "id": "66221400-ffbe-46d7-8f9c-93ddf510556d",
       "name": "Default Data Loader"
@@ -673,8 +768,8 @@
       "type": "@n8n/n8n-nodes-langchain.textSplitterCharacterTextSplitter",
       "typeVersion": 1,
       "position": [
-        784,
-        976
+        -656,
+        752
       ],
       "id": "8a4e02ac-2743-4d02-a7c7-7b40686c6a57",
       "name": "Character Text Splitter"
@@ -686,8 +781,8 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
       "typeVersion": 1.2,
       "position": [
-        480,
-        848
+        -752,
+        624
       ],
       "id": "c5896377-ab49-45b5-afff-cbf4b85f15b5",
       "name": "Embedding 3-small1",
@@ -700,55 +795,122 @@
     },
     {
       "parameters": {
-        "amount": 3
-      },
-      "type": "n8n-nodes-base.wait",
-      "typeVersion": 1.1,
-      "position": [
-        1376,
-        592
-      ],
-      "id": "089ac300-831a-43b7-8ea8-643a71676927",
-      "name": "Wait",
-      "webhookId": "41fd0a0b-5831-4ad3-8dea-a3f6255fd4d7"
-    },
-    {
-      "parameters": {
-        "operation": "removeItemsSeenInPreviousExecutions",
-        "dedupeValue": "={{ $json.tweet_id }}",
-        "options": {
-          "historySize": 200000
-        }
-      },
-      "type": "n8n-nodes-base.removeDuplicates",
-      "typeVersion": 2,
-      "position": [
-        640,
-        592
-      ],
-      "id": "c934fbc7-591e-41c5-a1c1-f7e70f4e50d3",
-      "name": "Remove Duplicates"
-    },
-    {
-      "parameters": {
         "inputSource": "passthrough"
       },
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
-        192,
-        768
+        -1664,
+        496
       ],
       "id": "b1c1e931-3bd9-49ae-9a63-050a8eeac2c8",
       "name": "Execute Workflow Trigger"
     },
     {
       "parameters": {
+        "jsCode": "// Check if the input has error information\nif ($input.item.json.error || $input.item.json.lastNodeExecuted) {\n  // Create a rich error object\n  $input.item.json.errorDetails = {\n    lastNode: $input.item.json.lastNodeExecuted || \"Unknown\",\n    errorMessage: $input.item.json.error || \"Unknown error\",\n    workflowId: $workflow.id,\n    executionId: $execution.id,\n    workflowURL: `https://gioben.app.n8n.cloud/workflow/${$workflow.id}`,\n    executionURL:   `https://gioben.app.n8n.cloud/workflow/${$workflow.id}/executions/${$execution.id}`\n  };\n}\nreturn $input.item;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        -80
+      ],
+      "id": "766b548c-f2a2-4e02-a0c6-4d9d4f008e76",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e7043922-7293-4844-bd46-86b5043b22da",
+              "name": "hasError",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        688,
+        -80
+      ],
+      "id": "3e73c0e7-cc8a-4dde-9fc6-4e8b0bd281f9",
+      "name": "Has Error"
+    },
+    {
+      "parameters": {
+        "sendTo": "gioben@protonmail.com",
+        "subject": "Error in X RAG workflow",
+        "emailType": "text",
+        "message": "==:x: Failed to add to RAG {{ $('Loop Over Sheet Name').item.json.topic }} from sheet ID ({{ $('Loop Over Sheet Name').item.json.sheet_id}})\n\n*Error Details:*\n{{ $json.errorDetails.errorMessage }}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        512,
+        -80
+      ],
+      "id": "2c4d557a-8a36-4f8e-acd9-f908a3479c0a",
+      "name": "Send a message",
+      "webhookId": "25e7c378-da6b-4bdb-ad0c-848e731af504",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "EdToD3kB7ULzhVZc",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -288,
+        -112
+      ],
+      "id": "58b79bec-f559-414d-8b8c-d6e77076ac1e",
+      "name": "Loop Over Sheet Name"
+    },
+    {
+      "parameters": {
+        "sendTo": "gioben@protonmail.com",
+        "subject": "X RAG workflow completed",
+        "emailType": "text",
+        "message": "=={{ $json.hasError\n  ? \"⚠️ supabase RAG data load with issues - \"\n  : \"✅ supabase RAG data load has completed successfully - \" }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -16,
+        -288
+      ],
+      "id": "5e1ad6aa-25fe-4e66-baf3-e5b4e005f2ee",
+      "name": "Send a message1",
+      "webhookId": "3769228a-57b0-46df-870b-f19d80c68bde",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "EdToD3kB7ULzhVZc",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "ckqbDqJLWXf5MOyR/b1c1e9",
+          "value": "={{ $workflow.id }}",
           "mode": "id",
-          "cachedResultUrl": "/workflow/ckqbDqJLWXf5MOyR%2Fb1c1e9"
+          "cachedResultUrl": "/workflow/=%7B%7B%20$workflow.id%20%7D%7D"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
@@ -765,14 +927,244 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -96,
-        -80
+        48,
+        -96
       ],
       "id": "39308736-6567-4c5c-8c56-358c8fbdcff5",
-      "name": "Call 'RAG'"
+      "name": "XRAG Load",
+      "onError": "continueErrorOutput",
+      "notes": "If there is an error send me a notification"
+    },
+    {
+      "parameters": {
+        "content": "# Workflow RAG Load",
+        "height": 688,
+        "width": 2896,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1728,
+        -368
+      ],
+      "id": "a93e38a3-9449-4b3e-9739-5cb1efd22246",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Subworflow RAG Load",
+        "height": 704,
+        "width": 1728,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -1744,
+        384
+      ],
+      "id": "fff59c71-982e-4f21-8efe-c5c9e44a96fc",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8744484e-1691-4f29-b963-d0c8fbeb71ab",
+              "name": "sheet_id",
+              "value": "={{ $(\"Loop Over Topic\").item.json.sheetId }}",
+              "type": "string"
+            },
+            {
+              "id": "f691d51d-bbaa-49f5-9962-d9a3c78071bd",
+              "name": "main_topic",
+              "value": "={{ $(\"Loop Over Topic\").item.json.mainTopic }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -496,
+        -112
+      ],
+      "id": "29aa2cd5-5d6b-4c9a-9427-9e23391bf2a2",
+      "name": "Add Fields"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -112,
+        624
+      ],
+      "id": "61d2bd20-de2b-4a84-a8df-1bc576c4caed",
+      "name": "Wait",
+      "webhookId": "687f0d1f-1754-4c59-ad00-9fd57ec9cd42"
+    },
+    {
+      "parameters": {
+        "operation": "removeItemsSeenInPreviousExecutions",
+        "dedupeValue": "={{ $json.tweet_id + $json.retweet_count }}",
+        "options": {
+          "historySize": 200000
+        }
+      },
+      "type": "n8n-nodes-base.removeDuplicates",
+      "typeVersion": 2,
+      "position": [
+        -1264,
+        496
+      ],
+      "id": "bcf323d2-c15b-4fcd-b807-c3ae1c7eecd6",
+      "name": "Remove Duplicates",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "be1c54a8-07aa-4dcc-bbd1-8525956dbbf5",
+              "name": "status",
+              "value": "inserted",
+              "type": "string"
+            },
+            {
+              "id": "83fd0812-b50e-43d3-a6d5-e3543d0b3f0b",
+              "name": "inserted",
+              "value": "={{ $input.all().length }}",
+              "type": "number"
+            },
+            {
+              "id": "c24963ea-f1a4-4d46-ae31-e9771b8ee478",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -272,
+        416
+      ],
+      "id": "ea8c5cdc-76a1-42fb-bdf7-811bd06b8cf0",
+      "name": "Inserted"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "be1c54a8-07aa-4dcc-bbd1-8525956dbbf5",
+              "name": "status",
+              "value": "discarded",
+              "type": "string"
+            },
+            {
+              "id": "83fd0812-b50e-43d3-a6d5-e3543d0b3f0b",
+              "name": "inserted",
+              "value": "={{ $input.all().length - 1}}",
+              "type": "number"
+            },
+            {
+              "id": "c24963ea-f1a4-4d46-ae31-e9771b8ee478",
+              "name": "timestamp",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -576,
+        944
+      ],
+      "id": "97805191-308a-4be1-b49d-eb27f2cf3247",
+      "name": "All duplicates"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7af164a6-bcfd-40fe-8a10-b32ee1625f13",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1040,
+        496
+      ],
+      "id": "54841ef4-812c-4e40-9dad-075920d4acc7",
+      "name": "If New"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "={{ $json.author_username }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        416
+      ],
+      "id": "e7449900-1b4f-4148-90de-b183fbe0d521",
+      "name": "Aggregate"
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "Execute Workflow Trigger": [
+      {
+        "json": {
+          "topic": "from:beast_ico",
+          "sheet_id": "1ogx9HwuMS246j6ddaUGTi6KhLmeMAky7ogqfmtZVl08",
+          "main_topic": "crypto_KOLs"
+        }
+      }
+    ]
+  },
   "repo_name": "n8n",
   "repo_owner": "thalderg",
   "repo_path": "workflows",
@@ -791,6 +1183,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-11-05T15:36:45.000Z",
-  "versionId": "ebffdb86-0b04-492b-bdc1-76f6bcb96662"
+  "updatedAt": "2025-11-06T15:45:27.000Z",
+  "versionId": "19abb7b0-9088-4d8f-b006-5ca8c5066eef"
 }
