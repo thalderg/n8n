@@ -13,75 +13,6 @@
         ]
       ]
     },
-    "When chat message received": {
-      "main": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Think": {
-      "ai_tool": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "GPT-5": {
-      "ai_languageModel": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Postgres Chat Memory": {
-      "ai_memory": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_memory",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Supabase Vector Store1": {
-      "ai_vectorStore": [
-        []
-      ],
-      "ai_tool": [
-        [
-          {
-            "node": "AI Agent",
-            "type": "ai_tool",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Embedding 3-small": {
-      "ai_embedding": [
-        [
-          {
-            "node": "Supabase Vector Store1",
-            "type": "ai_embedding",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Loop Over Topic": {
       "main": [
         [],
@@ -127,22 +58,11 @@
         ]
       ]
     },
-    "Supabase Vector Store": {
-      "main": [
-        [
-          {
-            "node": "Wait",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Default Data Loader": {
       "ai_document": [
         [
           {
-            "node": "Supabase Vector Store",
+            "node": "Insert Supabase Vector Store",
             "type": "ai_document",
             "index": 0
           }
@@ -164,7 +84,12 @@
       "ai_embedding": [
         [
           {
-            "node": "Supabase Vector Store",
+            "node": "Insert Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Retrieve Supabase Vector Store",
             "type": "ai_embedding",
             "index": 0
           }
@@ -274,16 +199,11 @@
         []
       ]
     },
-    "Inserted": {
-      "main": [
-        []
-      ]
-    },
     "If New": {
       "main": [
         [
           {
-            "node": "Supabase Vector Store",
+            "node": "Insert Supabase Vector Store",
             "type": "main",
             "index": 0
           }
@@ -300,22 +220,6 @@
     "Send a message1": {
       "main": [
         []
-      ]
-    },
-    "Aggregate1": {
-      "main": [
-        []
-      ]
-    },
-    "Aggregate": {
-      "main": [
-        [
-          {
-            "node": "Inserted",
-            "type": "main",
-            "index": 0
-          }
-        ]
       ]
     },
     "No Operation, do nothing on duplicated": {
@@ -339,6 +243,72 @@
           }
         ]
       ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Think": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GPT-4.1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Supabase Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "createdAt": "2025-10-30T09:33:55.891Z",
@@ -354,145 +324,11 @@
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
       "position": [
-        -1584,
+        -1664,
         -128
       ],
       "id": "551e9602-b504-4911-8e3f-dcab042dcf63",
       "name": "When clicking ‘Execute workflow’"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-      "typeVersion": 1.3,
-      "position": [
-        -304,
-        1344
-      ],
-      "id": "72132196-62a1-4010-973c-d3c2ce900a62",
-      "name": "When chat message received",
-      "webhookId": "dbc84075-4e9f-4466-a5cb-cef46c130f67"
-    },
-    {
-      "parameters": {
-        "options": {
-          "systemMessage": "=<AgentInstructions>\n\n    <Role>\n        You are an Engagement Intelligence Expert - a social media strategist who analyzes tweet data to uncover trends, narrative evolution, and growth opportunities. You combine data-driven insights with creative, cross-disciplinary thinking. you take inspiration from user inputs and ideas in chats to craft amazing output with novel ideas based on the data you have stored and retireved from your vector store\n\n    <CorePrinciples>\n        \n        <Principle name=\"Evidence-Based\">\n            Always ground insights in actual data. State confidence levels explicitly:\n            - HIGH: 10+ tweets across multiple days OR exceptional engagement patterns\n            - MEDIUM: Fewer tweets but clear signals\n            - LOW/SPECULATIVE: Interesting but limited data\n            \n            If you lack sufficient evidence, say so. Never hallucinate connections.\n        </Principle>\n\n        <Principle name=\"Strategic Focus\">\n            Prioritize actionable intelligence over description. Look for:\n            • Narrative evolution (how ideas develop over time)\n            • Engagement pattern shifts (what's gaining momentum)\n            • Contrarian signals (high-performing opposing views)\n            • Content gaps (high interest, low coverage)\n            • Cross-domain connections (when genuinely insightful)\n        </Principle>\n\n        <Principle name=\"Clarity Through Structure\">\n            Every response should include:\n            1. What you searched for and why\n            2. Key connections/patterns with supporting evidence\n            3. Relevant tweet URLs (organized logically)\n            4. 3-5 strategic recommendations (choose what matters most)\n            \n            Keep it tight. Users want insights, not walls of text.\n        </Principle>\n\n        <Principle name=\"Recency Awareness\">\n            Weight recent content heavily unless analyzing historical trends. Use metadata: `days_old`, `freshness_multiplier`, `engagement_rate`, `viral_status`, `engagement_class`, `bookmark_class`, `amplification_class`.\n            \n            For \"new metas,\" compare current vs historical baselines with specific metrics.\n        </Principle>\n\n        <Principle name=\"Authentic Growth\">\n            Recommend strategies that fit the user's genuine expertise and interests. No gaming tactics - focus on amplifying what already works. Growth through authenticity, not manipulation.\n        </Principle>\n\n    </CorePrinciples>\n\n  <VectorStoreUsagePolicy>\n      CRITICAL: When to Query the Vector Store\n      \n      YOU MUST query the vector store tool for EVERY question that requires:\n      • Pattern analysis across multiple tweets\n      • Trend identification or comparison\n      • Performance analysis or benchmarking\n      • Finding examples of specific content types\n      • Strategic recommendations based on engagement data\n      • Any question with: \"analyze,\" \"compare,\" \"identify,\" \"find,\" \"what performs,\" \"show me\"\n      \n      Conversation memory is ONLY for:\n      • Recalling specific tweets already discussed in THIS conversation\n      • Understanding user preferences and context\n      • Clarifying previous responses\n      \n      DO NOT use conversation memory to:\n      ❌ Answer new analytical questions\n      ❌ Identify patterns (need fresh comprehensive data)\n      ❌ Make performance comparisons (need full dataset)\n      ❌ Generate strategic recommendations (need current evidence)\n      \n      If you find yourself thinking \"I remember some examples from earlier,\" STOP.\n      Query the vector store instead. Fresh data = reliable insights.\n      \n      Workflow for analytical questions:\n      1. Identify what data is needed\n      2. Query vector store with specific search terms\n      3. Retrieve 10-20+ relevant tweets\n      4. Analyze fresh results\n      5. State confidence based on sample size\n      \n      Never say \"based on earlier examples\" in analytical responses.\n      Always say \"based on [X tweets] retrieved from vector store.\"\n  </VectorStoreUsagePolicy>\n\n    <KeyGuidelines>\n        \n        • **Query Strategy**: Make multiple searches from different angles for comprehensive coverage. State what you're looking for upfront.\n        \n        • **Time Bounds**: Respect user-specified timeframes strictly. Default to emphasizing last 7-14 days with historical context when no constraint given.\n        \n        • **Citations**: Provide tweet URLs cleanly. Paraphrase or excerpt key insights - never reproduce full tweets. Always attribute with username and metrics.\n        \n        • **Thread Handling**: Analyze threads as cohesive narratives. Link to parent tweet but reference key thread insights.\n        \n        • **Engagement Metrics**: Interpret bookmark_class, amplification_class, and engagement_rate as primary performance indicators. High bookmarks = valuable reference content.\n        \n        • **Scale Handling**: Query scope ranges from 10 to 1000+ tweets. For large datasets, summarize patterns and highlight representative examples.\n        \n        • **Tone**: Balanced and actionable. Assume solid foundational knowledge unless user requests otherwise. Focus on intelligence over tutorials.\n        \n        • **Creative License**: You can suggest unconventional angles and cross-domain connections, BUT clearly distinguish data-backed insights from speculative opportunities.\n\n    </KeyGuidelines>\n\n    <StrategicOutputs>\n        Choose the most relevant recommendations based on your analysis. Options include:\n        \n        • \"This is a new meta\" (explain momentum indicators with confidence level)\n        • \"Strong article/content opportunity\" (identify gaps, provide specific angles)\n        • \"Contrarian play\" (underexplored perspectives with engagement potential)\n        • \"Recommended reply angles\" (provide 2-3 approaches with examples)\n        • \"Original tweet ideas\" (provide 2-3 angles with examples)\n        • \"Engagement optimization tip\" (based on performance data)\n        • \"CTA/format recommendations\" (backed by content_type and call_to_action analysis)\n        • Any other insight you identify\n        \n        Surprise the user with creativity while staying grounded in evidence.\n    </StrategicOutputs>\n\n    <FutureCapabilities>\n        When user's own tweets/bookmarks become available:\n        • Treat bookmarks as high-priority interest signals\n        • Benchmark their performance against successful patterns\n        • Provide specific improvement recommendations\n        • Analyze their authentic voice and suggest aligned content\n    </FutureCapabilities>\n\n</AgentInstructions>",
-          "returnIntermediateSteps": true
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.agent",
-      "typeVersion": 2.2,
-      "position": [
-        352,
-        1536
-      ],
-      "id": "4074bf7a-fdc4-44cb-bc75-e3d1e8f9be66",
-      "name": "AI Agent"
-    },
-    {
-      "parameters": {},
-      "type": "@n8n/n8n-nodes-langchain.toolThink",
-      "typeVersion": 1.1,
-      "position": [
-        1360,
-        1280
-      ],
-      "id": "780f1250-c3dd-4539-b38c-37fd2e706c70",
-      "name": "Think"
-    },
-    {
-      "parameters": {
-        "model": {
-          "__rl": true,
-          "value": "gpt-4.1",
-          "mode": "list",
-          "cachedResultName": "gpt-4.1"
-        },
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        176,
-        1120
-      ],
-      "id": "82c11fbc-8881-4537-8ba2-4f8ca7d61879",
-      "name": "GPT-5",
-      "credentials": {
-        "openAiApi": {
-          "id": "fcIDL6mBCr4eAnxg",
-          "name": "OpenAi voice to text"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "contextWindowLength": 10
-      },
-      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
-      "typeVersion": 1.3,
-      "position": [
-        480,
-        1136
-      ],
-      "id": "140168bb-078c-4b42-a795-e64f62e24c60",
-      "name": "Postgres Chat Memory",
-      "credentials": {
-        "postgres": {
-          "id": "qmFOJkAksFNgWfUk",
-          "name": "Postgres account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "mode": "retrieve-as-tool",
-        "toolDescription": "Twitter/X engagement vector store with tweet content, metrics, and metadata across multiple accounts.\n\nSTRUCTURE: {pageContent: \"text\", metadata: {...}}\n\nMETADATA FIELDS (all ALWAYS available):\n\nIdentity: author_username, tweet_url, tweet_id\nEngagement: like_count, retweet_count, bookmark_count, view_count, engagement_rate, engagement_class (poor/average/good/excellent), viral_status (low/medium/high)\nTime: days_old (age in days), freshness_multiplier, date_collected\nContent: content_type, thread_indicator, has_media, call_to_action\nOther: conversation_id, author_followers, overall_preformance\n\nCITATION (MANDATORY):\n[@{metadata.author_username}]({metadata.tweet_url})\n\"{excerpt}\"\nMetrics: {engagement_class} | {engagement_rate}% | {like_count} likes | {days_old}d old\n\nNever say metadata \"not available\" - extract from metadata object.\n\nUSE FOR: Performance analysis, viral pattern identification, narrative tracking, content benchmarking, strategic insights.\n\nEXAMPLES:\n• \"Tweets with engagement_class='excellent' from past week\"\n• \"High viral_status content about [topic]\"\n• \"Compare bookmark_rate by content_type\"",
-        "tableName": {
-          "__rl": true,
-          "value": "XCryptoKOLs",
-          "mode": "list",
-          "cachedResultName": "XCryptoKOLs"
-        },
-        "topK": 10,
-        "options": {
-          "queryName": "match_documents"
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
-      "typeVersion": 1.3,
-      "position": [
-        848,
-        1040
-      ],
-      "id": "559c0504-8032-4d6e-a500-4b74dc26228a",
-      "name": "Supabase Vector Store1",
-      "credentials": {
-        "supabaseApi": {
-          "id": "AJSgyS6o6Iogt0OW",
-          "name": "Supabase account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
-      "typeVersion": 1.2,
-      "position": [
-        672,
-        1200
-      ],
-      "id": "4a4bcc53-f5de-4e52-aa43-f3c85a7b15be",
-      "name": "Embedding 3-small",
-      "credentials": {
-        "openAiApi": {
-          "id": "fcIDL6mBCr4eAnxg",
-          "name": "OpenAi voice to text"
-        }
-      }
     },
     {
       "parameters": {
@@ -503,8 +339,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        -1024,
-        -128
+        -1104,
+        -208
       ],
       "id": "368d4dda-cfdc-40d1-9e36-40aea221dc27",
       "name": "Loop Over Topic"
@@ -516,7 +352,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1312,
+        -1424,
         -128
       ],
       "id": "f2d54eff-b9bf-49ef-b5f0-a5c346321d90",
@@ -544,24 +380,24 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -704,
-        -112
+        -832,
+        -192
       ],
       "id": "bec2a9cd-9a7e-4bf0-b974-d37b497f7557",
       "name": "Call Main Topic Workflow"
     },
     {
       "parameters": {
-        "content": "# 📋 Workflow RAG load Logic\n\n## For each topic:\n### - Loop over corresponding **sheet name**\n### - Add data to **Supabase**\n---\n\n## Flow:\n### 1. Topic → Sheet mapping\n### 2. Query Google Sheets one sheet at a time. each sheet is an account or topic from X\n### 3. Insert into Supabase\n---\n\n## 🔄 Loop Over Topics \n### processes one topic at a time\n\n## 🔄  Loop Over sheet Name\n### processes one sheet name at a time calling the Subworkflow",
-        "height": 544,
-        "width": 704,
+        "content": "# 📋 Workflow RAG load Logic\n\n## For each topic:\n### - Loop over corresponding **sheet name**\n### - Add data to **Supabase**\n---\n\n## Flow:\n### 1. Topic → Sheet mapping\n### 2. Query Google Sheets one sheet at a time. each sheet is an account or topic from X\n### 3. Insert into Supabase\n---\n\n## 🔄 Loop Over Topics \n### processes one topic at a time\n\n## 🔄  Loop Over sheet Name\n### processes one sheet name at a time calling the Subworkflow\n\n\nTHINGS TO DO NEXT:\n1) ADD AGGREGATE ON THE SUPABASE INSERT NODE BRANCH AS I AM SENDING HUGE AMOUNT OF DATA RIGHT",
+        "height": 720,
+        "width": 752,
         "color": 4
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1664,
-        -960
+        112,
+        352
       ],
       "id": "60ad1f7d-03bc-43eb-b0a9-aefcaf67fe33",
       "name": "Sticky Note"
@@ -593,34 +429,6 @@
         "googleApi": {
           "id": "L4sljRXqrMaAo1pq",
           "name": "Google Sheets account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "mode": "insert",
-        "tableName": {
-          "__rl": true,
-          "value": "twitterdata",
-          "mode": "list",
-          "cachedResultName": "twitterdata"
-        },
-        "options": {
-          "queryName": "match_twitterdata"
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
-      "typeVersion": 1.3,
-      "position": [
-        -784,
-        416
-      ],
-      "id": "c43eff4f-f5cb-4378-837d-d081872b080d",
-      "name": "Supabase Vector Store",
-      "credentials": {
-        "supabaseApi": {
-          "id": "AJSgyS6o6Iogt0OW",
-          "name": "Supabase account"
         }
       }
     },
@@ -780,8 +588,8 @@
       "type": "@n8n/n8n-nodes-langchain.textSplitterCharacterTextSplitter",
       "typeVersion": 1,
       "position": [
-        -656,
-        752
+        -640,
+        800
       ],
       "id": "8a4e02ac-2743-4d02-a7c7-7b40686c6a57",
       "name": "Character Text Splitter"
@@ -793,8 +601,8 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
       "typeVersion": 1.2,
       "position": [
-        -752,
-        624
+        -1248,
+        832
       ],
       "id": "c5896377-ab49-45b5-afff-cbf4b85f15b5",
       "name": "Embedding 3-small1",
@@ -813,7 +621,7 @@
       "typeVersion": 1.1,
       "position": [
         -1664,
-        496
+        448
       ],
       "id": "b1c1e931-3bd9-49ae-9a63-050a8eeac2c8",
       "name": "Execute Workflow Trigger"
@@ -825,8 +633,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        320,
-        -80
+        144,
+        -96
       ],
       "id": "766b548c-f2a2-4e02-a0c6-4d9d4f008e76",
       "name": "Code"
@@ -849,8 +657,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        688,
-        -80
+        608,
+        -16
       ],
       "id": "3e73c0e7-cc8a-4dde-9fc6-4e8b0bd281f9",
       "name": "Has Error"
@@ -866,8 +674,8 @@
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        512,
-        -80
+        384,
+        -96
       ],
       "id": "2c4d557a-8a36-4f8e-acd9-f908a3479c0a",
       "name": "Send a message",
@@ -888,8 +696,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        -224,
-        -112
+        -336,
+        -128
       ],
       "id": "58b79bec-f559-414d-8b8c-d6e77076ac1e",
       "name": "Loop Over Sheet Name"
@@ -899,14 +707,14 @@
         "sendTo": "gioben@protonmail.com",
         "subject": "X RAG workflow completed",
         "emailType": "text",
-        "message": "=={{ $json.hasError\n  ? \"⚠️ supabase RAG data load with issues - \"\n  : \"✅ supabase RAG data load has completed successfully - \" }}",
+        "message": "=={{ $json.hasError\n  ? \"⚠️ Backup completed with issues - Main Topic: \" + {{ $('Add Fields').item.json.main_topic }} + \" \" + $('Add Fields').all().length + \" workflows processed, some encountered errors.\"\n  : \"✅ Backup has completed successfully - \" + $('Add Fields').all().length + \" workflows have been processed.\" }}",
         "options": {}
       },
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,
       "position": [
-        224,
-        -320
+        -160,
+        -336
       ],
       "id": "5e1ad6aa-25fe-4e66-baf3-e5b4e005f2ee",
       "name": "Send a message1",
@@ -941,8 +749,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        48,
-        -96
+        -80,
+        -112
       ],
       "id": "39308736-6567-4c5c-8c56-358c8fbdcff5",
       "name": "XRAG Load",
@@ -952,15 +760,15 @@
     {
       "parameters": {
         "content": "# Workflow RAG Load",
-        "height": 688,
-        "width": 2896,
+        "height": 704,
+        "width": 2640,
         "color": 7
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1744,
-        -368
+        -1776,
+        -400
       ],
       "id": "a93e38a3-9449-4b3e-9739-5cb1efd22246",
       "name": "Sticky Note1"
@@ -968,15 +776,15 @@
     {
       "parameters": {
         "content": "## Subworflow RAG Load",
-        "height": 704,
-        "width": 1728,
+        "height": 720,
+        "width": 1840,
         "color": 6
       },
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -1664,
-        368
+        -1776,
+        352
       ],
       "id": "fff59c71-982e-4f21-8efe-c5c9e44a96fc",
       "name": "Sticky Note2"
@@ -1005,8 +813,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -496,
-        -112
+        -592,
+        -192
       ],
       "id": "29aa2cd5-5d6b-4c9a-9427-9e23391bf2a2",
       "name": "Add Fields"
@@ -1027,41 +835,6 @@
       "name": "Remove Duplicates",
       "alwaysOutputData": true,
       "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "be1c54a8-07aa-4dcc-bbd1-8525956dbbf5",
-              "name": "status",
-              "value": "inserted",
-              "type": "string"
-            },
-            {
-              "id": "83fd0812-b50e-43d3-a6d5-e3543d0b3f0b",
-              "name": "inserted",
-              "value": "={{ $input.all().length }}",
-              "type": "number"
-            },
-            {
-              "id": "c24963ea-f1a4-4d46-ae31-e9771b8ee478",
-              "name": "timestamp",
-              "value": "={{ $now.toISO() }}",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        400,
-        416
-      ],
-      "id": "ea8c5cdc-76a1-42fb-bdf7-811bd06b8cf0",
-      "name": "Inserted"
     },
     {
       "parameters": {
@@ -1097,54 +870,12 @@
       "name": "If New"
     },
     {
-      "parameters": {
-        "fieldsToAggregate": {
-          "fieldToAggregate": [
-            {
-              "fieldToAggregate": "={{ $json.status }}"
-            }
-          ]
-        },
-        "options": {
-          "mergeLists": true
-        }
-      },
-      "type": "n8n-nodes-base.aggregate",
-      "typeVersion": 1,
-      "position": [
-        48,
-        -336
-      ],
-      "id": "1c00f0ed-8d25-451c-a246-abec9e62ea39",
-      "name": "Aggregate1"
-    },
-    {
-      "parameters": {
-        "fieldsToAggregate": {
-          "fieldToAggregate": [
-            {
-              "fieldToAggregate": "={{ $json.metadata.author_username }}"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.aggregate",
-      "typeVersion": 1,
-      "position": [
-        160,
-        400
-      ],
-      "id": "e7449900-1b4f-4148-90de-b183fbe0d521",
-      "name": "Aggregate"
-    },
-    {
       "parameters": {},
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -512,
-        928
+        -768,
+        912
       ],
       "id": "0e3d006d-f5fb-4e31-b075-10f5f2348b6b",
       "name": "No Operation, do nothing on duplicated"
@@ -1185,6 +916,149 @@
       "id": "61d2bd20-de2b-4a84-a8df-1bc576c4caed",
       "name": "Wait",
       "webhookId": "687f0d1f-1754-4c59-ad00-9fd57ec9cd42"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1328,
+        1312
+      ],
+      "id": "5def3fdb-e688-4899-887e-a0a2e3347908",
+      "name": "When chat message received",
+      "webhookId": "dbc84075-4e9f-4466-a5cb-cef46c130f67"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "=<AgentInstructions>\n\n    <Role>\n        You are an Engagement Intelligence Expert - a social media strategist who analyzes tweet data to uncover trends, narrative evolution, and growth opportunities. You combine data-driven insights with creative, cross-disciplinary thinking. you take inspiration from user inputs and ideas in chats to craft amazing output with novel ideas based on the data you have stored and retireved from your vector store\n\n    <CorePrinciples>\n        \n        <Principle name=\"Evidence-Based\">\n            Always ground insights in actual data. State confidence levels explicitly:\n            - HIGH: 10+ tweets across multiple days OR exceptional engagement patterns\n            - MEDIUM: Fewer tweets but clear signals\n            - LOW/SPECULATIVE: Interesting but limited data\n            \n            If you lack sufficient evidence, say so. Never hallucinate connections.\n        </Principle>\n\n        <Principle name=\"Strategic Focus\">\n            Prioritize actionable intelligence over description. Look for:\n            • Narrative evolution (how ideas develop over time)\n            • Engagement pattern shifts (what's gaining momentum)\n            • Contrarian signals (high-performing opposing views)\n            • Content gaps (high interest, low coverage)\n            • Cross-domain connections (when genuinely insightful)\n        </Principle>\n\n        <Principle name=\"Clarity Through Structure\">\n            Every response should include:\n            1. What you searched for and why\n            2. Key connections/patterns with supporting evidence\n            3. Relevant tweet URLs (organized logically)\n            4. 3-5 strategic recommendations (choose what matters most)\n            \n            Keep it tight. Users want insights, not walls of text.\n        </Principle>\n\n        <Principle name=\"Recency Awareness\">\n            Weight recent content heavily unless analyzing historical trends. Use metadata: `days_old`, `freshness_multiplier`, `engagement_rate`, `viral_status`, `engagement_class`, `bookmark_class`, `amplification_class`.\n            \n            For \"new metas,\" compare current vs historical baselines with specific metrics.\n        </Principle>\n\n        <Principle name=\"Authentic Growth\">\n            Recommend strategies that fit the user's genuine expertise and interests. No gaming tactics - focus on amplifying what already works. Growth through authenticity, not manipulation.\n        </Principle>\n\n    </CorePrinciples>\n\n  <VectorStoreUsagePolicy>\n      CRITICAL: When to Query the Vector Store\n      \n      YOU MUST query the vector store tool for EVERY question that requires:\n      • Pattern analysis across multiple tweets\n      • Trend identification or comparison\n      • Performance analysis or benchmarking\n      • Finding examples of specific content types\n      • Strategic recommendations based on engagement data\n      • Any question with: \"analyze,\" \"compare,\" \"identify,\" \"find,\" \"what performs,\" \"show me\"\n      \n      Conversation memory is ONLY for:\n      • Recalling specific tweets already discussed in THIS conversation\n      • Understanding user preferences and context\n      • Clarifying previous responses\n      \n      DO NOT use conversation memory to:\n      ❌ Answer new analytical questions\n      ❌ Identify patterns (need fresh comprehensive data)\n      ❌ Make performance comparisons (need full dataset)\n      ❌ Generate strategic recommendations (need current evidence)\n      \n      If you find yourself thinking \"I remember some examples from earlier,\" STOP.\n      Query the vector store instead. Fresh data = reliable insights.\n      \n      Workflow for analytical questions:\n      1. Identify what data is needed\n      2. Query vector store with specific search terms\n      3. Retrieve 10-20+ relevant tweets\n      4. Analyze fresh results\n      5. State confidence based on sample size\n      \n      Never say \"based on earlier examples\" in analytical responses.\n      Always say \"based on [X tweets] retrieved from vector store.\"\n  </VectorStoreUsagePolicy>\n\n    <KeyGuidelines>\n        \n        • **Query Strategy**: Make multiple searches from different angles for comprehensive coverage. State what you're looking for upfront.\n        \n        • **Time Bounds**: Respect user-specified timeframes strictly. Default to emphasizing last 7-14 days with historical context when no constraint given.\n        \n        • **Citations**: Provide tweet URLs cleanly. Paraphrase or excerpt key insights - never reproduce full tweets. Always attribute with username and metrics.\n        \n        • **Thread Handling**: Analyze threads as cohesive narratives. Link to parent tweet but reference key thread insights.\n        \n        • **Engagement Metrics**: Interpret bookmark_class, amplification_class, and engagement_rate as primary performance indicators. High bookmarks = valuable reference content.\n        \n        • **Scale Handling**: Query scope ranges from 10 to 1000+ tweets. For large datasets, summarize patterns and highlight representative examples.\n        \n        • **Tone**: Balanced and actionable. Assume solid foundational knowledge unless user requests otherwise. Focus on intelligence over tutorials.\n        \n        • **Creative License**: You can suggest unconventional angles and cross-domain connections, BUT clearly distinguish data-backed insights from speculative opportunities.\n\n    </KeyGuidelines>\n\n    <StrategicOutputs>\n        Choose the most relevant recommendations based on your analysis. Options include:\n        \n        • \"This is a new meta\" (explain momentum indicators with confidence level)\n        • \"Strong article/content opportunity\" (identify gaps, provide specific angles)\n        • \"Contrarian play\" (underexplored perspectives with engagement potential)\n        • \"Recommended reply angles\" (provide 2-3 approaches with examples)\n        • \"Original tweet ideas\" (provide 2-3 angles with examples)\n        • \"Engagement optimization tip\" (based on performance data)\n        • \"CTA/format recommendations\" (backed by content_type and call_to_action analysis)\n        • Any other insight you identify\n        \n        Surprise the user with creativity while staying grounded in evidence.\n    </StrategicOutputs>\n\n    <FutureCapabilities>\n        When user's own tweets/bookmarks become available:\n        • Treat bookmarks as high-priority interest signals\n        • Benchmark their performance against successful patterns\n        • Provide specific improvement recommendations\n        • Analyze their authentic voice and suggest aligned content\n    </FutureCapabilities>\n\n</AgentInstructions>",
+          "returnIntermediateSteps": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -784,
+        1136
+      ],
+      "id": "6ea486af-ca36-43d6-839e-1e0e527a9f68",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolThink",
+      "typeVersion": 1.1,
+      "position": [
+        -368,
+        1504
+      ],
+      "id": "be175cbd-c088-441c-93b8-4cd0e8b7adf4",
+      "name": "Think"
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -624,
+        1488
+      ],
+      "id": "9b87ade9-9b89-4b9c-8dc8-4ff66bf13f69",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "qmFOJkAksFNgWfUk",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -912,
+        1504
+      ],
+      "id": "1b8c51a4-8b3b-49f4-acd5-8da35979fb6e",
+      "name": "GPT-4.1",
+      "credentials": {
+        "openAiApi": {
+          "id": "fcIDL6mBCr4eAnxg",
+          "name": "OpenAi voice to text"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "twitterdata",
+          "mode": "list",
+          "cachedResultName": "twitterdata"
+        },
+        "options": {
+          "queryName": "match_twitterdata"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -784,
+        416
+      ],
+      "id": "c43eff4f-f5cb-4378-837d-d081872b080d",
+      "name": "Insert Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "AJSgyS6o6Iogt0OW",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "=Twitter/X engagement vector store with tweet content, metrics, and metadata across multiple accounts.\n\nSTRUCTURE: {pageContent: \"text\", metadata: {...}}\n\nMETADATA FIELDS (all ALWAYS available):\n\nIdentity: author_username, tweet_url, tweet_id\nEngagement: like_count, retweet_count, bookmark_count, view_count, engagement_rate, engagement_class (poor/average/good/excellent), viral_status (low/medium/high)\nTime: days_old (age in days), freshness_multiplier, date_collected\nContent: content_type, thread_indicator, has_media, call_to_action\nOther: conversation_id, author_followers, overall_preformance\n\nCITATION (MANDATORY):\n[@{metadata.author_username}]({metadata.tweet_url})\n\"{excerpt}\"\nMetrics: {engagement_class} | {engagement_rate}% | {like_count} likes | {days_old}d old\n\nNever say metadata \"not available\" - extract from metadata object.\n\nUSE FOR: Performance analysis, viral pattern identification, narrative tracking, content benchmarking, strategic insights.\n\nEXAMPLES:\n• \"Tweets with engagement_class='excellent' from past week\"\n• \"High viral_status content about [topic]\"\n• \"Compare bookmark_rate by content_type\"",
+        "tableName": {
+          "__rl": true,
+          "value": "twitterdata",
+          "mode": "list",
+          "cachedResultName": "twitterdata"
+        },
+        "topK": 10,
+        "options": {
+          "queryName": "match_twitterdata"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -1248,
+        1152
+      ],
+      "id": "8e707e76-5df1-455a-98cf-9928ed0018b6",
+      "name": "Retrieve Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "AJSgyS6o6Iogt0OW",
+          "name": "Supabase account"
+        }
+      }
     }
   ],
   "pinData": {},
@@ -1206,6 +1080,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-11-07T13:17:41.000Z",
-  "versionId": "2601c31f-bad0-4e38-b34a-c796343d663f"
+  "updatedAt": "2025-11-08T16:07:53.000Z",
+  "versionId": "e06e7eb9-d333-4b11-adc4-05213e16a6e5"
 }
