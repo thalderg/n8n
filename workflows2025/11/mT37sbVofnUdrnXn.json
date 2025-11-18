@@ -1,0 +1,3715 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "No Operation, do nothing on duplicated": {
+      "main": [
+        [
+          {
+            "node": "Return",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Supabase Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Insert Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Return",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-11-17T12:03:39.643Z",
+  "id": "mT37sbVofnUdrnXn",
+  "isArchived": false,
+  "meta": null,
+  "name": "RAG test data",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Subworflow RAG Load",
+        "height": 720,
+        "width": 1840,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        144,
+        -112
+      ],
+      "id": "4bfb254b-e7ec-40c4-b973-d8235ba4bbbc",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        464
+      ],
+      "id": "929f6355-fa69-4bd4-b336-b7b1a27dd963",
+      "name": "No Operation, do nothing on duplicated"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8f264feb-ee34-4fad-b3fc-516aa808a8d9",
+              "name": "done",
+              "value": true,
+              "type": "boolean"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1968,
+        192
+      ],
+      "id": "f747c079-31f7-4ee1-90b7-9966fdf19cb4",
+      "name": "Return"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "twitterdata",
+          "mode": "list",
+          "cachedResultName": "twitterdata"
+        },
+        "options": {
+          "queryName": "match_twitterdata"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1008,
+        -48
+      ],
+      "id": "b01f7f25-363d-4216-a7b3-e5a161a38164",
+      "name": "Insert Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "AJSgyS6o6Iogt0OW",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        528,
+        0
+      ],
+      "id": "27496b7a-f966-4c6e-b205-e5cca8e2a930",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "={{ $json.metadata.author_username }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        -48
+      ],
+      "id": "b81acb01-061a-40d3-89e4-489a1f5a62b0",
+      "name": "Aggregate"
+    }
+  ],
+  "pinData": {
+    "Insert Supabase Vector Store": [
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 9
+              }
+            },
+            "tweet_id": "1987144350657356051",
+            "date_collected": "Sun 09 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/sporsho_AI/status/1987144350657356051",
+            "author_username": "sporsho_AI",
+            "author_followers": 13205,
+            "like_count": 64,
+            "retweet_count": 36,
+            "bookmark_count": 10,
+            "view_count": 1596,
+            "quote_count": 1,
+            "conversation_id": "1987144350657356051",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/KwN0Lda1J8",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 100,
+            "days_old": 0.5,
+            "freshness_multiplier": 1.5,
+            "base_score": 72,
+            "engagement_rate": 6.95,
+            "bookmark_rate": 0.63,
+            "amplification_rate": 6.95,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "viral",
+            "engagement_class": "excellent",
+            "bookmark_class": "poor",
+            "amplification_class": "excellent",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "I MADE A VOICE AI AUTOMATION AGENT FOR A REAL ESATE AGENT THAT MADE THEM $43,000\n\nLiterally created this bot in 20 mins with n8n\n\nWant a Doc + workflow on how to do it?\n\nRT, Like &amp; reply \"AI” and I’ll DM it to you\n\n(Must follow for dm) https://t.co/KwN0Lda1J8"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 6
+              }
+            },
+            "tweet_id": "1986992636285362255",
+            "date_collected": "Sun 09 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/piyascode9/status/1986992636285362255",
+            "author_username": "piyascode9",
+            "author_followers": 5191,
+            "like_count": 169,
+            "retweet_count": 93,
+            "bookmark_count": 66,
+            "view_count": 7503,
+            "quote_count": 0,
+            "conversation_id": "1986992636285362255",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/jV84tdE7bN",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 100,
+            "days_old": 0.9,
+            "freshness_multiplier": 1.5,
+            "base_score": 67,
+            "engagement_rate": 4.37,
+            "bookmark_rate": 0.88,
+            "amplification_rate": 4.37,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "viral",
+            "engagement_class": "excellent",
+            "bookmark_class": "poor",
+            "amplification_class": "excellent",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "This AI Bot Creates &amp; Uploads YouTube Videos Automatically 🎥🤖\n\nBuilt the whole system in just 20 minutes with n8n! ⚡️\n\nWant the Full Doc + Workflow?\n👉 RT, Like &amp; reply 'AI' and I’ll DM it (Must follow)\"** https://t.co/jV84tdE7bN"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 9
+              }
+            },
+            "tweet_id": "1986981015500574966",
+            "date_collected": "Sun 09 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/Python_Dv/status/1986981015500574966",
+            "author_username": "Python_Dv",
+            "author_followers": 153693,
+            "like_count": 219,
+            "retweet_count": 30,
+            "bookmark_count": 203,
+            "view_count": 11990,
+            "quote_count": 1,
+            "conversation_id": "1986981015500574966",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/WKENdbTLCC, https://t.co/WKENdbTLCC, https://t.co/WKENdbTLCC, https://t.co/WKENdbTLCC",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 100,
+            "days_old": 0.9,
+            "freshness_multiplier": 1.5,
+            "base_score": 74,
+            "engagement_rate": 3.78,
+            "bookmark_rate": 1.69,
+            "amplification_rate": 3.78,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "viral",
+            "engagement_class": "good",
+            "bookmark_class": "excellent",
+            "amplification_class": "average",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "Learning n8n from scratch, Just build your first automation!\n\nToday we will learn about the n8n interface and created a lead qualification system that:\n✅ Collects form submissions\n✅ Filters leads by income\n✅ Auto-adds qualified leads to Google Sheets\n✅ Sends success messages\n\nZero coding. Just following along."
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 10
+              }
+            },
+            "tweet_id": "1987017839379947694",
+            "date_collected": "Sun 09 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/Nourin_withAi/status/1987017839379947694",
+            "author_username": "Nourin_withAi",
+            "author_followers": 1946,
+            "like_count": 244,
+            "retweet_count": 87,
+            "bookmark_count": 157,
+            "view_count": 13534,
+            "quote_count": 1,
+            "conversation_id": "1987017839379947694",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/ZnLw2ceqaP",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 90,
+            "days_old": 0.8,
+            "freshness_multiplier": 1.5,
+            "base_score": 60,
+            "engagement_rate": 3.61,
+            "bookmark_rate": 1.16,
+            "amplification_rate": 3.61,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "viral",
+            "engagement_class": "average",
+            "bookmark_class": "good",
+            "amplification_class": "good",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "🚀 Automate Instagram, TikTok, X, FB &amp; LinkedIn—zero effort!\n\nFrom Khulna to Global, I built this AI workflow using n8n + AI Agents + APIs for:\n✨ Auto content\n📅 Smart scheduling\n📊 Analytics\n🔁 Cross-posting\n\nLike+comment (SEND)\nRepost 🔄&amp; follow✅ if this helps you! https://t.co/ZnLw2ceqaP"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 8
+              }
+            },
+            "tweet_id": "1986806960508088419",
+            "date_collected": "Sun 09 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/mjkayum/status/1986806960508088419",
+            "author_username": "mjkayum",
+            "author_followers": 1247,
+            "like_count": 74,
+            "retweet_count": 17,
+            "bookmark_count": 35,
+            "view_count": 3628,
+            "quote_count": 1,
+            "conversation_id": "1986806960508088419",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/Q88ypTABCe",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 72,
+            "days_old": 1.4,
+            "freshness_multiplier": 1.3,
+            "base_score": 55,
+            "engagement_rate": 3.5,
+            "bookmark_rate": 0.96,
+            "amplification_rate": 3.5,
+            "thread_indicator": "single",
+            "content_type": "monetization",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "average",
+            "bookmark_class": "average",
+            "amplification_class": "average",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "Built an AI Automation Agent for a real estate client that made them $43,000 🤖💰\n\nTook me just 20 mins using n8n — automates form → AI logic → Slack/Jira setup ⚙️\n\nWant the Doc + Workflow?\n\nRT, Like &amp; reply “AI” — I’ll DM it to you 💬\n(Follow required) https://t.co/Q88ypTABCe"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 10
+              }
+            },
+            "tweet_id": "1986643818633101360",
+            "date_collected": "Sun 09 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/Nourin_withAi/status/1986643818633101360",
+            "author_username": "Nourin_withAi",
+            "author_followers": 1946,
+            "like_count": 175,
+            "retweet_count": 67,
+            "bookmark_count": 98,
+            "view_count": 9308,
+            "quote_count": 1,
+            "conversation_id": "1986643818633101360",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/rpdti8LQs1",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 66,
+            "days_old": 1.9,
+            "freshness_multiplier": 1.1,
+            "base_score": 60,
+            "engagement_rate": 3.66,
+            "bookmark_rate": 1.05,
+            "amplification_rate": 3.66,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "good",
+            "bookmark_class": "average",
+            "amplification_class": "good",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "🚀 Automate Instagram, TikTok, X, FB &amp; LinkedIn—zero effort!\n\nFrom Khulna to Global, I built this AI workflow using n8n + AI Agents + APIs for:\n✨ Auto content\n📅 Smart scheduling\n📊 Analytics\n🔁 Cross-posting\n\nLike+comment (SEND)\nRepost 🔄&amp; follow✅ if this helps you! https://t.co/rpdti8LQs1"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 5
+              }
+            },
+            "tweet_id": "1986839448454336916",
+            "date_collected": "Sun 09 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/NabilMinhaz/status/1986839448454336916",
+            "author_username": "NabilMinhaz",
+            "author_followers": 3254,
+            "like_count": 89,
+            "retweet_count": 43,
+            "bookmark_count": 33,
+            "view_count": 5541,
+            "quote_count": 1,
+            "conversation_id": "1986839448454336916",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/xTYHTla2in",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 63,
+            "days_old": 1.3,
+            "freshness_multiplier": 1.3,
+            "base_score": 49,
+            "engagement_rate": 3,
+            "bookmark_rate": 0.6,
+            "amplification_rate": 3,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "average",
+            "bookmark_class": "poor",
+            "amplification_class": "excellent",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "This AI Bot Creates &amp; Uploads YouTube Videos Automatically 🎥🤖\nBuilt the whole system in just 20 minutes with n8n! ⚡️\n\nWant the Full Doc + Workflow?\n👉 RT, Like &amp; reply 'AI' and I’ll DM it (Must follow)\" https://t.co/xTYHTla2in"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 15
+              }
+            },
+            "tweet_id": "1987006984915460523",
+            "date_collected": "Sun 09 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/marryevan999/status/1987006984915460523",
+            "author_username": "marryevan999",
+            "author_followers": 13034,
+            "like_count": 70,
+            "retweet_count": 32,
+            "bookmark_count": 28,
+            "view_count": 5457,
+            "quote_count": 0,
+            "conversation_id": "1987006984915460523",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/kUPeMEtnMH, https://t.co/kUPeMEtnMH, https://t.co/kUPeMEtnMH",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 60,
+            "days_old": 0.9,
+            "freshness_multiplier": 1.5,
+            "base_score": 40,
+            "engagement_rate": 2.38,
+            "bookmark_rate": 0.51,
+            "amplification_rate": 2.38,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "average",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "HOLY SH*T…\n\nSomeone just leaked 2,053+ plug-and-play N8N workflows and it’s breaking the internet.\n\nThey scraped everything from the official docs, GitHub, AND hidden forums.\n\n• AI-powered lead gen\n• Auto content repurposing\n• Sales & CRM automation\n\nThis vault would cost tens of thousands to build from scratch.\n\nLIKE + COMMENT “N8N” & I’ll send you the FULL library + setup FREE!\n\n(must follow so I can DM)"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 40
+              }
+            },
+            "tweet_id": "1986838835272319238",
+            "date_collected": "Sun 09 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/NoahEpstein_/status/1986838835272319238",
+            "author_username": "NoahEpstein_",
+            "author_followers": 25803,
+            "like_count": 366,
+            "retweet_count": 35,
+            "bookmark_count": 664,
+            "view_count": 46673,
+            "quote_count": 1,
+            "conversation_id": "1986838835272319238",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/zG2BRIF56g",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 60,
+            "days_old": 1.3,
+            "freshness_multiplier": 1.3,
+            "base_score": 46,
+            "engagement_rate": 2.28,
+            "bookmark_rate": 1.42,
+            "amplification_rate": 2.28,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "poor",
+            "bookmark_class": "good",
+            "amplification_class": "poor",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "🚨 Synta just made every $2,000 n8n course look like a scam.\n\nAnd every consultant charging $8K per workflow is about to have a very bad year.\n\nHere's what just changed:\n\nn8n consultants built their entire business on one thing:\n\nThe learning curve being so brutal that smart people give up and pay someone else.\n\n- 40+ hours watching tutorials\n- $500 courses teaching 400 nodes you'll never use\n- Months of practice before you build anything that works\n- Finally hiring a consultant for $5-10K because fuck it\n\nThat barrier just collapsed.\n\nSynta takes plain English and builds complete n8n workflows.\n\nNot templates. Not \"close enough.\"\n\nActual working automation with nodes, connections, and logic configured.\n\nHere's the process:\n\nType: \"When someone fills out my Typeform, add them to Airtable and send a welcome email\"\n\nSynta builds it.\n\nImport to n8n with one click.\n\nDone.\n\nNo learning about:\n- Webhook triggers\n- JSON parsing\n- HTTP request nodes\n- Data mapping\n\nJust English → working autom"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 26,
+                "to": 73
+              }
+            },
+            "tweet_id": "1986838835272319238",
+            "date_collected": "Sun 09 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/NoahEpstein_/status/1986838835272319238",
+            "author_username": "NoahEpstein_",
+            "author_followers": 25803,
+            "like_count": 366,
+            "retweet_count": 35,
+            "bookmark_count": 664,
+            "view_count": 46673,
+            "quote_count": 1,
+            "conversation_id": "1986838835272319238",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/zG2BRIF56g",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 60,
+            "days_old": 1.3,
+            "freshness_multiplier": 1.3,
+            "base_score": 46,
+            "engagement_rate": 2.28,
+            "bookmark_rate": 1.42,
+            "amplification_rate": 2.28,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "poor",
+            "bookmark_class": "good",
+            "amplification_class": "poor",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "nd send a welcome email\"\n\nSynta builds it.\n\nImport to n8n with one click.\n\nDone.\n\nNo learning about:\n- Webhook triggers\n- JSON parsing\n- HTTP request nodes\n- Data mapping\n\nJust English → working automation.\n\nWhen something breaks?\n\nTell Synta in plain English what's wrong.\n\nIt fixes it.\n\nBack and forth until it works.\n\nThe advantage everyone's missing:\n\nAgencies are cutting production time by 90%.\n\n8-hour workflow → 45 minutes\n2-day automation → 3 hours\n\nSame pricing. Way more capacity.\n\nI'm watching people go from 2-3 clients/month to 10+ because they're building 10x faster.\n\nThe automation consulting space is about to get flooded with people who couldn't code 3 months ago.\n\nBecause the technical barrier just hit zero.\n\nWhile n8n consultants are still charging $8K for workflows that take 45 minutes with Synta.\n\nThe intelligence gap:\n\nEveryone's still grinding tutorials.\n\nSmart people are typing English into Synta and shipping client work same day.\n\nComment \"SYNTA\" and I'll send you:"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 65,
+                "to": 84
+              }
+            },
+            "tweet_id": "1986838835272319238",
+            "date_collected": "Sun 09 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/NoahEpstein_/status/1986838835272319238",
+            "author_username": "NoahEpstein_",
+            "author_followers": 25803,
+            "like_count": 366,
+            "retweet_count": 35,
+            "bookmark_count": 664,
+            "view_count": 46673,
+            "quote_count": 1,
+            "conversation_id": "1986838835272319238",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/zG2BRIF56g",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 60,
+            "days_old": 1.3,
+            "freshness_multiplier": 1.3,
+            "base_score": 46,
+            "engagement_rate": 2.28,
+            "bookmark_rate": 1.42,
+            "amplification_rate": 2.28,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "poor",
+            "bookmark_class": "good",
+            "amplification_class": "poor",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "45 minutes with Synta.\n\nThe intelligence gap:\n\nEveryone's still grinding tutorials.\n\nSmart people are typing English into Synta and shipping client work same day.\n\nComment \"SYNTA\" and I'll send you:\n\n✓ Complete setup guide\n✓ The 5 integrations that handle 80% of requests\n✓ Real workflow examples built in minutes\n✓ How agencies scale to 10+ clients/month\n\n(Must be following)\n\nThe people paying $2,000 for courses don't know this exists yet.\n\nThe bellow workflow was made within 3 minutes and 4 answered questions."
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 5
+              }
+            },
+            "tweet_id": "1986443781462495282",
+            "date_collected": "Sun 09 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/zerion0/status/1986443781462495282",
+            "author_username": "zerion0",
+            "author_followers": 642,
+            "like_count": 64,
+            "retweet_count": 0,
+            "bookmark_count": 13,
+            "view_count": 1911,
+            "quote_count": 0,
+            "conversation_id": "1986443781462495282",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 44,
+            "days_old": 2.4,
+            "freshness_multiplier": 0.9,
+            "base_score": 49,
+            "engagement_rate": 4.03,
+            "bookmark_rate": 0.68,
+            "amplification_rate": 4.03,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "medium",
+            "engagement_class": "good",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "I am tired of sending cold emails manually \n\nGoing to learn n8n and trying to make it automatically \n\nSuggest me some good website or extension where i can scrap company person email"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 5
+              }
+            },
+            "tweet_id": "1986856174000414862",
+            "date_collected": "Sun 09 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/thirdweb/status/1986856174000414862",
+            "author_username": "thirdweb",
+            "author_followers": 96354,
+            "like_count": 49,
+            "retweet_count": 7,
+            "bookmark_count": 18,
+            "view_count": 4642,
+            "quote_count": 0,
+            "conversation_id": "1986856174000414862",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 37,
+            "days_old": 1.3,
+            "freshness_multiplier": 1.3,
+            "base_score": 29,
+            "engagement_rate": 1.59,
+            "bookmark_rate": 0.39,
+            "amplification_rate": 1.59,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "The internet’s next layer is forming right here 🤯\n\nn8n workflows that can pay and get paid through x402 - powered by Nexus APIs.\n\nAutomation, commerce, and coordination, all in one flow!"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 3
+              }
+            },
+            "tweet_id": "1986769258651463971",
+            "date_collected": "Sun 09 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/omoalhajaabiola/status/1986769258651463971",
+            "author_username": "omoalhajaabiola",
+            "author_followers": 154180,
+            "like_count": 162,
+            "retweet_count": 7,
+            "bookmark_count": 9,
+            "view_count": 11189,
+            "quote_count": 1,
+            "conversation_id": "1986769258651463971",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 30,
+            "days_old": 1.5,
+            "freshness_multiplier": 1.1,
+            "base_score": 28,
+            "engagement_rate": 1.6,
+            "bookmark_rate": 0.08,
+            "amplification_rate": 1.6,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "N8n sent me new licenses \n\nWho should I give?"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 1
+              }
+            },
+            "tweet_id": "1986856358743073241",
+            "date_collected": "Sun 09 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/omoalhajaabiola/status/1986856358743073241",
+            "author_username": "omoalhajaabiola",
+            "author_followers": 154180,
+            "like_count": 48,
+            "retweet_count": 1,
+            "bookmark_count": 15,
+            "view_count": 6599,
+            "quote_count": 0,
+            "conversation_id": "1986856358743073241",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 29,
+            "days_old": 1.3,
+            "freshness_multiplier": 1.3,
+            "base_score": 23,
+            "engagement_rate": 0.97,
+            "bookmark_rate": 0.23,
+            "amplification_rate": 0.97,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "Oya, let me send you one n8n license"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 13
+              }
+            },
+            "tweet_id": "1987730715187028030",
+            "date_collected": "Tue 11 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/razib_ul47671/status/1987730715187028030",
+            "author_username": "razib_ul47671",
+            "author_followers": 1066,
+            "like_count": 59,
+            "retweet_count": 26,
+            "bookmark_count": 10,
+            "view_count": 1622,
+            "quote_count": 0,
+            "conversation_id": "1987730715187028030",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/DL7Bo2tzL5",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 100,
+            "days_old": 0.9,
+            "freshness_multiplier": 1.5,
+            "base_score": 67,
+            "engagement_rate": 5.86,
+            "bookmark_rate": 0.62,
+            "amplification_rate": 5.86,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": true,
+            "viral_status": "viral",
+            "engagement_class": "excellent",
+            "bookmark_class": "average",
+            "amplification_class": "excellent",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "Built in n8n — it:\n\n🔁 Clones viral TikToks\n✍️ Rewrites w/ GPT-4o\n🎥 Auto-generates avatar videos\n🎬 Adds captions + edits them\n📤 Posts to 9 platforms (TikTok, IG,YT,X, etc.)\n\nTo Get It..\n\n🔁 Like + RT🫂\n💬 Reply “Steal”\n📩 Must Be Follow me &amp; I’ll DM you.🤝 https://t.co/DL7Bo2tzL5"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 30
+              }
+            },
+            "tweet_id": "1987934964214583706",
+            "date_collected": "Tue 11 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/mikefutia/status/1987934964214583706",
+            "author_username": "mikefutia",
+            "author_followers": 42082,
+            "like_count": 545,
+            "retweet_count": 50,
+            "bookmark_count": 749,
+            "view_count": 39309,
+            "quote_count": 0,
+            "conversation_id": "1987934964214583706",
+            "has_media": true,
+            "media_type": "video",
+            "media_urls": "https://t.co/qYx7PWbULt",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 98,
+            "days_old": 0.3,
+            "freshness_multiplier": 1.5,
+            "base_score": 65,
+            "engagement_rate": 3.42,
+            "bookmark_rate": 1.91,
+            "amplification_rate": 3.42,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "viral",
+            "engagement_class": "average",
+            "bookmark_class": "good",
+            "amplification_class": "poor",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "This YouTube AI agent is absolutely wild 🤯\n\nIt scrapes top YouTube videos in your niche, analyzes them with AI, and extracts every creative insight you need.\n\nAll inside n8n + Airtable.\n\nPerfect for DTC brands & agencies who need to know what's working on YouTube before they create ads or content.\n\nHere's the problem:\n\nManual YouTube research takes forever.\n\nYou're watching dozens of videos, taking notes on hooks, trying to remember what angles worked.\n\nAnd by the time you analyze everything, you've wasted hours.\n\nThis n8n automation solves it:\n\n→ Enter a keyword (e.g., \"rucking\", \"cold plunge\", \"protein powder\")\n→ AI scrapes top YouTube videos with transcripts automatically\n→ Writes all videos to Airtable with views, likes, published date\n→ Gemini analyzes each transcript and extracts: Hook, Angle, Theme\n\nNo manual watching. No note-taking. No wasted hours.\n\nWhat you get in Airtable:\n\n→ Video URL, title, channel, performance metrics\n→ AI-extracted hooks (what grabbed attention)\n→ Ang"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 22,
+                "to": 42
+              }
+            },
+            "tweet_id": "1987934964214583706",
+            "date_collected": "Tue 11 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/mikefutia/status/1987934964214583706",
+            "author_username": "mikefutia",
+            "author_followers": 42082,
+            "like_count": 545,
+            "retweet_count": 50,
+            "bookmark_count": 749,
+            "view_count": 39309,
+            "quote_count": 0,
+            "conversation_id": "1987934964214583706",
+            "has_media": true,
+            "media_type": "video",
+            "media_urls": "https://t.co/qYx7PWbULt",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 98,
+            "days_old": 0.3,
+            "freshness_multiplier": 1.5,
+            "base_score": 65,
+            "engagement_rate": 3.42,
+            "bookmark_rate": 1.91,
+            "amplification_rate": 3.42,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "viral",
+            "engagement_class": "average",
+            "bookmark_class": "good",
+            "amplification_class": "poor",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "ook, Angle, Theme\n\nNo manual watching. No note-taking. No wasted hours.\n\nWhat you get in Airtable:\n\n→ Video URL, title, channel, performance metrics\n→ AI-extracted hooks (what grabbed attention)\n→ Angles (the unique claim or perspective)\n→ Themes (the core narrative structure)\n→ Full transcripts for deeper analysis\n\nBuilt 100% in n8n.\n\nWant the complete n8n template + Airtable base?\n\n> Comment \"YOUTUBE\"\n\n> Like this post\n\nAnd I'll send it over (must be following so I can DM)"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 15
+              }
+            },
+            "tweet_id": "1987943361810985453",
+            "date_collected": "Tue 11 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/codyschneiderxx/status/1987943361810985453",
+            "author_username": "codyschneiderxx",
+            "author_followers": 51014,
+            "like_count": 127,
+            "retweet_count": 7,
+            "bookmark_count": 232,
+            "view_count": 10254,
+            "quote_count": 1,
+            "conversation_id": "1987943361810985453",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 94,
+            "days_old": 0.3,
+            "freshness_multiplier": 1.5,
+            "base_score": 63,
+            "engagement_rate": 3.58,
+            "bookmark_rate": 2.26,
+            "amplification_rate": 3.58,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "viral",
+            "engagement_class": "average",
+            "bookmark_class": "excellent",
+            "amplification_class": "poor",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "dear founders \n\nin the next 24 hours you can \n\nbuild 100 facebook ads with Sora 2 api\n\nmake 1,000 landing tools landing pages targeting long tale keywords with claude code\n\nscrape 10,000 emails with n8n by having perplexity + sonnet 4.5 write the json code to wire together google maps email scraping with millionverifier to instantly ai\n\nget 100,000 impressions on x by shiposting xeets by scraping podcast the most viral podcasts from last week transcriptions, extracting the main insights, and then writing and schedule posts about insights\n\nlike, what's stoping you go eat big dog \n\nwe are in abundance"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 10
+              }
+            },
+            "tweet_id": "1987734781308838180",
+            "date_collected": "Tue 11 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/MrRahimBD/status/1987734781308838180",
+            "author_username": "MrRahimBD",
+            "author_followers": 27729,
+            "like_count": 111,
+            "retweet_count": 40,
+            "bookmark_count": 2,
+            "view_count": 2472,
+            "quote_count": 1,
+            "conversation_id": "1987734781308838180",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/ZDHyYMrNYk",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 92,
+            "days_old": 0.9,
+            "freshness_multiplier": 1.5,
+            "base_score": 61,
+            "engagement_rate": 6.23,
+            "bookmark_rate": 0.08,
+            "amplification_rate": 6.23,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "viral",
+            "engagement_class": "excellent",
+            "bookmark_class": "poor",
+            "amplification_class": "excellent",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "🚀 Automate Instagram, TikTok, X, FB &amp; LinkedIn—zero effort!\n\nFrom Khulna to Global, I built this AI workflow using n8n + AI Agents + APIs for:\n✨ Auto content\n📅 Smart scheduling\n📊 Analytics\n🔁 Cross-posting\n\nLike+comment (SEND)\nRepost 🔄&amp; follow✅ if this helps you! https://t.co/ZDHyYMrNYk"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 3
+              }
+            },
+            "tweet_id": "1987585324906840257",
+            "date_collected": "Tue 11 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/wladefant/status/1987585324906840257",
+            "author_username": "wladefant",
+            "author_followers": 251,
+            "like_count": 167,
+            "retweet_count": 15,
+            "bookmark_count": 118,
+            "view_count": 3297,
+            "quote_count": 1,
+            "conversation_id": "1987362384894435371",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "https://github.com/Zie619/n8n-workflows",
+            "topic": "n8n -FREE",
+            "engagement_score": 91,
+            "days_old": 1.3,
+            "freshness_multiplier": 1.3,
+            "base_score": 70,
+            "engagement_rate": 9.13,
+            "bookmark_rate": 3.58,
+            "amplification_rate": 9.13,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "viral",
+            "engagement_class": "excellent",
+            "bookmark_class": "excellent",
+            "amplification_class": "good",
+            "overall_preformance": "excellent",
+            "main_topic": "AI"
+          },
+          "pageContent": "@JulianGoldieSEO https://t.co/WyDf5917KO\n\nNext time just add the repo"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 10
+              }
+            },
+            "tweet_id": "1987782489843323366",
+            "date_collected": "Tue 11 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/Jeffar_AI/status/1987782489843323366",
+            "author_username": "Jeffar_AI",
+            "author_followers": 11618,
+            "like_count": 64,
+            "retweet_count": 25,
+            "bookmark_count": 11,
+            "view_count": 2439,
+            "quote_count": 0,
+            "conversation_id": "1987782489843323366",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/DrI7g0s18Z",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 89,
+            "days_old": 0.7,
+            "freshness_multiplier": 1.5,
+            "base_score": 59,
+            "engagement_rate": 4.1,
+            "bookmark_rate": 0.45,
+            "amplification_rate": 4.1,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "viral",
+            "engagement_class": "good",
+            "bookmark_class": "poor",
+            "amplification_class": "good",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "🚀 Automate Instagram, TikTok, X, FB &amp; LinkedIn—zero effort!\n\nFrom Khulna to Global, I built this AI workflow using n8n + AI Agents + APIs for:\n✨ Auto content\n📅 Smart scheduling\n📊 Analytics\n🔁 Cross-posting\n\nLike+comment (SEND)\nRepost 🔄&amp; follow✅ if this helps you! https://t.co/DrI7g0s18Z"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 13
+              }
+            },
+            "tweet_id": "1987537636970664149",
+            "date_collected": "Tue 11 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/mrjackjohan03/status/1987537636970664149",
+            "author_username": "mrjackjohan03",
+            "author_followers": 2229,
+            "like_count": 71,
+            "retweet_count": 34,
+            "bookmark_count": 16,
+            "view_count": 2547,
+            "quote_count": 0,
+            "conversation_id": "1987537636970664149",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/PluE4LwxmO",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 84,
+            "days_old": 1.4,
+            "freshness_multiplier": 1.3,
+            "base_score": 64,
+            "engagement_rate": 4.75,
+            "bookmark_rate": 0.63,
+            "amplification_rate": 4.75,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": true,
+            "viral_status": "viral",
+            "engagement_class": "good",
+            "bookmark_class": "average",
+            "amplification_class": "excellent",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "Built in n8n — it:\n\n🔁 Clones viral TikToks\n✍️ Rewrites w/ GPT-4o\n🎥 Auto-generates avatar videos\n🎬 Adds captions + edits them\n📤 Posts to 9 platforms (TikTok, IG,YT,X, etc.)\n\nTo Get It..\n\n🔁 Like + RT🫂\n💬 Reply “Steal”\n📩 Must Be Follow me &amp; I’ll DM you.🤝 https://t.co/PluE4LwxmO"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 2
+              }
+            },
+            "tweet_id": "1987913308809134156",
+            "date_collected": "Tue 11 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/n8n_io/status/1987913308809134156",
+            "author_username": "n8n_io",
+            "author_followers": 66912,
+            "like_count": 302,
+            "retweet_count": 44,
+            "bookmark_count": 189,
+            "view_count": 16707,
+            "quote_count": 1,
+            "conversation_id": "1987913308809134156",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "https://bit.ly/49cmZCq",
+            "topic": "n8n -FREE",
+            "engagement_score": 76,
+            "days_old": 0.4,
+            "freshness_multiplier": 1.5,
+            "base_score": 50,
+            "engagement_rate": 3.21,
+            "bookmark_rate": 1.13,
+            "amplification_rate": 3.21,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "high",
+            "engagement_class": "average",
+            "bookmark_class": "average",
+            "amplification_class": "average",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "Deploy n8n on @googlecloud Run for simple, scalable, cost-effective AI workflows without managing servers. Run the official Docker image in a few commands, connect Cloud SQL for persistent data, use Gemini with Google Workspace, and even review GitHub PRs or pull insights from BigQuery.\nhttps://t.co/e44m23L35J"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 49
+              }
+            },
+            "tweet_id": "1987498171522490742",
+            "date_collected": "Tue 11 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/dashboardlim/status/1987498171522490742",
+            "author_username": "dashboardlim",
+            "author_followers": 20710,
+            "like_count": 148,
+            "retweet_count": 25,
+            "bookmark_count": 203,
+            "view_count": 9488,
+            "quote_count": 1,
+            "conversation_id": "1987498171522490742",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 75,
+            "days_old": 1.5,
+            "freshness_multiplier": 1.1,
+            "base_score": 68,
+            "engagement_rate": 3.97,
+            "bookmark_rate": 2.14,
+            "amplification_rate": 3.97,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "good",
+            "bookmark_class": "excellent",
+            "amplification_class": "average",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "if i had to land my first $3K automation client in 10 days\n\nhere's exactly how i'd do it:\n\nday 1-2: build something for yourself first\n\npick ONE annoying task you do every week\n\nonboarding, reporting, lead tracking, content pipeline, whatever\n\nbuild the automation in n8n\nit doesn't need to be perfect\nit needs to WORK for you\n\nyou're not learning theory\nyou're solving a real problem\n\nday 3: screenshot everything\n\ndocument what it does\ntake videos of it running\nshow the before/after time\n\nthis is your proof\nnot that you CAN build\nbut that you DID build\n\nday 4-5: find 10 people with the same problem\n\nnot random people\npeople in YOUR industry who do what you do\n\nreach out:\n\"hey, i automated [task] for myself. \nsaved me 4 hours/week. \nthought you might have the same issue?\"\n\nyou're not selling yet\nyou're validating\n\nday 6: listen to what they actually need\n\nthey'll say \"yeah but i need it to also do X\"\n\nperfect\nwrite that down\n\nnow you know what version 2 looks like\nand you have a reason to"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 38,
+                "to": 95
+              }
+            },
+            "tweet_id": "1987498171522490742",
+            "date_collected": "Tue 11 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/dashboardlim/status/1987498171522490742",
+            "author_username": "dashboardlim",
+            "author_followers": 20710,
+            "like_count": 148,
+            "retweet_count": 25,
+            "bookmark_count": 203,
+            "view_count": 9488,
+            "quote_count": 1,
+            "conversation_id": "1987498171522490742",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 75,
+            "days_old": 1.5,
+            "freshness_multiplier": 1.1,
+            "base_score": 68,
+            "engagement_rate": 3.97,
+            "bookmark_rate": 2.14,
+            "amplification_rate": 3.97,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "good",
+            "bookmark_class": "excellent",
+            "amplification_class": "average",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "yet\nyou're validating\n\nday 6: listen to what they actually need\n\nthey'll say \"yeah but i need it to also do X\"\n\nperfect\nwrite that down\n\nnow you know what version 2 looks like\nand you have a reason to follow up\n\nday 7: make the offer\n\n\"so i'm launching this with a few people. normally this would be $5K to build. \ni'm doing it for $3K because i need case studies. interested?\"\n\nkey word: \"launching\"\nnot \"i'm new\"\nnot \"i'm learning\"\n\nLAUNCHING\n\nday 8: get paid first\n\nDO NOT BUILD UNTIL YOU HAVE MONEY\n\ni don't care if they seem serious\ni don't care if they \"definitely want it\"\n\nget 50% upfront minimum\n\nonce paid:\n→ they're committed\n→ you're motivated\n→ you're not wasting time\n\nday 9-10: build it\n\nyou already built version 1 for yourself\nyou know n8n\nyou know the problem\n\njust adapt what you made\n\nuse AI to speed up the boring parts\nuse your brain for the logic\n\n- ship it\n- get feedback\n- iterate\n\nreal talk:\n\nyou're going to feel unqualified\nyou're going to think \"i'm not ready\"\nyou're goi"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 82,
+                "to": 104
+              }
+            },
+            "tweet_id": "1987498171522490742",
+            "date_collected": "Tue 11 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/dashboardlim/status/1987498171522490742",
+            "author_username": "dashboardlim",
+            "author_followers": 20710,
+            "like_count": 148,
+            "retweet_count": 25,
+            "bookmark_count": 203,
+            "view_count": 9488,
+            "quote_count": 1,
+            "conversation_id": "1987498171522490742",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 75,
+            "days_old": 1.5,
+            "freshness_multiplier": 1.1,
+            "base_score": 68,
+            "engagement_rate": 3.97,
+            "bookmark_rate": 2.14,
+            "amplification_rate": 3.97,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "good",
+            "bookmark_class": "excellent",
+            "amplification_class": "average",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "ade\n\nuse AI to speed up the boring parts\nuse your brain for the logic\n\n- ship it\n- get feedback\n- iterate\n\nreal talk:\n\nyou're going to feel unqualified\nyou're going to think \"i'm not ready\"\nyou're going to want more practice first\n\nignore that\n\nthe only difference between you and someone charging $10K?\nthey started before they felt ready\n\nsolve one problem well.\ncharge for it.\nrepeat."
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 31
+              }
+            },
+            "tweet_id": "1987564643783700635",
+            "date_collected": "Tue 11 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/demirdjiantwins/status/1987564643783700635",
+            "author_username": "demirdjiantwins",
+            "author_followers": 44606,
+            "like_count": 387,
+            "retweet_count": 34,
+            "bookmark_count": 405,
+            "view_count": 26935,
+            "quote_count": 0,
+            "conversation_id": "1987564643783700635",
+            "has_media": true,
+            "media_type": "animated_gif",
+            "media_urls": "https://t.co/aOup4KhgB6",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 71,
+            "days_old": 1.3,
+            "freshness_multiplier": 1.3,
+            "base_score": 55,
+            "engagement_rate": 3.07,
+            "bookmark_rate": 1.5,
+            "amplification_rate": 3.07,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "average",
+            "bookmark_class": "good",
+            "amplification_class": "poor",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "Nano Banana + Linah AI + n8n is legitimately insane 🤯\n\nThis workflow generates hundreds of UGC-style product-in-hand videos from a single product photo.\n\nFully automated inside n8n.\n\nPerfect for DTC brands & agencies that need constant creative volume for paid social.\n\nHere’s the bottleneck every brand hits:\n\nYou need 50+ ad variations to fight creative fatigue.\nBut coordinating creators, filming, and editing takes weeks and costs thousands.\n\nThis automation removes all of that:\n\n→ Upload ONE product image into n8n\n→ Linah AI generates 20–50 product-in-hand visual variations\n→ Each variation is turned into UGC-style video scenes\n→ AI auto-creates demos, testimonials, reactions & lifestyle shots\n→ All outputs save directly to Box / Drive / Airtable for instant launch\n\nNo creator sourcing.\nNo shoot days.\nNo revision delays.\n\nWhat you get:\n\n→ Dozens of ready-to-run UGC ads from a single product photo\n→ Costs pennies per video\n→ Full commercial rights\n→ Perfect for rapid A/B testing & sca"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 23,
+                "to": 40
+              }
+            },
+            "tweet_id": "1987564643783700635",
+            "date_collected": "Tue 11 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/demirdjiantwins/status/1987564643783700635",
+            "author_username": "demirdjiantwins",
+            "author_followers": 44606,
+            "like_count": 387,
+            "retweet_count": 34,
+            "bookmark_count": 405,
+            "view_count": 26935,
+            "quote_count": 0,
+            "conversation_id": "1987564643783700635",
+            "has_media": true,
+            "media_type": "animated_gif",
+            "media_urls": "https://t.co/aOup4KhgB6",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 71,
+            "days_old": 1.3,
+            "freshness_multiplier": 1.3,
+            "base_score": 55,
+            "engagement_rate": 3.07,
+            "bookmark_rate": 1.5,
+            "amplification_rate": 3.07,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "average",
+            "bookmark_class": "good",
+            "amplification_class": "poor",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "No shoot days.\nNo revision delays.\n\nWhat you get:\n\n→ Dozens of ready-to-run UGC ads from a single product photo\n→ Costs pennies per video\n→ Full commercial rights\n→ Perfect for rapid A/B testing & scaling campaigns\n\nBuilt 100% in n8n + Linah AI.\n\nWant the exact workflow setup?\n\nComment “BANANA”\nLike this post\n\nAnd I’ll DM you the full automation (must be following)."
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 2
+              }
+            },
+            "tweet_id": "1987807632531300693",
+            "date_collected": "Tue 11 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/n8n_io/status/1987807632531300693",
+            "author_username": "n8n_io",
+            "author_followers": 66912,
+            "like_count": 80,
+            "retweet_count": 14,
+            "bookmark_count": 24,
+            "view_count": 4446,
+            "quote_count": 0,
+            "conversation_id": "1987807632531300693",
+            "has_media": true,
+            "media_type": "video",
+            "media_urls": "https://t.co/8GWgNX5CD4",
+            "external_links": "https://bit.ly/3XlbQry",
+            "topic": "n8n -FREE",
+            "engagement_score": 65,
+            "days_old": 0.7,
+            "freshness_multiplier": 1.5,
+            "base_score": 43,
+            "engagement_rate": 2.65,
+            "bookmark_rate": 0.54,
+            "amplification_rate": 2.65,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "high",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "average",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "🎧 New n8n Podcast: Plugging voice agents into your stack with n8n. With @jannismooreai, founder of Integraticus, on using voice AI + n8n to qualify/reactivate leads, book appointments, handle support, and hand calls off to humans when it matters.\n🔗 https://t.co/NRwSxI3bc5 https://t.co/8GWgNX5CD4"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 11
+              }
+            },
+            "tweet_id": "1987738893341606317",
+            "date_collected": "Tue 11 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/noahmorriz/status/1987738893341606317",
+            "author_username": "noahmorriz",
+            "author_followers": 48835,
+            "like_count": 52,
+            "retweet_count": 3,
+            "bookmark_count": 18,
+            "view_count": 4431,
+            "quote_count": 0,
+            "conversation_id": "1987738893341606317",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 35,
+            "days_old": 0.9,
+            "freshness_multiplier": 1.5,
+            "base_score": 23,
+            "engagement_rate": 1.65,
+            "bookmark_rate": 0.41,
+            "amplification_rate": 1.65,
+            "thread_indicator": "single",
+            "content_type": "monetization",
+            "call_to_action": false,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "Heya, sorry to bore you all with more hiring post but the channel network and other companies are growing super fast.\n\nI’m looking for an operational assistant (fulltime) for HR, Finances, documents and email support.\n\nAlso looking for n8n automation experts (part or full time) \n\nEditors, writers & junior python developers.\n\nI’ll also pay $500 referral bonus for anyone who brings someone who fills these position.\n\nPlease note that I do check all your messages but I don’t have time to respond to every single one. If you send me something relevant and impressive I’ll most likely reply."
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 3
+              }
+            },
+            "tweet_id": "1987767765672067292",
+            "date_collected": "Tue 11 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/crystalsssup/status/1987767765672067292",
+            "author_username": "crystalsssup",
+            "author_followers": 17389,
+            "like_count": 311,
+            "retweet_count": 19,
+            "bookmark_count": 124,
+            "view_count": 27800,
+            "quote_count": 0,
+            "conversation_id": "1987767765672067292",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 34,
+            "days_old": 0.8,
+            "freshness_multiplier": 1.5,
+            "base_score": 23,
+            "engagement_rate": 1.63,
+            "bookmark_rate": 0.45,
+            "amplification_rate": 1.63,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "Thanks so much for this eval, it's much more solid than a single prompt.\n\nVibe testing for LLMs should definitely happen on workflow platforms like N8N, because that's the real production path where you build up your service."
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 7
+              }
+            },
+            "tweet_id": "1987906642936000976",
+            "date_collected": "Tue 11 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/AIFrontliner/status/1987906642936000976",
+            "author_username": "AIFrontliner",
+            "author_followers": 427787,
+            "like_count": 282,
+            "retweet_count": 138,
+            "bookmark_count": 187,
+            "view_count": 84468,
+            "quote_count": 0,
+            "conversation_id": "1987906642936000976",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 32,
+            "days_old": 0.4,
+            "freshness_multiplier": 1.5,
+            "base_score": 22,
+            "engagement_rate": 0.72,
+            "bookmark_rate": 0.22,
+            "amplification_rate": 0.72,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "🚨 BREAKING: Gamma just released automation workflows for every business need.\n\n→ AI carousel generator (Make)\n→ Custom proposal decks (n8n)\n→ AI-narrated video presentations\n→ Personalized pitch decks (Instantly)\n→ Content research &amp; generation"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 3
+              }
+            },
+            "tweet_id": "1987902668686430611",
+            "date_collected": "Tue 11 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/skeptrune/status/1987902668686430611",
+            "author_username": "skeptrune",
+            "author_followers": 8295,
+            "like_count": 55,
+            "retweet_count": 2,
+            "bookmark_count": 2,
+            "view_count": 6470,
+            "quote_count": 0,
+            "conversation_id": "1987787127204249824",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 15,
+            "days_old": 0.4,
+            "freshness_multiplier": 1.5,
+            "base_score": 10,
+            "engagement_rate": 0.91,
+            "bookmark_rate": 0.03,
+            "amplification_rate": 0.91,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "@yishan @peer_rich i dont agree. if openai can't kill n8n then they're cooked\n\ngenerally speaking it seems like the labs are too forward deployed with specific enterprise customers and a business model which looks more like consulting than SaaS for vertical specific categories"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 9
+              }
+            },
+            "tweet_id": "1988446473772736815",
+            "date_collected": "Thu 13 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/ai_empire74532/status/1988446473772736815",
+            "author_username": "ai_empire74532",
+            "author_followers": 122,
+            "like_count": 78,
+            "retweet_count": 26,
+            "bookmark_count": 4,
+            "view_count": 694,
+            "quote_count": 0,
+            "conversation_id": "1988446473772736815",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/73Y5xiRiPm",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 100,
+            "days_old": 0.9,
+            "freshness_multiplier": 1.5,
+            "base_score": 70,
+            "engagement_rate": 15.56,
+            "bookmark_rate": 0.58,
+            "amplification_rate": 15.56,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "viral",
+            "engagement_class": "excellent",
+            "bookmark_class": "average",
+            "amplification_class": "excellent",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "I MADE A VOICE AI AUTOMATION AGENT FOR A REAL ESATE AGENT THAT MADE THEM $43,000\n\nLiterally created this bot in 20 mins with n8n\n\nWant a Doc + workflow on how to do it?\n\nRT, Like &amp; reply \"AI” and I’ll DM it to you\n\n(Must follow for dm) https://t.co/73Y5xiRiPm"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 6
+              }
+            },
+            "tweet_id": "1988283242039177260",
+            "date_collected": "Thu 13 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/dip_roy_1/status/1988283242039177260",
+            "author_username": "dip_roy_1",
+            "author_followers": 403,
+            "like_count": 46,
+            "retweet_count": 19,
+            "bookmark_count": 3,
+            "view_count": 248,
+            "quote_count": 0,
+            "conversation_id": "1988283242039177260",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/mNQFB6wkcX",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 100,
+            "days_old": 1.4,
+            "freshness_multiplier": 1.3,
+            "base_score": 78,
+            "engagement_rate": 27.42,
+            "bookmark_rate": 1.21,
+            "amplification_rate": 27.42,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "viral",
+            "engagement_class": "excellent",
+            "bookmark_class": "excellent",
+            "amplification_class": "excellent",
+            "overall_preformance": "excellent",
+            "main_topic": "AI"
+          },
+          "pageContent": "🚀 This AI Bot Creates &amp; Uploads YouTube Videos 100% Automatically! 🎥🤖\n\nBuilt it in just 20 minutes using n8n — no code, no editing, pure automation magic ⚡\n\n👉 Like ❤️, Repost 🔁 &amp; Comment “AI”\n(Must follow @dip_roy_1 so I can DM it to you) https://t.co/mNQFB6wkcX"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 25
+              }
+            },
+            "tweet_id": "1988621974386421764",
+            "date_collected": "Thu 13 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/VibeMarketer_/status/1988621974386421764",
+            "author_username": "VibeMarketer_",
+            "author_followers": 20836,
+            "like_count": 166,
+            "retweet_count": 20,
+            "bookmark_count": 178,
+            "view_count": 10615,
+            "quote_count": 0,
+            "conversation_id": "1988621974386421764",
+            "has_media": true,
+            "media_type": "video",
+            "media_urls": "https://t.co/Pe812VHSOx",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 95,
+            "days_old": 0.4,
+            "freshness_multiplier": 1.5,
+            "base_score": 63,
+            "engagement_rate": 3.43,
+            "bookmark_rate": 1.68,
+            "amplification_rate": 3.43,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "viral",
+            "engagement_class": "good",
+            "bookmark_class": "excellent",
+            "amplification_class": "average",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "gamma + n8n = personalized proposals at scale\n\nmost b2b teams still write every proposal manually.. researching companies, personalizing offers, and writing outreach emails one by one\n\nthis workflow automates all of it\n\nhere’s how it works:\n- the flow researches your prospect\n- pulls their company data + recent activity\n- sends it to gamma\n- gamma generates a custom proposal deck with their logo, case studies, and tailored copy\n- then writes a personalized outreach email linking to the deck\n\nthis is the quickest way I’ve seen to get 50 done-for-you proposals in under 30 minutes\n\nthe result:\n- every proposal feels written 1:1\n- response rates go up\n- your team gets hours back each week\n\nperfect for agencies, consultants, and BD teams who want to scale personalization without losing quality\n\nwant the full Gamma + n8n proposal generator workflow?\n\ncomment PROPOSAL + like this post (must be following so i can dm you)"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 7
+              }
+            },
+            "tweet_id": "1988611237542809862",
+            "date_collected": "Thu 13 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/0xgmike/status/1988611237542809862",
+            "author_username": "0xgmike",
+            "author_followers": 14751,
+            "like_count": 82,
+            "retweet_count": 20,
+            "bookmark_count": 3,
+            "view_count": 1414,
+            "quote_count": 1,
+            "conversation_id": "1988611237542809862",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 87,
+            "days_old": 0.4,
+            "freshness_multiplier": 1.5,
+            "base_score": 58,
+            "engagement_rate": 7.5,
+            "bookmark_rate": 0.21,
+            "amplification_rate": 7.5,
+            "thread_indicator": "single",
+            "content_type": "monetization",
+            "call_to_action": true,
+            "viral_status": "viral",
+            "engagement_class": "good",
+            "bookmark_class": "poor",
+            "amplification_class": "good",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "When I saw n8n raise $180M at $2.5B, I felt validation.\n\nThe demand is real. \n\nBut the future isn’t another SaaS. \n\nIt’s a network where AI agent workflows are assets, and everyone shares the upside."
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 9
+              }
+            },
+            "tweet_id": "1988414943863996669",
+            "date_collected": "Thu 13 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/0xgmike/status/1988414943863996669",
+            "author_username": "0xgmike",
+            "author_followers": 14751,
+            "like_count": 84,
+            "retweet_count": 26,
+            "bookmark_count": 4,
+            "view_count": 2416,
+            "quote_count": 2,
+            "conversation_id": "1988414943863996669",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 82,
+            "days_old": 1,
+            "freshness_multiplier": 1.5,
+            "base_score": 54,
+            "engagement_rate": 4.8,
+            "bookmark_rate": 0.17,
+            "amplification_rate": 4.8,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "viral",
+            "engagement_class": "good",
+            "bookmark_class": "poor",
+            "amplification_class": "good",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "Landscape check: \n\nCentralized (Zapier/Make/n8n) ≈ polished but closed. \n\nWeb3 agent projects are early, no clear leader.\n\nTalus Nexus = decentralized n8n + agent marketplace + token economics (built for AI + crypto rails).\n\nIf automation is the OS, Nexus is its on-chain kernel."
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 3
+              }
+            },
+            "tweet_id": "1988676627661029468",
+            "date_collected": "Thu 13 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/GithubProjects/status/1988676627661029468",
+            "author_username": "GithubProjects",
+            "author_followers": 212557,
+            "like_count": 127,
+            "retweet_count": 16,
+            "bookmark_count": 156,
+            "view_count": 14722,
+            "quote_count": 0,
+            "conversation_id": "1988676627661029468",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/Akvj6JDGHO",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 71,
+            "days_old": 0.3,
+            "freshness_multiplier": 1.5,
+            "base_score": 48,
+            "engagement_rate": 2.03,
+            "bookmark_rate": 1.06,
+            "amplification_rate": 2.03,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "high",
+            "engagement_class": "poor",
+            "bookmark_class": "good",
+            "amplification_class": "average",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "Prompt to build AI agent workflows in seconds.\n\nApache 2.0 alternative to n8n. https://t.co/Akvj6JDGHO"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 1
+              }
+            },
+            "tweet_id": "1988268131916112349",
+            "date_collected": "Thu 13 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/n8n_io/status/1988268131916112349",
+            "author_username": "n8n_io",
+            "author_followers": 67185,
+            "like_count": 80,
+            "retweet_count": 10,
+            "bookmark_count": 25,
+            "view_count": 4667,
+            "quote_count": 2,
+            "conversation_id": "1988268131916112349",
+            "has_media": true,
+            "media_type": "video",
+            "media_urls": "https://t.co/FgduhtRgOj",
+            "external_links": "https://bit.ly/4oXD03w",
+            "topic": "n8n -FREE",
+            "engagement_score": 55,
+            "days_old": 1.4,
+            "freshness_multiplier": 1.3,
+            "base_score": 42,
+            "engagement_rate": 2.51,
+            "bookmark_rate": 0.54,
+            "amplification_rate": 2.51,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "medium",
+            "engagement_class": "average",
+            "bookmark_class": "average",
+            "amplification_class": "average",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "n8n’s AI Workflow Builder lets you describe a workflow in text, then iteratively generate, run and repair it using tools for node search, safe connections, node config and LLM + programmatic evals. 👀 https://t.co/6Hrt4fvW1D https://t.co/FgduhtRgOj"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 10
+              }
+            },
+            "tweet_id": "1988435166709125319",
+            "date_collected": "Thu 13 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/dr_cintas/status/1988435166709125319",
+            "author_username": "dr_cintas",
+            "author_followers": 117642,
+            "like_count": 68,
+            "retweet_count": 12,
+            "bookmark_count": 74,
+            "view_count": 16318,
+            "quote_count": 0,
+            "conversation_id": "1988435166709125319",
+            "has_media": true,
+            "media_type": "video",
+            "media_urls": "https://t.co/cpfv2gbqR5",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 40,
+            "days_old": 0.9,
+            "freshness_multiplier": 1.5,
+            "base_score": 26,
+            "engagement_rate": 0.94,
+            "bookmark_rate": 0.45,
+            "amplification_rate": 0.94,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "medium",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "Gamma + OpenAI + n8n = never manually create proposals again.\n\nThis automation takes all my leads in a spreadsheets and:\n\n• Researches the company\n• Understands their specific challenges\n• Creates custom proposal with a deck\n• Writes personalized emails\n\nLink to access below. https://t.co/cpfv2gbqR5"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 3
+              }
+            },
+            "tweet_id": "1988326506259771717",
+            "date_collected": "Thu 13 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/TomFrankly/status/1988326506259771717",
+            "author_username": "TomFrankly",
+            "author_followers": 143570,
+            "like_count": 51,
+            "retweet_count": 1,
+            "bookmark_count": 26,
+            "view_count": 5340,
+            "quote_count": 0,
+            "conversation_id": "1988326506259771717",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/jGdUUsUOrq",
+            "external_links": "https://www.npmjs.com/package/notion-helper",
+            "topic": "n8n -FREE",
+            "engagement_score": 40,
+            "days_old": 1.2,
+            "freshness_multiplier": 1.3,
+            "base_score": 31,
+            "engagement_rate": 1.46,
+            "bookmark_rate": 0.49,
+            "amplification_rate": 1.46,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "medium",
+            "engagement_class": "poor",
+            "bookmark_class": "average",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "Stoked to see my @NotionHQ npm library is past 2,000 weekly downloads: https://t.co/cQ41zmvDFl\n\nWould love to see @n8n_io implement or fork it so my workflows no longer need to make an API call for every block I want to send to Notion. https://t.co/jGdUUsUOrq"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 3
+              }
+            },
+            "tweet_id": "1988306977928474927",
+            "date_collected": "Thu 13 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/godofprompt/status/1988306977928474927",
+            "author_username": "godofprompt",
+            "author_followers": 155081,
+            "like_count": 86,
+            "retweet_count": 8,
+            "bookmark_count": 35,
+            "view_count": 12167,
+            "quote_count": 1,
+            "conversation_id": "1988306977928474927",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/l8PZO9b5tz",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 33,
+            "days_old": 1.3,
+            "freshness_multiplier": 1.3,
+            "base_score": 25,
+            "engagement_rate": 1.07,
+            "bookmark_rate": 0.29,
+            "amplification_rate": 1.07,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "Google’s AI agent builder looks like it was vibe coded.\n\nn8n is still not going anywhere. https://t.co/l8PZO9b5tz"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 1
+              }
+            },
+            "tweet_id": "1988270596401037766",
+            "date_collected": "Thu 13 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/omoalhajaabiola/status/1988270596401037766",
+            "author_username": "omoalhajaabiola",
+            "author_followers": 154694,
+            "like_count": 51,
+            "retweet_count": 3,
+            "bookmark_count": 8,
+            "view_count": 4557,
+            "quote_count": 0,
+            "conversation_id": "1988270596401037766",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 31,
+            "days_old": 1.4,
+            "freshness_multiplier": 1.3,
+            "base_score": 24,
+            "engagement_rate": 1.36,
+            "bookmark_rate": 0.18,
+            "amplification_rate": 1.36,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "I sent you n8n license. Well done!"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 1
+              }
+            },
+            "tweet_id": "1988179120631779414",
+            "date_collected": "Thu 13 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/skeptrune/status/1988179120631779414",
+            "author_username": "skeptrune",
+            "author_followers": 8476,
+            "like_count": 94,
+            "retweet_count": 0,
+            "bookmark_count": 24,
+            "view_count": 16006,
+            "quote_count": 4,
+            "conversation_id": "1988179120631779414",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 11,
+            "days_old": 1.6,
+            "freshness_multiplier": 1.1,
+            "base_score": 10,
+            "engagement_rate": 0.76,
+            "bookmark_rate": 0.15,
+            "amplification_rate": 0.76,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "If you’re 13 right now, you should spend all your time in n8n. This is the Alex Hormozi, Gary Vee moment. The people who grow up with these ai workflows will have an immense advantage in the future economy."
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 1
+              }
+            },
+            "tweet_id": "1985410693890523162",
+            "date_collected": "Sat 15 Nov 2025 01:00:34 +0000",
+            "tweet_url": "https://x.com/farmingsim/status/1985410693890523162",
+            "author_username": "farmingsim",
+            "author_followers": 151289,
+            "like_count": 1787,
+            "retweet_count": 126,
+            "bookmark_count": 447,
+            "view_count": 10335109,
+            "quote_count": 35,
+            "conversation_id": "1985410693890523162",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 9,
+            "days_old": 11.3,
+            "freshness_multiplier": 0.5,
+            "base_score": 17,
+            "engagement_rate": 0.02,
+            "bookmark_rate": 0,
+            "amplification_rate": 0.02,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "Welcome to Kinlaig! Get the new Highlands Fishing Expansion now."
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 3
+              }
+            },
+            "tweet_id": "1987394730624426167",
+            "date_collected": "Sat 15 Nov 2025 01:00:34 +0000",
+            "tweet_url": "https://x.com/BioProtocol/status/1987394730624426167",
+            "author_username": "BioProtocol",
+            "author_followers": 117283,
+            "like_count": 98,
+            "retweet_count": 21,
+            "bookmark_count": 24,
+            "view_count": 823829,
+            "quote_count": 1,
+            "conversation_id": "1987394730624426167",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 3,
+            "days_old": 5.8,
+            "freshness_multiplier": 0.5,
+            "base_score": 6,
+            "engagement_rate": 0.02,
+            "bookmark_rate": 0,
+            "amplification_rate": 0.02,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "Looking for a better way to fund your research?\n\nDecentralized Science is opening new pathways for researchers to access funding and move their work forward."
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 33
+              }
+            },
+            "tweet_id": "1989406463899701719",
+            "date_collected": "Mon 17 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/mikefutia/status/1989406463899701719",
+            "author_username": "mikefutia",
+            "author_followers": 43959,
+            "like_count": 306,
+            "retweet_count": 30,
+            "bookmark_count": 342,
+            "view_count": 15866,
+            "quote_count": 1,
+            "conversation_id": "1989406463899701719",
+            "has_media": true,
+            "media_type": "video",
+            "media_urls": "https://t.co/9R47Ot7VTd",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 65,
+            "days_old": 2.3,
+            "freshness_multiplier": 0.9,
+            "base_score": 72,
+            "engagement_rate": 4.28,
+            "bookmark_rate": 2.16,
+            "amplification_rate": 4.28,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "good",
+            "bookmark_class": "excellent",
+            "amplification_class": "poor",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "Sora 2 + n8n is absolutely insane 🤯\n\nThis n8n automation generates entire UGC campaigns with the same AI creator across unlimited videos.\n\nAll from one Airtable form.\n\nPerfect for DTC brands & agencies who need brand consistency in their AI ads without hiring real creators.\n\nWhy this matters:\n\nEvery AI video tool gives you a random person each time. You can't build multi-video campaigns because your \"creator\" changes in every clip.\n\nSora 2 consistent characters solves this:\n\nSame AI creator → Different scenes → Unlimited videos\n\nThe n8n workflow:\n\n→ Fill out Airtable form once (select your character, describe scenes, choose quantity)\n→ Claude AI generates professional Sora 2 prompts automatically\n→ Sora 2 renders videos with your consistent character\n→ Videos auto-upload to ImageKit CDN\n→ Everything tracked in Airtable with shareable URLs\n\nNo manual prompting.\n\nNo file management.\n\nNo different people in every video.\n\nWhat you can create:\n\n→ 3-part testimonial series with the same per"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 23,
+                "to": 53
+              }
+            },
+            "tweet_id": "1989406463899701719",
+            "date_collected": "Mon 17 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/mikefutia/status/1989406463899701719",
+            "author_username": "mikefutia",
+            "author_followers": 43959,
+            "like_count": 306,
+            "retweet_count": 30,
+            "bookmark_count": 342,
+            "view_count": 15866,
+            "quote_count": 1,
+            "conversation_id": "1989406463899701719",
+            "has_media": true,
+            "media_type": "video",
+            "media_urls": "https://t.co/9R47Ot7VTd",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 65,
+            "days_old": 2.3,
+            "freshness_multiplier": 0.9,
+            "base_score": 72,
+            "engagement_rate": 4.28,
+            "bookmark_rate": 2.16,
+            "amplification_rate": 4.28,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "good",
+            "bookmark_class": "excellent",
+            "amplification_class": "poor",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "Everything tracked in Airtable with shareable URLs\n\nNo manual prompting.\n\nNo file management.\n\nNo different people in every video.\n\nWhat you can create:\n\n→ 3-part testimonial series with the same person\n→ Before/during/after transformation campaigns\n→ Product tutorial sequences that feel cohesive\n→ Entire ad creative libraries with your \"brand ambassador\"\n\nTrack everything in Airtable:\n\n→ Video status (queued → generating → complete)\n→ Shareable URLs for each clip\n→ Scene descriptions and prompts\n→ Production-ready in 5-10 minutes\n\nBuilt 100% in n8n + Airtable.\n\nWant the complete template?\n\n> Comment \"SORA\"\n\n> Like this post\n\nAnd I'll send it over (must be following so I can DM)"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 13
+              }
+            },
+            "tweet_id": "1989321417100546255",
+            "date_collected": "Mon 17 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/0xgmike/status/1989321417100546255",
+            "author_username": "0xgmike",
+            "author_followers": 14753,
+            "like_count": 100,
+            "retweet_count": 26,
+            "bookmark_count": 2,
+            "view_count": 1796,
+            "quote_count": 3,
+            "conversation_id": "1989321417100546255",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 52,
+            "days_old": 2.5,
+            "freshness_multiplier": 0.9,
+            "base_score": 58,
+            "engagement_rate": 7.29,
+            "bookmark_rate": 0.11,
+            "amplification_rate": 7.29,
+            "thread_indicator": "single",
+            "content_type": "monetization",
+            "call_to_action": false,
+            "viral_status": "medium",
+            "engagement_class": "excellent",
+            "bookmark_class": "poor",
+            "amplification_class": "excellent",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "Workflow automation is a $45B market.\n\nn8n → $2.5B\n\nZapier → $310M rev\n\nUiPath → $36B IPO\n\nAll centralized.\n\nThe next $36B player will be decentralized\n\nIN TAL($US) WE TR($US)T"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 1
+              }
+            },
+            "tweet_id": "1989325008401756633",
+            "date_collected": "Mon 17 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/n8n_io/status/1989325008401756633",
+            "author_username": "n8n_io",
+            "author_followers": 67595,
+            "like_count": 156,
+            "retweet_count": 15,
+            "bookmark_count": 91,
+            "view_count": 8953,
+            "quote_count": 0,
+            "conversation_id": "1989325008401756633",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/uV4xJuNISb",
+            "external_links": "https://n8n.io/integrations/",
+            "topic": "n8n -FREE",
+            "engagement_score": 43,
+            "days_old": 2.5,
+            "freshness_multiplier": 0.9,
+            "base_score": 47,
+            "engagement_rate": 2.93,
+            "bookmark_rate": 1.02,
+            "amplification_rate": 2.93,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "medium",
+            "engagement_class": "poor",
+            "bookmark_class": "average",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "Run AI locally and on the edge. n8n now has comprehensive support for Lemonade, an open-source language model server that enables local and self-hosted AI models through an OpenAI-compatible API. 👉🏻 https://t.co/WBrpsreFhU https://t.co/uV4xJuNISb"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 15
+              }
+            },
+            "tweet_id": "1989277635440996434",
+            "date_collected": "Sat 15 Nov 2025 01:00:34 +0000",
+            "tweet_url": "https://x.com/0xfrigg/status/1989277635440996434",
+            "author_username": "0xfrigg",
+            "author_followers": 56577,
+            "like_count": 55,
+            "retweet_count": 0,
+            "bookmark_count": 0,
+            "view_count": 1227,
+            "quote_count": 0,
+            "conversation_id": "1989277635440996434",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 64,
+            "days_old": 0.6,
+            "freshness_multiplier": 1.5,
+            "base_score": 43,
+            "engagement_rate": 4.48,
+            "bookmark_rate": 0,
+            "amplification_rate": 4.48,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "high",
+            "engagement_class": "good",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "this anecdote explains why @Talus_Labs exists in the most bare way\n\nin web2 our automations (zapier n8n etc) break in two places continuity and proof\n\nflows randomly fail and even when they don’t there’s no auditable answer to “what exactly ran how long did each step take what did i pay for”\n\nmike’s line “automation without verifiability is broken trust” is right because if automation can’t prove it worked it asks for trust and asking for trust contradicts the promise of automation\n\nwhat Nexus does is turn that trust ask into proof\n\nthe flow (DAG/workflow) is defined onchain the agent’s identity permissions budget are framed onchain the heavy intelligence runs offchain but orchestration + receipt come back onchain\n\nso even a basic flow like “summarize meeting notes → write to Notion” answers like a recipe “which steps were called which limit was used how much gas/fee burned when was the output written”\n\nthe “did it work” debate becomes “here’s the proof” that’s what rebuilds automation"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 13,
+                "to": 18
+              }
+            },
+            "tweet_id": "1989277635440996434",
+            "date_collected": "Sat 15 Nov 2025 01:00:34 +0000",
+            "tweet_url": "https://x.com/0xfrigg/status/1989277635440996434",
+            "author_username": "0xfrigg",
+            "author_followers": 56577,
+            "like_count": 55,
+            "retweet_count": 0,
+            "bookmark_count": 0,
+            "view_count": 1227,
+            "quote_count": 0,
+            "conversation_id": "1989277635440996434",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 64,
+            "days_old": 0.6,
+            "freshness_multiplier": 1.5,
+            "base_score": 43,
+            "engagement_rate": 4.48,
+            "bookmark_rate": 0,
+            "amplification_rate": 4.48,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "high",
+            "engagement_class": "good",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "rs like a recipe “which steps were called which limit was used how much gas/fee burned when was the output written”\n\nthe “did it work” debate becomes “here’s the proof” that’s what rebuilds automation’s credibility\n\n═══\nif i see simple flows everyone can set up plus templated security blocks and metric dashboards i’ll say we’ve moved from “automation = broken trust” to “automation = provable service”"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 1
+              }
+            },
+            "tweet_id": "1988948141899673988",
+            "date_collected": "Sat 15 Nov 2025 01:00:34 +0000",
+            "tweet_url": "https://x.com/AmyntsDesign/status/1988948141899673988",
+            "author_username": "AmyntsDesign",
+            "author_followers": 338,
+            "like_count": 78,
+            "retweet_count": 0,
+            "bookmark_count": 17,
+            "view_count": 1772,
+            "quote_count": 0,
+            "conversation_id": "1988948141899673988",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/rLPvZ4kQRT",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 61,
+            "days_old": 1.5,
+            "freshness_multiplier": 1.1,
+            "base_score": 55,
+            "engagement_rate": 5.36,
+            "bookmark_rate": 0.96,
+            "amplification_rate": 5.36,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "high",
+            "engagement_class": "excellent",
+            "bookmark_class": "average",
+            "amplification_class": "poor",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "podcast, shein, n8n, gold https://t.co/rLPvZ4kQRT"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 2
+              }
+            },
+            "tweet_id": "1988962613934334365",
+            "date_collected": "Sat 15 Nov 2025 01:00:34 +0000",
+            "tweet_url": "https://x.com/n8n_io/status/1988962613934334365",
+            "author_username": "n8n_io",
+            "author_followers": 67454,
+            "like_count": 168,
+            "retweet_count": 10,
+            "bookmark_count": 71,
+            "view_count": 8738,
+            "quote_count": 1,
+            "conversation_id": "1988962613934334365",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/2mQZPxwCYc",
+            "external_links": "https://bit.ly/3LY5Lig",
+            "topic": "n8n -FREE",
+            "engagement_score": 60,
+            "days_old": 1.5,
+            "freshness_multiplier": 1.3,
+            "base_score": 46,
+            "engagement_rate": 2.86,
+            "bookmark_rate": 0.81,
+            "amplification_rate": 2.86,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "poor",
+            "bookmark_class": "average",
+            "amplification_class": "average",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "Now THAT’S flowgramming. 🔥 Clean, easy to follow workflow. Named nodes, clear explanation, source available. 👏 \nhttps://t.co/iahW2GnyQ4 https://t.co/2mQZPxwCYc"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 2
+              }
+            },
+            "tweet_id": "1988894687860511142",
+            "date_collected": "Sat 15 Nov 2025 01:00:34 +0000",
+            "tweet_url": "https://x.com/n8n_io/status/1988894687860511142",
+            "author_username": "n8n_io",
+            "author_followers": 67454,
+            "like_count": 224,
+            "retweet_count": 27,
+            "bookmark_count": 140,
+            "view_count": 12439,
+            "quote_count": 1,
+            "conversation_id": "1988894687860511142",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/aZheDUkOWy",
+            "external_links": "https://bit.ly/4p9FkEN",
+            "topic": "n8n -FREE",
+            "engagement_score": 59,
+            "days_old": 1.7,
+            "freshness_multiplier": 1.1,
+            "base_score": 54,
+            "engagement_rate": 3.15,
+            "bookmark_rate": 1.13,
+            "amplification_rate": 3.15,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "medium",
+            "engagement_class": "average",
+            "bookmark_class": "good",
+            "amplification_class": "average",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "Big documents often push your app or your AI too far. This workflow uses Subworkflow AI to extract text so you can keep using it in n8n.\nCheck it out here: https://t.co/E8HVnfckEv https://t.co/aZheDUkOWy"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 45
+              }
+            },
+            "tweet_id": "1988876776454369412",
+            "date_collected": "Sat 15 Nov 2025 01:00:34 +0000",
+            "tweet_url": "https://x.com/AutomationKing0/status/1988876776454369412",
+            "author_username": "AutomationKing0",
+            "author_followers": 1529,
+            "like_count": 179,
+            "retweet_count": 20,
+            "bookmark_count": 108,
+            "view_count": 9837,
+            "quote_count": 4,
+            "conversation_id": "1988876776454369412",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/1DLRqIT93Y",
+            "external_links": "http://Make.com",
+            "topic": "n8n -FREE",
+            "engagement_score": 56,
+            "days_old": 1.7,
+            "freshness_multiplier": 1.1,
+            "base_score": 51,
+            "engagement_rate": 3.16,
+            "bookmark_rate": 1.1,
+            "amplification_rate": 3.16,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "medium",
+            "engagement_class": "average",
+            "bookmark_class": "good",
+            "amplification_class": "good",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "WHY YOU’RE DROWNING WHILE LEARNING AI AUTOMATION\n\nSomeone messaged me last night.\n\nTired. Frustrated. Mentally drained.\n\nShe’s been bouncing from Zapier to https://t.co/62A9fUlVdj to n8n… and still feels like she knows nothing.\n\nBut it’s not laziness.\n\nIt’s mental overload.\n\nThe real problem?\n\nShe came into AI thinking it’s plug-and-play. Like downloading a template.\n\nWrong.\n\nAI is not magic.\nAutomation isn’t instant.\nAnd your brain is not a Google Drive.\nYou binge 9-hour YouTube videos.\nDownload 17 eBooks.\nTake 3 courses.\nJoin 5 communities.\nStill feel stuck.\n\nBecause your brain isn’t learning  it’s choking.\n\nHere’s how to stop the spiral:\n\nSlow down to speed up. Master ONE tool first.\n\nLink what you know. Your workflows should reflect your business, not confuse it.\n\nLearn from curiosity, not fear. AI won’t save your business. It amplifies YOU.\n\nBreathe.\n\nPick one tool. Build one workflow.\nMake it work. Then repeat.\nAI is a relationship.\nNot a rescue plan.\n\nDon’t break while trying to"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 36,
+                "to": 45
+              }
+            },
+            "tweet_id": "1988876776454369412",
+            "date_collected": "Sat 15 Nov 2025 01:00:34 +0000",
+            "tweet_url": "https://x.com/AutomationKing0/status/1988876776454369412",
+            "author_username": "AutomationKing0",
+            "author_followers": 1529,
+            "like_count": 179,
+            "retweet_count": 20,
+            "bookmark_count": 108,
+            "view_count": 9837,
+            "quote_count": 4,
+            "conversation_id": "1988876776454369412",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/1DLRqIT93Y",
+            "external_links": "http://Make.com",
+            "topic": "n8n -FREE",
+            "engagement_score": 56,
+            "days_old": 1.7,
+            "freshness_multiplier": 1.1,
+            "base_score": 51,
+            "engagement_rate": 3.16,
+            "bookmark_rate": 1.1,
+            "amplification_rate": 3.16,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "medium",
+            "engagement_class": "average",
+            "bookmark_class": "good",
+            "amplification_class": "good",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "not fear. AI won’t save your business. It amplifies YOU.\n\nBreathe.\n\nPick one tool. Build one workflow.\nMake it work. Then repeat.\nAI is a relationship.\nNot a rescue plan.\n\nDon’t break while trying to automate everything."
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 7
+              }
+            },
+            "tweet_id": "1988919473169199529",
+            "date_collected": "Sat 15 Nov 2025 01:00:34 +0000",
+            "tweet_url": "https://x.com/SaniBulaAI/status/1988919473169199529",
+            "author_username": "SaniBulaAI",
+            "author_followers": 83920,
+            "like_count": 57,
+            "retweet_count": 50,
+            "bookmark_count": 154,
+            "view_count": 71547,
+            "quote_count": 1,
+            "conversation_id": "1988919473169199529",
+            "has_media": true,
+            "media_type": "video",
+            "media_urls": "https://t.co/9joQI5NRyV",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 17,
+            "days_old": 1.6,
+            "freshness_multiplier": 1.1,
+            "base_score": 16,
+            "engagement_rate": 0.37,
+            "bookmark_rate": 0.22,
+            "amplification_rate": 0.37,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "The most underrated growth hack in 2025?\n\nNot ads. Not outreach scripts.\n\nIt’s automated personalization — and Gamma just became a cheat code for it.\n\nWe turned n8n + Gamma into a system that researches prospects, builds custom proposals, and writes emails.. automatically. 🤯 https://t.co/9joQI5NRyV"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 7
+              }
+            },
+            "tweet_id": "1988999569309409451",
+            "date_collected": "Sat 15 Nov 2025 01:00:34 +0000",
+            "tweet_url": "https://x.com/CohorteAI/status/1988999569309409451",
+            "author_username": "CohorteAI",
+            "author_followers": 4527,
+            "like_count": 905,
+            "retweet_count": 48,
+            "bookmark_count": 50,
+            "view_count": 187395,
+            "quote_count": 0,
+            "conversation_id": "1988999569309409451",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/ycp7vaItAX",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 12,
+            "days_old": 1.4,
+            "freshness_multiplier": 1.3,
+            "base_score": 9,
+            "engagement_rate": 0.54,
+            "bookmark_rate": 0.03,
+            "amplification_rate": 0.54,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "One n8n AI agent now does it better.\n\nIf you can drag-and-drop, you can build this.\n\nOpen-source. Visual. No code.\n\nAgents + automations on one canvas. https://t.co/ycp7vaItAX"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 7
+              }
+            },
+            "tweet_id": "1989861236398247978",
+            "date_collected": "Mon 17 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/freeCodeCamp/status/1989861236398247978",
+            "author_username": "freeCodeCamp",
+            "author_followers": 997996,
+            "like_count": 829,
+            "retweet_count": 125,
+            "bookmark_count": 827,
+            "view_count": 51390,
+            "quote_count": 2,
+            "conversation_id": "1989861236398247978",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/rvVROb7Osd",
+            "external_links": "https://www.freecodecamp.org/news/build-complex-workflows-with-n8n-and-master-ai-integration/",
+            "topic": "n8n -FREE",
+            "engagement_score": 100,
+            "days_old": 1,
+            "freshness_multiplier": 1.5,
+            "base_score": 70,
+            "engagement_rate": 3.47,
+            "bookmark_rate": 1.61,
+            "amplification_rate": 3.47,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "viral",
+            "engagement_class": "average",
+            "bookmark_class": "good",
+            "amplification_class": "average",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "n8n is an open source workflow automation tool that helps you connect various apps, APIs, and services.\n\nAnd in this course, Gavin teaches you how to use it by building four practical projects.\n\nYou'll learn why standards like REST and OAuth2 are key to automation, how to integrate AI Agents into your workflows, and lots more.\n\nhttps://t.co/4QbvPqIB9v"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 8
+              }
+            },
+            "tweet_id": "1989759684635463721",
+            "date_collected": "Mon 17 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/0xROAS/status/1989759684635463721",
+            "author_username": "0xROAS",
+            "author_followers": 8085,
+            "like_count": 172,
+            "retweet_count": 8,
+            "bookmark_count": 195,
+            "view_count": 8747,
+            "quote_count": 1,
+            "conversation_id": "1989759684635463721",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/40Ofyd0443",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 90,
+            "days_old": 1.3,
+            "freshness_multiplier": 1.3,
+            "base_score": 69,
+            "engagement_rate": 4.3,
+            "bookmark_rate": 2.23,
+            "amplification_rate": 4.3,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "viral",
+            "engagement_class": "good",
+            "bookmark_class": "excellent",
+            "amplification_class": "poor",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "99% of people don't know you can upload a video to gemini and analyze it:\n\n- open gemini \n- upload your competitor's best performing ad \n- \"extract the script and rewrite it for [your product]\" \n- that's it \n\ncongrats, you just skipped building a 30-step n8n automation and got the same result in one prompt."
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 11
+              }
+            },
+            "tweet_id": "1989854251670229321",
+            "date_collected": "Mon 17 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/nahidulislam404/status/1989854251670229321",
+            "author_username": "nahidulislam404",
+            "author_followers": 1272,
+            "like_count": 135,
+            "retweet_count": 65,
+            "bookmark_count": 79,
+            "view_count": 6580,
+            "quote_count": 0,
+            "conversation_id": "1989854251670229321",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/0WFVokWDEb, https://t.co/0WFVokWDEb",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 88,
+            "days_old": 1,
+            "freshness_multiplier": 1.3,
+            "base_score": 68,
+            "engagement_rate": 4.24,
+            "bookmark_rate": 1.2,
+            "amplification_rate": 4.24,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "viral",
+            "engagement_class": "good",
+            "bookmark_class": "average",
+            "amplification_class": "excellent",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "I compiled 50+ n8n automation templates you can copy &amp; paste into your business or sell to other companies.\n\n– Lead gen\n-Content creation\n– Email outreach\n– CRM updates\n– AI workflows\n\nFollow + Retweet + Reply “n8n” and I’ll send it\n\n(Must follow for dm) https://t.co/0WFVokWDEb"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 28
+              }
+            },
+            "tweet_id": "1989760204159029695",
+            "date_collected": "Mon 17 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/demirdjiantwins/status/1989760204159029695",
+            "author_username": "demirdjiantwins",
+            "author_followers": 45040,
+            "like_count": 490,
+            "retweet_count": 60,
+            "bookmark_count": 673,
+            "view_count": 38771,
+            "quote_count": 0,
+            "conversation_id": "1989760204159029695",
+            "has_media": true,
+            "media_type": "video",
+            "media_urls": "https://t.co/lOzlIkCASu",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 78,
+            "days_old": 1.3,
+            "freshness_multiplier": 1.3,
+            "base_score": 60,
+            "engagement_rate": 3.15,
+            "bookmark_rate": 1.74,
+            "amplification_rate": 3.15,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "average",
+            "bookmark_class": "good",
+            "amplification_class": "poor",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "This TikTok Ads AI Agent is absolutely wild 🤯\n\nIt scrapes trending TikToks in your niche, analyzes them with AI, and instantly recreates viral ad concepts using Linah AI.\n\nAll inside n8n + Airtable.\n\nPerfect for DTC brands & agencies who want to know what’s working on TikTok before creating content.\n\nHere’s the problem:\n\nManual TikTok research is slow.\nYou scroll for hours, screenshot videos, note hooks and by the time you act, the trend’s gone.\n\nThis n8n automation fixes it:\n\n→ Enter a keyword (e.g. “skincare”, “coffee”, “fitness”)\n→ AI scrapes trending TikToks automatically\n→ Logs videos in Airtable with views, likes, comments\n→ Click “Analyze Video” → Linah AI extracts Hook, Proof Point, Theme\n→ Click “Generate Ad” → Linah recreates it as your own UGC-style ad\n\nNo scrolling. No guesswork. No missed trends.\n\nWhat you get in Airtable:\n→ Video URL, creator handle, metrics\n→ AI-extracted hooks & proof points\n→ Narrative themes & comment insights\n→ Auto-generated Linah ad variations rea"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 22,
+                "to": 37
+              }
+            },
+            "tweet_id": "1989760204159029695",
+            "date_collected": "Mon 17 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/demirdjiantwins/status/1989760204159029695",
+            "author_username": "demirdjiantwins",
+            "author_followers": 45040,
+            "like_count": 490,
+            "retweet_count": 60,
+            "bookmark_count": 673,
+            "view_count": 38771,
+            "quote_count": 0,
+            "conversation_id": "1989760204159029695",
+            "has_media": true,
+            "media_type": "video",
+            "media_urls": "https://t.co/lOzlIkCASu",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 78,
+            "days_old": 1.3,
+            "freshness_multiplier": 1.3,
+            "base_score": 60,
+            "engagement_rate": 3.15,
+            "bookmark_rate": 1.74,
+            "amplification_rate": 3.15,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "average",
+            "bookmark_class": "good",
+            "amplification_class": "poor",
+            "overall_preformance": "average",
+            "main_topic": "AI"
+          },
+          "pageContent": "rk. No missed trends.\n\nWhat you get in Airtable:\n→ Video URL, creator handle, metrics\n→ AI-extracted hooks & proof points\n→ Narrative themes & comment insights\n→ Auto-generated Linah ad variations ready to post\n\nBuilt 100% in n8n + Linah AI.\n\nWant the full n8n + Linah template?\n\nComment “TIKTOK”\nLike this post\n\nAnd I’ll DM you the setup (must be following)."
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 9
+              }
+            },
+            "tweet_id": "1989897105151070364",
+            "date_collected": "Mon 17 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/remo_226/status/1989897105151070364",
+            "author_username": "remo_226",
+            "author_followers": 1065,
+            "like_count": 70,
+            "retweet_count": 1,
+            "bookmark_count": 0,
+            "view_count": 737,
+            "quote_count": 4,
+            "conversation_id": "1989897105151070364",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/rUKtxboY86",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 75,
+            "days_old": 0.9,
+            "freshness_multiplier": 1.5,
+            "base_score": 50,
+            "engagement_rate": 10.18,
+            "bookmark_rate": 0,
+            "amplification_rate": 10.18,
+            "thread_indicator": "single",
+            "content_type": "monetization",
+            "call_to_action": false,
+            "viral_status": "high",
+            "engagement_class": "excellent",
+            "bookmark_class": "poor",
+            "amplification_class": "good",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "i thought @Talus_Labs was just AvA hype, then I dug in and the picture changed\n\nweb2 has n8n and Zapier, web3 has Chainlink keepers and Gelato, but Nexus feels like the missing layer: verifiable AI agents running cross-chain workflows, not just cron jobs. that’s the kind of infra that can create real economic outcomes, not demos\n\nnear term: $US TGE is close. CoinGecko app submitted (req CL1411250018) and CMC spotted. testnet snapshot taken, tester rewards confirmed. still time to earn your cut by yapping on Kaito about what Talus is building\n\nmedium term: Nexus in focus into Q4 ’25, then AvA prediction markets in Q1 ’26 via Idol/Ava. agents competing, users backing winners. i can see that flying when #PredictionMarkets catch a fresh bid\n\nif you care about #AI + #Web3 actually doing work, this stack hits different. i’m positioning and watching the exchanges next. who’s with me on the $US thesis?"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 13
+              }
+            },
+            "tweet_id": "1989698904451944583",
+            "date_collected": "Mon 17 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/0xgmike/status/1989698904451944583",
+            "author_username": "0xgmike",
+            "author_followers": 14753,
+            "like_count": 116,
+            "retweet_count": 26,
+            "bookmark_count": 2,
+            "view_count": 1739,
+            "quote_count": 0,
+            "conversation_id": "1989698904451944583",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 73,
+            "days_old": 1.4,
+            "freshness_multiplier": 1.3,
+            "base_score": 57,
+            "engagement_rate": 8.28,
+            "bookmark_rate": 0.12,
+            "amplification_rate": 8.28,
+            "thread_indicator": "single",
+            "content_type": "monetization",
+            "call_to_action": false,
+            "viral_status": "high",
+            "engagement_class": "excellent",
+            "bookmark_class": "poor",
+            "amplification_class": "excellent",
+            "overall_preformance": "good",
+            "main_topic": "AI"
+          },
+          "pageContent": "The next wave isn’t SaaS. It’s networks.\n\nn8n, Zapier, UiPath = closed vendors.\n\nNexus = open protocol.\n\nEvery workflow becomes an asset.\n\nEvery agent a participant.\n\nEvery execution a proof.\n\nIt all comes together with $US"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 7
+              }
+            },
+            "tweet_id": "1990013249463411181",
+            "date_collected": "Mon 17 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/dashboardlim/status/1990013249463411181",
+            "author_username": "dashboardlim",
+            "author_followers": 21032,
+            "like_count": 580,
+            "retweet_count": 68,
+            "bookmark_count": 600,
+            "view_count": 50915,
+            "quote_count": 2,
+            "conversation_id": "1990013249463411181",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/giRRdNJdjp",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 66,
+            "days_old": 0.6,
+            "freshness_multiplier": 1.5,
+            "base_score": 44,
+            "engagement_rate": 2.46,
+            "bookmark_rate": 1.18,
+            "amplification_rate": 2.46,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "high",
+            "engagement_class": "poor",
+            "bookmark_class": "average",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "Just Recorded a Tutorial on How to Build a $12M AI Diet Planner App without writing a single line of code (step-by-step)\n\nWith Lovable + n8n, you can now launch a full AI meal plan app with custom plans, recipes, and shopping lists in minutes\n\nLike + Comment \"APP\" to get the FULL Tutorial + n8n workflow FREE\n\n(Must be following)"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 7
+              }
+            },
+            "tweet_id": "1989940595855692066",
+            "date_collected": "Mon 17 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/hasan28d/status/1989940595855692066",
+            "author_username": "hasan28d",
+            "author_followers": 9761,
+            "like_count": 51,
+            "retweet_count": 23,
+            "bookmark_count": 20,
+            "view_count": 4346,
+            "quote_count": 0,
+            "conversation_id": "1989940595855692066",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/1UHsEXf4iL, https://t.co/1UHsEXf4iL",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 54,
+            "days_old": 0.8,
+            "freshness_multiplier": 1.5,
+            "base_score": 36,
+            "engagement_rate": 2.16,
+            "bookmark_rate": 0.46,
+            "amplification_rate": 2.16,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "medium",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "average",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "99% of the AI agent tutorials on YouTube are garbage.\n\nI’ve built 47 agents with n8n and Claude.\n\nHere are the 3 prompts that actually work (and make agent-building simple).\n\nBonus: comment \"Agent: and I’ll DM you AI agent system prompt + full guide ↓ https://t.co/1UHsEXf4iL"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 3
+              }
+            },
+            "tweet_id": "1989767167244734538",
+            "date_collected": "Mon 17 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/__dolani/status/1989767167244734538",
+            "author_username": "__dolani",
+            "author_followers": 1461,
+            "like_count": 141,
+            "retweet_count": 8,
+            "bookmark_count": 25,
+            "view_count": 5978,
+            "quote_count": 2,
+            "conversation_id": "1989767167244734538",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/mzCK0HY9tn",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 51,
+            "days_old": 1.3,
+            "freshness_multiplier": 1.3,
+            "base_score": 39,
+            "engagement_rate": 2.94,
+            "bookmark_rate": 0.42,
+            "amplification_rate": 2.94,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "medium",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "Time to build weapons fashioned from Webflow and N8N projects.\n\nThank you @n8n_io and @webflow 😌 https://t.co/mzCK0HY9tn"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 27
+              }
+            },
+            "tweet_id": "1989314174678335659",
+            "date_collected": "Mon 17 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/WorkflowWhisper/status/1989314174678335659",
+            "author_username": "WorkflowWhisper",
+            "author_followers": 2361,
+            "like_count": 768,
+            "retweet_count": 91,
+            "bookmark_count": 1348,
+            "view_count": 91668,
+            "quote_count": 5,
+            "conversation_id": "1989314174678335659",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/cVXRtSnYec",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 37,
+            "days_old": 2.5,
+            "freshness_multiplier": 0.8,
+            "base_score": 47,
+            "engagement_rate": 2.41,
+            "bookmark_rate": 1.47,
+            "amplification_rate": 2.41,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "average",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "I just found an app that builds n8n workflows from plain English in under 30 seconds.\n\nNo coding.\nNo webhook debugging.\nNo \"let me check the docs.\"\n\nJust: \"Build me a lead enrichment system with email validation and CRM updates\"\n\n→ Done. Deployed. Working.\n\nI tested it with my team:\n\nJunior marketer (zero tech experience): Built a content automation system in 4 minutes that agencies quote $8K for.\n\nThe app has real-time n8n documentation baked in.\n\nIt knows every node, every integration, every edge case.\n\nYour $12K consultant is probably using this and charging you enterprise prices.\n\nI'm not gatekeeping it.\n\nFollow me and comment \"BUILD\" below.\n\nI'll DM you the link + 3 workflows you can deploy today.\n\nThe automation game just changed forever."
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 9
+              }
+            },
+            "tweet_id": "1989362124775473266",
+            "date_collected": "Mon 17 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/TheUltimate_AI/status/1989362124775473266",
+            "author_username": "TheUltimate_AI",
+            "author_followers": 7255,
+            "like_count": 337,
+            "retweet_count": 133,
+            "bookmark_count": 243,
+            "view_count": 38334,
+            "quote_count": 1,
+            "conversation_id": "1989362124775473266",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/EyRyHpQ2Em",
+            "external_links": "",
+            "topic": "n8n -FREE",
+            "engagement_score": 30,
+            "days_old": 2.4,
+            "freshness_multiplier": 0.9,
+            "base_score": 33,
+            "engagement_rate": 1.86,
+            "bookmark_rate": 0.63,
+            "amplification_rate": 1.86,
+            "thread_indicator": "single",
+            "content_type": "engagement_bait",
+            "call_to_action": true,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "average",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "I MADE A VOICE AI AUTOMATION AGENT FOR A REAL ESATE AGENT THAT MADE THEM $43,000\n\nLiterally created this bot in 20 mins with n8n\n\nWant a Doc + workflow on how to do it?\n\nRT, Like &amp; reply \"AI” and I’ll DM it to you\n\n(Must follow for dm) https://t.co/EyRyHpQ2Em"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 2
+              }
+            },
+            "tweet_id": "1989389159119651031",
+            "date_collected": "Mon 17 Nov 2025 01:00:33 +0000",
+            "tweet_url": "https://x.com/n8n_io/status/1989389159119651031",
+            "author_username": "n8n_io",
+            "author_followers": 67595,
+            "like_count": 78,
+            "retweet_count": 12,
+            "bookmark_count": 14,
+            "view_count": 5759,
+            "quote_count": 2,
+            "conversation_id": "1989389159119651031",
+            "has_media": true,
+            "media_type": "photo",
+            "media_urls": "https://t.co/X7VXjUJrdx",
+            "external_links": "http://hackathon.elevenlabs.io",
+            "topic": "n8n -FREE",
+            "engagement_score": 25,
+            "days_old": 2.3,
+            "freshness_multiplier": 0.9,
+            "base_score": 28,
+            "engagement_rate": 1.84,
+            "bookmark_rate": 0.24,
+            "amplification_rate": 1.84,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "average",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "We’re joining @elevenlabsio for their Worldwide Hackathon: one evening across thirty cities, building the future of conversational agents. 💥\nWant in? Apply now: https://t.co/sUOTdkCgN2 https://t.co/X7VXjUJrdx"
+        }
+      },
+      {
+        "json": {
+          "metadata": {
+            "source": "blob",
+            "blobType": "text/plain",
+            "loc": {
+              "lines": {
+                "from": 1,
+                "to": 3
+              }
+            },
+            "tweet_id": "1940843123946754178",
+            "date_collected": "Mon 17 Nov 2025 01:00:32 +0000",
+            "tweet_url": "https://x.com/TranslateMom/status/1940843123946754178",
+            "author_username": "TranslateMom",
+            "author_followers": 106780,
+            "like_count": 535,
+            "retweet_count": 78,
+            "bookmark_count": 163,
+            "view_count": 2610482,
+            "quote_count": 6,
+            "conversation_id": "1940843123946754178",
+            "has_media": false,
+            "media_type": "",
+            "media_urls": "",
+            "external_links": "http://translate.mom",
+            "topic": "n8n -FREE",
+            "engagement_score": 1,
+            "days_old": 136.3,
+            "freshness_multiplier": 0.5,
+            "base_score": 1,
+            "engagement_rate": 0.03,
+            "bookmark_rate": 0.01,
+            "amplification_rate": 0.03,
+            "thread_indicator": "single",
+            "content_type": "educational",
+            "call_to_action": false,
+            "viral_status": "low",
+            "engagement_class": "poor",
+            "bookmark_class": "poor",
+            "amplification_class": "poor",
+            "overall_preformance": "poor",
+            "main_topic": "AI"
+          },
+          "pageContent": "Wait for it... 👀\n\nCaption, dub and translate any video instantly using https://t.co/DZu6VuHAMi 👩"
+        }
+      }
+    ]
+  },
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "createdAt": "2025-11-17T12:03:39.648Z",
+      "updatedAt": "2025-11-17T12:03:39.648Z",
+      "role": "workflow:owner",
+      "workflowId": "mT37sbVofnUdrnXn",
+      "projectId": "rwZmgF8pMPgWdXwq"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-17T12:05:08.000Z",
+  "versionId": "73456070-f36d-4a8d-80a3-8895db295400"
+}
