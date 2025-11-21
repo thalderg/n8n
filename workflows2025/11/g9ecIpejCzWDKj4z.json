@@ -1,0 +1,772 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "Extract Tweet ID": {
+      "main": [
+        [
+          {
+            "node": "Add Table Identifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Move Binary Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move Binary Data": {
+      "main": [
+        [
+          {
+            "node": "Extract Tweet ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Get Tweets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Thread": {
+      "main": [
+        [
+          {
+            "node": "Construct Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construct Thread": {
+      "main": [
+        [
+          {
+            "node": "Upsert Thread into Data Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construct Thread Query": {
+      "main": [
+        [
+          {
+            "node": "Get Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Not threads": {
+      "main": [
+        [
+          {
+            "node": "Upsert Tweet into Data Table",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Construct Thread Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Table Identifier": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Tweet ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Tweet ID": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Execute Subworkflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Tweets": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Enrich Tweets Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enrich Tweets Data": {
+      "main": [
+        [
+          {
+            "node": "If Not threads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Subworkflow": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Tweet ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Thread into Data Table": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "createdAt": "2025-11-19T10:15:05.272Z",
+  "id": "g9ecIpejCzWDKj4z",
+  "isArchived": false,
+  "meta": null,
+  "name": "Import Bookmarks and Posts to Data Table",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// Parse JSON if it's a string, then flatten nested arrays\nlet items = $input.all();\n\n// Get the actual data - it might be in different formats\nlet data = items[0].json;\n\n// If it's a string, parse it\nif (typeof data === 'string') {\n  data = JSON.parse(data);\n}\n\n// Flatten if nested array [[...]]\nif (Array.isArray(data) && Array.isArray(data[0])) {\n  data = data.flat();\n}\n\n// Now extract tweet_id from each item\nreturn data.map(item => {\n  // Extract tweet_id from URL\n  // URL format: https://twitter.com/username/status/1989802644185993720\n  const tweetId = item.url.split('/status/')[1];\n  \n  return {\n    tweet_id: tweetId,\n    url: item.url,\n    text: item.text,\n    metadata: JSON.stringify(item) // Store entire object as JSON string\n  };\n});"
+      },
+      "id": "12f1789d-d5f6-4e6f-b598-86e6fc3a42e0",
+      "name": "Extract Tweet ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -816,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "upload the json twitter file",
+        "formDescription": "The file should have this format example:\n[\n  {\n    \"text\": \" WHERE WE STAND: Reading the Crypto Market Tea Leaves (Nov 3, 2025)\\nOctober was rough. Like, really rough. But if you know how to read the data, we might be closer to a bottom than most people think.\\nLet me show you what I'm seeing \",\n    \"author_name\": \"zkshrink\",\n    \"author_handle\": \"@DoxxedMind\",\n    \"url\": \"https://twitter.com/DoxxedMind/status/1985305108561748282\",\n    \"date\": \"2025-11-03T11:16:37.000Z\",\n    \"timestamp\": \"2025-11-03T11:16:37.000Z\",\n    \"replies\": 1,\n    \"retweets\": 0,\n    \"likes\": 0,\n    \"bookmarks\": 0,\n    \"is_retweet\": false,\n    \"is_reply\": false,\n    \"is_quote_tweet\": false,\n    \"has_media\": false,\n    \"has_video\": false,\n    \"media_urls\": \"\",\n    \"source_type\": \"tweets\",\n    \"collected_at\": \"2025-11-18T10:37:39.143Z\"\n  },",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "The the json file from twitter",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -1376,
+        0
+      ],
+      "id": "65fb0c8a-4431-4368-b41c-047ca4b5ec26",
+      "name": "On form submission",
+      "webhookId": "7ff0f251-23df-4e2b-a372-0bc0de593c77"
+    },
+    {
+      "parameters": {
+        "sourceKey": "=The_the_json_file_from_twitter",
+        "options": {
+          "keepSource": false
+        }
+      },
+      "id": "4b2c1986-c3bc-4066-8647-f5e9a0694e0b",
+      "name": "Move Binary Data",
+      "type": "n8n-nodes-base.moveBinaryData",
+      "typeVersion": 1,
+      "position": [
+        -1072,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1872,
+        -784
+      ],
+      "id": "cde9a27f-71a5-4210-997c-deea9c3ba0d9",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "url": "https://api.twitterapi.io/twitter/tweet/advanced_search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.query }}"
+            },
+            {
+              "name": "limit",
+              "value": "=20"
+            },
+            {
+              "name": "result_type",
+              "value": "latest"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Accept\": \"application/json\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -432,
+        -688
+      ],
+      "id": "a62e5f0e-83be-4e89-ab0b-daf60093d817",
+      "name": "Get Thread",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Y9mqglloyte4NEfz",
+          "name": "Twitter API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the main tweet from \"Loop Over Threads\" node\nconst mainTweet = $(\"Enrich Tweets Data\").first().json;\n\n// Get the input data which contains the tweets array\nconst inputData = $input.first().json;\n\n// Extract the tweets array from the nested structure\nconst threadTweets = inputData.tweets || [];\n\n// Reverse to get chronological order (oldest to newest)\nconst orderedThreadTweets = threadTweets.reverse();\n\n// Extract just the text from each thread tweet\nconst threadTexts = orderedThreadTweets.map(tweet => tweet.text);\n\n// Build the combined text starting with main tweet\nlet combinedText = mainTweet.tweet_text;\n\n// Add each thread part with numbering starting from (2)\nthreadTexts.forEach((text, index) => {\n  combinedText += `\\n\\n(${index + 2}) ${text}`;\n});\n\n// Create the result maintaining the exact JSON structure from \"Loop Over Threads\"\nconst result = {\n  ...mainTweet, // Keep all original fields exactly as they were\n  tweet_text: combinedText // Update only the tweet_text field\n};\n\nreturn [result];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -224,
+        -688
+      ],
+      "id": "d6610417-6e68-4391-aaa0-4c35c6b8d620",
+      "name": "Construct Thread"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the input data\nconst inputData = $input.all();\nconst results = [];\n\ninputData.forEach(item => {\n  const data = item.json;\n  \n  // Parse the created_at date\n  const createdAt = new Date(data.created_at);\n  \n  // Format the since time (set seconds to 00)\n  const sinceYear = createdAt.getUTCFullYear();\n  const sinceMonth = String(createdAt.getUTCMonth() + 1).padStart(2, '0');\n  const sinceDay = String(createdAt.getUTCDate()).padStart(2, '0');\n  const sinceHour = String(createdAt.getUTCHours()).padStart(2, '0');\n  const sinceMinute = String(createdAt.getUTCMinutes()).padStart(2, '0');\n  \n  const sinceTime = `${sinceYear}-${sinceMonth}-${sinceDay}_${sinceHour}:${sinceMinute}:00_UTC`;\n  \n  // Calculate until time (10 minutes later)\n  const untilDate = new Date(createdAt.getTime() + 10 * 60 * 1000); // Add 10 minutes\n  const untilYear = untilDate.getUTCFullYear();\n  const untilMonth = String(untilDate.getUTCMonth() + 1).padStart(2, '0');\n  const untilDay = String(untilDate.getUTCDate()).padStart(2, '0');\n  const untilHour = String(untilDate.getUTCHours()).padStart(2, '0');\n  const untilMinute = String(untilDate.getUTCMinutes()).padStart(2, '0');\n  \n  const untilTime = `${untilYear}-${untilMonth}-${untilDay}_${untilHour}:${untilMinute}:00_UTC`;\n  \n  // Construct the query\n  const query = `since:${sinceTime} until:${untilTime} from:${data.author_username} filter:self_threads`;\n  \n  // Return the result\n  results.push({\n    query: query,\n    original_tweet_id: data.tweet_id,\n    author_username: data.author_username,\n    created_at: data.created_at,\n    since_time: sinceTime,\n    until_time: untilTime\n  });\n});\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -656,
+        -688
+      ],
+      "id": "d1b8371c-b456-4897-8ba4-64b9f3d788f8",
+      "name": "Construct Thread Query"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e8d17d4e-345b-4428-90ee-ecaa6f0c35f6",
+              "leftValue": "={{ $json.thread_indicator }}",
+              "rightValue": "single",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -944,
+        -768
+      ],
+      "id": "2d35b827-8e4c-4902-8029-47edd0ddba32",
+      "name": "If Not threads"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the filename from form submission\nconst fileName = $('On form submission').item.binary.The_the_json_file_from_twitter.fileName;\n\n// Get all the tweet data\nconst items = $input.all();\n\n// Check if filename contains 'bookmarks' or 'posts'\nlet dataTableId;\n\nif (fileName.toLowerCase().includes('bookmarks')) {\n    dataTableId = 'gJAB6tAevM48B8Cz';\n} else if (fileName.toLowerCase().includes('posts')) {\n    dataTableId = 'F5FElHiOY1tMR6Ee';\n} else {\n    dataTableId = 'F5FElHiOY1tMR6Ee';\n}\n\n// Return all items with dataTableId added to each\nreturn items.map(item => {\n    return {\n        json: {\n            ...item.json,  // Keep all original fields\n            dataTableId: dataTableId  // Add the table ID\n        }\n    };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -560,
+        -80
+      ],
+      "id": "4709e08e-c46d-40eb-83b6-ddbc5e3087ce",
+      "name": "Add Table Identifier"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "5b51de11-05d1-4675-b47d-48444ab0b415",
+      "name": "Loop Over Tweet ID",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -256,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.twitterapi.io/twitter/tweets",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "tweet_ids",
+              "value": "={{$json.tweet_id }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Accept\": \"application/json\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1632,
+        -784
+      ],
+      "id": "d3c6b48a-98aa-4268-84d8-782bdc23f5fd",
+      "name": "Get Tweets",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Y9mqglloyte4NEfz",
+          "name": "Twitter API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d80ed495-b86d-4111-b568-8fee23caad0a",
+              "name": "tweet_text",
+              "value": "={{ $json.tweets[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "8c23f813-f0fb-4cc4-a373-838b52809cb5",
+              "name": "tweet_id",
+              "value": "={{ $json.tweets[0].id }}",
+              "type": "string"
+            },
+            {
+              "id": "53023fdc-a1a7-47ba-aa68-bc6f899a0f24",
+              "name": "date_collected",
+              "value": "={{ new Date().toUTCString().replace(/GMT/, '+0000').replace(/,/, '').replace(/(\\w{3}) (\\w{3}) (\\d{2}) (\\d{4}) (\\d{2}:\\d{2}:\\d{2})/, '$1 $2 $3 $5 +0000 $4') }}",
+              "type": "string"
+            },
+            {
+              "id": "547e2bf2-934e-439c-ad7c-df013576f120",
+              "name": "created_at",
+              "value": "={{ $json.tweets[0].createdAt }}",
+              "type": "string"
+            },
+            {
+              "id": "7c00968d-e708-4b7c-8844-8d8cff3dea5a",
+              "name": "tweet_url",
+              "value": "={{ $json.tweets[0].twitterUrl }}",
+              "type": "string"
+            },
+            {
+              "id": "104c10d0-0a00-425d-985b-73adf3c14773",
+              "name": "author_username",
+              "value": "={{ $json.tweets[0].author.userName }}",
+              "type": "string"
+            },
+            {
+              "id": "f44b5799-54fa-4c91-ba7a-eb8e061bcf7b",
+              "name": "author_followers",
+              "value": "={{ $json.tweets[0].author.followers }}",
+              "type": "string"
+            },
+            {
+              "id": "a0134c1b-fb1f-4eca-aeb4-9e1754b9113a",
+              "name": "like_count",
+              "value": "={{ $json.tweets[0].likeCount }}",
+              "type": "string"
+            },
+            {
+              "id": "066eebb9-aa76-43c1-8283-6a1335b6731e",
+              "name": "retweet_count",
+              "value": "={{ $json.tweets[0].retweetCount }}",
+              "type": "string"
+            },
+            {
+              "id": "7cc5f5d3-a56d-4674-b8d2-880fd45dc53e",
+              "name": "bookmark_count",
+              "value": "={{ $json.tweets[0].bookmarkCount }}",
+              "type": "string"
+            },
+            {
+              "id": "efa36c5b-ee1f-4e97-8328-456c5a1d4b6c",
+              "name": "view_count",
+              "value": "={{ $json.tweets[0].viewCount }}",
+              "type": "string"
+            },
+            {
+              "id": "c9bcde2b-0488-4e54-b9aa-6a8a8c19ad22",
+              "name": "quote_count",
+              "value": "={{ $json.tweets[0].quoteCount }}",
+              "type": "string"
+            },
+            {
+              "id": "6561214f-26df-4e44-8b4a-3f8bf06847b8",
+              "name": "conversation_id",
+              "value": "={{ $json.tweets[0].conversationId }}",
+              "type": "string"
+            },
+            {
+              "id": "553ee9c8-59b7-4932-b9e7-d1c8e699a177",
+              "name": "has_media",
+              "value": "={{ ($json.tweets.extendedEntities && Array.isArray($json.tweets.extendedEntities.media) && $json.tweets.extendedEntities.media.length > 0) ? true : false }}",
+              "type": "string"
+            },
+            {
+              "id": "6996318a-7c65-4dda-a742-21a82fe6207d",
+              "name": "media_type",
+              "value": "={{ ($json.tweets.extendedEntities && $json.tweets.extendedEntities.media && $json.tweets.extendedEntities.media[0]) ? $json.tweets.extendedEntities.media[0].type : null }}",
+              "type": "string"
+            },
+            {
+              "id": "560ad3c2-8af8-4a80-b1b6-8091d1fc2e45",
+              "name": "media_urls",
+              "value": "={{ ($json.tweets.extendedEntities && $json.tweets.extendedEntities.media) ? $json.tweets.extendedEntities.media.map(m => m.url).join(', ') : null }}",
+              "type": "string"
+            },
+            {
+              "id": "d96a7640-1a73-4142-9a80-4fe0a3ba9d5f",
+              "name": "external_links",
+              "value": "={{ ($json.tweets.entities && $json.tweets.entities.urls && $json.tweets.entities.urls.length > 0) ? $json.tweets.entities.urls.map(u => u.expanded_url).join(', ') : null }}",
+              "type": "string"
+            },
+            {
+              "id": "ec1b19b7-0fc2-4233-9708-3bf8b452999b",
+              "name": "topic",
+              "value": "={{ $json.tweets[0].author.userName }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1408,
+        -784
+      ],
+      "id": "90fa3e30-83a1-4c30-b9c9-688040243093",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "7ynylpF8yqILu7A8",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/7ynylpF8yqILu7A8",
+          "cachedResultName": "My project — Enrich Tweets Data"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -1184,
+        -768
+      ],
+      "id": "00145167-756a-4c46-963d-f8afd7d669af",
+      "name": "Enrich Tweets Data"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "={{ $workflow.id }}",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/=%7B%7B%20$workflow.id%20%7D%7D"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        32,
+        -144
+      ],
+      "id": "fbdad76d-19e6-48c9-9243-0d006f7cf654",
+      "name": "Execute Subworkflow"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $(\"When Executed by Another Workflow\").item.json.dataTableId}}",
+          "mode": "id"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "tweet_id",
+              "keyValue": "={{ $json.tweet_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "tweet_id": "={{ $json.tweet_id }}",
+            "url": "={{ $json.tweet_url }}",
+            "text": "={{ $json.tweet_text }}",
+            "metadata": "={{ JSON.stringify($json) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "text",
+              "displayName": "text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tweet_id",
+              "displayName": "tweet_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "4dabd09a-4999-4771-bd06-91095d9f136f",
+      "name": "Upsert Thread into Data Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        16,
+        -688
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $(\"When Executed by Another Workflow\").item.json.dataTableId}}",
+          "mode": "id"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "tweet_id",
+              "keyValue": "={{ $json.tweet_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "text": "={{ $json.tweet_text }}",
+            "url": "={{ $json.tweet_url }}",
+            "metadata": "={{ JSON.stringify($json) }}",
+            "tweet_id": "={{ $json.tweet_id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "text",
+              "displayName": "text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "url",
+              "displayName": "url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "metadata",
+              "displayName": "metadata",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tweet_id",
+              "displayName": "tweet_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "14ce4cf6-2491-4f78-8c0f-449bfe6a7fd0",
+      "name": "Upsert Tweet into Data Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        -992
+      ]
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "createdAt": "2025-11-19T10:15:05.275Z",
+      "updatedAt": "2025-11-19T10:15:05.275Z",
+      "role": "workflow:owner",
+      "workflowId": "g9ecIpejCzWDKj4z",
+      "projectId": "rwZmgF8pMPgWdXwq"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-20T13:33:48.000Z",
+  "versionId": "45a9c4d4-2eeb-4f9d-906a-872c702e463c"
+}
