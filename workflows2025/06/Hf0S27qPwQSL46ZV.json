@@ -2,113 +2,6 @@
   "": "",
   "active": true,
   "connections": {
-    "Edit Fields1": {
-      "main": [
-        [
-          {
-            "node": "Add Score1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Split Out1": {
-      "main": [
-        [
-          {
-            "node": "Edit Fields1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Add Score1": {
-      "main": [
-        [
-          {
-            "node": "Add Rates & Indicators1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Add Rates & Indicators1": {
-      "main": [
-        [
-          {
-            "node": "If Threads1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Tweets1": {
-      "main": [
-        [
-          {
-            "node": "Has Tweets1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Set API Query1": {
-      "main": [
-        [
-          {
-            "node": "Get Tweets1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If Threads1": {
-      "main": [
-        [
-          {
-            "node": "Append or update tweets row1",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Loop Over Threads1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Loop Over Topics1": {
-      "main": [
-        [],
-        [
-          {
-            "node": "Set API Query1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Append or update tweets row1": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Topics1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Schedule Trigger1": {
       "main": [
         [
@@ -120,91 +13,187 @@
         ]
       ]
     },
-    "Has Tweets1": {
-      "main": [
-        [
-          {
-            "node": "Split Out1",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Loop Over Topics1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Loop Over Threads1": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Topics1",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Construct Thread Query1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Thread1": {
-      "main": [
-        [
-          {
-            "node": "Construct Thread1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Construct Thread1": {
-      "main": [
-        [
-          {
-            "node": "Append or Update Thread row1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Construct Thread Query1": {
-      "main": [
-        [
-          {
-            "node": "Get Thread1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Append or Update Thread row1": {
-      "main": [
-        [
-          {
-            "node": "Loop Over Threads1",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Call 'AI KOLs and Topics'": {
       "main": [
         [
           {
-            "node": "Loop Over Topics1",
+            "node": "Loop Over Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Tweets": {
+      "main": [
+        [
+          {
+            "node": "Split Out Tweets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Topics": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Set API Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set API Query": {
+      "main": [
+        [
+          {
+            "node": "Get Tweets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Tweets": {
+      "main": [
+        [
+          {
+            "node": "Has Tweets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out Tweets": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Call 'Enrich Tweets Data'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Threads": {
+      "main": [
+        [
+          {
+            "node": "Append or update tweets row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Threads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or update tweets row": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append or Update Thread row": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Threads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construct Thread": {
+      "main": [
+        [
+          {
+            "node": "Append or Update Thread row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Threads": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Topics",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Construct Thread Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Construct Thread Query": {
+      "main": [
+        [
+          {
+            "node": "Get Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Thread": {
+      "main": [
+        [
+          {
+            "node": "Construct Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Enrich Tweets Data'": {
+      "main": [
+        [
+          {
+            "node": "If Threads",
             "type": "main",
             "index": 0
           }
@@ -220,6 +209,207 @@
   },
   "name": "AI_X_Scraper",
   "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "daysInterval": 2,
+              "triggerAtHour": 2
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2048,
+        1056
+      ],
+      "id": "e6be4306-1e9b-4af9-8567-4d57d30c61d1",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "S6n2cmAtmBGJAHYv",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/S6n2cmAtmBGJAHYv",
+          "cachedResultName": "My project — AI KOLs and Topics"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {}
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -1728,
+        1056
+      ],
+      "id": "8c2392fb-c001-4364-8c21-582d5905e40b",
+      "name": "Call 'AI KOLs and Topics'"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "1289782f-d93b-4b47-8a64-e9ac00375f1f",
+              "leftValue": "={{ $json.has_next_page }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -752,
+        1152
+      ],
+      "id": "3721ae92-e2d7-43c9-9e8d-2afc1aca3415",
+      "name": "Has Tweets"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1440,
+        1136
+      ],
+      "id": "0a0e9f34-558e-4efa-b44f-1347b0472787",
+      "name": "Loop Over Topics"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "14770443-872a-4d20-bf8b-927263c2801d",
+              "name": "query",
+              "value": "={{ $json.topic }} within_time:3d min_faves:50 lang:en",
+              "type": "string"
+            },
+            {
+              "id": "6f64d503-5b18-48ed-9898-ea6a44701fb7",
+              "name": "limit",
+              "value": 10,
+              "type": "number"
+            },
+            {
+              "id": "884d3ac4-bbdd-4b35-b1e4-11531c9465a2",
+              "name": "result_type",
+              "value": "top",
+              "type": "string"
+            },
+            {
+              "id": "bc16ed32-f357-49c3-bb16-f48764fb82bc",
+              "name": "topic",
+              "value": "={{ $json.topic }}",
+              "type": "string"
+            },
+            {
+              "id": "5a1e0334-b35a-4004-8be2-76685bb58236",
+              "name": "",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "959f0762-1e09-43bd-ae3b-7ec1e736cf32",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1184,
+        1152
+      ],
+      "id": "1d54ac34-99d9-4671-bf93-c5bf87e060b3",
+      "name": "Set API Query"
+    },
+    {
+      "parameters": {
+        "url": "https://api.twitterapi.io/twitter/tweet/advanced_search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.query }}"
+            },
+            {
+              "name": "limit",
+              "value": "={{ $json.limit }}"
+            },
+            {
+              "name": "result_type",
+              "value": "={{ $json.result_type }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Accept\": \"application/json\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -976,
+        1152
+      ],
+      "id": "3560d02e-a5a0-4467-a8a6-9201bc0f2c85",
+      "name": "Get Tweets",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "Y9mqglloyte4NEfz",
+          "name": "Twitter API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "tweets",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        1136
+      ],
+      "id": "3bf5cc04-0ceb-4051-bc0a-31d33411977b",
+      "name": "Split Out Tweets"
+    },
     {
       "parameters": {
         "assignments": {
@@ -329,7 +519,7 @@
             {
               "id": "ec1b19b7-0fc2-4233-9708-3bf8b452999b",
               "name": "topic",
-              "value": "={{ $('Set API Query1').first().json.topic }}",
+              "value": "={{ $('Set API Query').first().json.topic }}",
               "type": "string"
             }
           ]
@@ -339,147 +529,11 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -304,
-        1152
-      ],
-      "id": "84a6a632-09b5-47c7-b7e8-2f6ce8d12b5f",
-      "name": "Edit Fields1"
-    },
-    {
-      "parameters": {
-        "fieldToSplitOut": "tweets",
-        "include": "allOtherFields",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.splitOut",
-      "typeVersion": 1,
-      "position": [
-        -464,
+        -352,
         1136
       ],
-      "id": "3bf5cc04-0ceb-4051-bc0a-31d33411977b",
-      "name": "Split Out1"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Engagement Score Calculator with Freshness Factor (0-100 scale)\nconst tweets = $input.all();\nconst scoredTweets = [];\n\n// Get all tweets for normalization\nconst allTweets = tweets.map(item => item.json);\nconst viewCounts = allTweets.map(t => parseInt(t.view_count) || 1);\nconst followerCounts = allTweets.map(t => parseInt(t.author_followers) || 1);\n\nconst maxViews = Math.max(...viewCounts);\nconst maxFollowers = Math.max(...followerCounts);\n\nfor (const item of tweets) {\n    const tweet = item.json;\n    \n    // Parse numeric values\n    const likes = parseInt(tweet.like_count) || 0;\n    const retweets = parseInt(tweet.retweet_count) || 0;\n    const bookmarks = parseInt(tweet.bookmark_count) || 0;\n    const views = parseInt(tweet.view_count) || 1;\n    const quotes = parseInt(tweet.quote_count) || 0;\n    const followers = parseInt(tweet.author_followers) || 1;\n    \n    // FRESHNESS CALCULATION\n    const now = new Date();\n    const tweetDate = new Date(tweet.created_at);\n    const hoursOld = (now - tweetDate) / (1000 * 60 * 60);\n    const daysOld = hoursOld / 24;\n    \n    // Freshness multiplier (decays over time)\n    // for now set to 1 as we want the agent to decide\n    let freshnessMultiplier = 1.0;\n    \n    if (daysOld <= 1) {\n        freshnessMultiplier = 1.5;      // 50% boost for content < 1 day\n    } else if (daysOld <= 1.5) {\n        freshnessMultiplier = 1.3;      // 30% boost for content < 1.5 days\n    } else if (daysOld <= 2) {\n        freshnessMultiplier = 1.1;      // 10% boost for content < 2 days\n    } else if (daysOld <= 2.5) {\n        freshnessMultiplier = 0.9;      // 10% penalty for content < 2.5 days\n    } else if (daysOld <= 3) {\n        freshnessMultiplier = 0.8;      // 20% penalty for content < 3 days\n    } else {\n        freshnessMultiplier = 0.5;      // 50% penalty for content > 3 days\n    }\n    \n    // Core engagement calculation\n    const totalEngagements = likes + retweets + bookmarks + quotes;\n    const engagementRate = (totalEngagements / views) * 100;\n    \n    // Base scoring (before freshness)\n    const engagementScore = Math.min(engagementRate * 10, 40);\n    \n    const bookmarkRate = (bookmarks / views) * 100;\n    const bookmarkScore = Math.min(bookmarkRate * 12.5, 25);\n    \n    const amplificationRate = ((retweets + quotes) / views) * 100;\n    const amplificationScore = Math.min(amplificationRate * 10, 20);\n    \n    const authorityScore = (followers / maxFollowers) * 10;\n    \n    let mediaBonus = 0;\n    if (tweet.has_media === \"true\") {\n        mediaBonus = tweet.media_type === \"video\" ? 5 : 3;\n    }\n    \n    // Viral bonuses\n    let viralBonus = 0;\n    if (likes > 1000) viralBonus = 10;\n    if (likes > 5000) viralBonus = 20;\n    if (likes > 10000) viralBonus = 30;\n    \n    // Base score (before freshness)\n    const baseScore = engagementScore + bookmarkScore + amplificationScore + authorityScore + mediaBonus + viralBonus;\n    \n    // Apply freshness multiplier\n    const finalScore = Math.min(Math.round(baseScore * freshnessMultiplier), 100);\n    \n    scoredTweets.push({\n        json: {\n            ...tweet,\n            engagement_score: finalScore,\n            days_old: Math.round(daysOld * 10) / 10,  // Round to 1 decimal\n            freshness_multiplier: Math.round(freshnessMultiplier * 100) / 100,  // Round to 2 decimals\n            base_score: Math.round(baseScore)  // Score before freshness\n        }\n    });\n}\n\n// Sort by engagement score (highest first)\nscoredTweets.sort((a, b) => b.json.engagement_score - a.json.engagement_score);\n\nreturn scoredTweets;\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        -112,
-        1152
-      ],
-      "id": "8a244a0b-508d-4331-8afb-b3404b6b0cdc",
-      "name": "Add Score1"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Enhanced Analytics Code Node with Dynamic Benchmarks\nconst tweets = $input.all();\nconst enhancedTweets = [];\n\n// First pass: Calculate all metrics\nfor (const item of tweets) {\n    const tweet = item.json;\n    \n    // Parse numbers safely\n    const likes = parseInt(tweet.like_count) || 0;\n    const retweets = parseInt(tweet.retweet_count) || 0;\n    const bookmarks = parseInt(tweet.bookmark_count) || 0;\n    const quotes = parseInt(tweet.quote_count) || 0;\n    const views = parseInt(tweet.view_count) || 1;\n    \n    // Calculate engagement metrics\n    const totalEngagements = likes + retweets + bookmarks + quotes;\n    const engagementRate = parseFloat(((totalEngagements / views) * 100).toFixed(2));\n    const bookmarkRate = parseFloat(((bookmarks / views) * 100).toFixed(2));\n    const amplificationRate = parseFloat((((retweets + quotes) / views) * 100).toFixed(2));\n    \n    // Thread detection\n    const text = tweet.tweet_text;\nconst threadIndicator = \n    text.includes(\"🧵\") ||\n    text.match(/\\d+\\/\\d+/) ||\n    text.includes(\"Thread:\") ||\n    text.includes(\"THREAD\") ||\n    text.match(/:\\s*$/) ||  // ends with colon (with optional whitespace)\n    text.match(/below\\s*[:.]*\\s*$/i) ||  // ends with \"below\" (case insensitive)\n    text.match(/\\(\\d+(?:\\/[a-zA-Z0-9]+)?\\)/) ||  // numbered tweets like (1), (2), (1/x), (1/10), etc.\n    text.includes(\"a thread\") ||\n    text.includes(\"thread 👇\") ||\n    text.includes(\"👇\") ||  // pointing down emoji\n    text.includes(\"⬇️\") ||  // down arrow emoji\n    text.includes(\"continued\") ||\n    text.includes(\"continue\") ||\n    text.includes(\"more...\") ||\n    text.includes(\"...\") && text.length > 250 ||  // long tweets ending with ellipsis\n    text.match(/\\d+\\.\\s/) ||  // numbered list format \"1. \"\n    text.match(/^\\d+[\\)\\.]/) ||  // starts with number and ) or . like \"1)\" or \"1.\"\n    text.match(/\\(\\d+(?:\\/(?:[a-zA-Z]|[1-9]|[12][0-9]|30))?\\)/) ||  // numbered tweets like (1), (2), (1/x), (1/30)\n    text.match(/:\\s*https?:\\/\\/t\\.co\\/\\w+\\s*$/i) ||  // ends with colon and Twitter URL\n    text.includes(\"let's dive in\") ||\n    text.includes(\"here's how\") ||\n    text.includes(\"step by step\") ||\n    text.includes(\"breakdown\")\n    //(tweet.conversation_id !== tweet.tweet_id)\n    ? \"thread\" : \"single\";\n\n    // Content type analysis\n    let contentType = \"educational\";\n    if (text.includes(\"comment\") || text.includes(\"follow\")) {\n        contentType = \"engagement_bait\";\n    } else if (text.includes(\"$\") || text.includes(\"money\")) {\n        contentType = \"monetization\";\n    } else if (text.includes(\"here's\") || text.includes(\"setup\")) {\n        contentType = \"tutorial\";\n    }\n    \n    // Call to action detection\n    const hasCallToAction = /comment|follow|repost|dm|share|like this/i.test(text);\n    \n    // Viral status based on engagement score\n    let viralStatus = \"low\";\n    if (tweet.engagement_score >= 80) viralStatus = \"viral\";\n    else if (tweet.engagement_score >= 60) viralStatus = \"high\";\n    else if (tweet.engagement_score >= 40) viralStatus = \"medium\";\n    \n    enhancedTweets.push({\n        json: {\n            ...tweet,\n            engagement_rate: engagementRate,\n            bookmark_rate: bookmarkRate,\n            amplification_rate: amplificationRate,\n            thread_indicator: threadIndicator,\n            content_type: contentType,\n            call_to_action: hasCallToAction,\n            viral_status: viralStatus\n        }\n    });\n}\n\n// Second pass: Calculate benchmarks from all tweets\nconst allTweets = enhancedTweets.map(item => item.json);\nconst engagementRates = allTweets.map(t => t.engagement_rate).sort((a, b) => a - b);\nconst bookmarkRates = allTweets.map(t => t.bookmark_rate).sort((a, b) => a - b);\nconst amplificationRates = allTweets.map(t => t.amplification_rate).sort((a, b) => a - b);\n\n// Calculate percentiles\nfunction getPercentile(arr, percentile) {\n    const index = Math.ceil((percentile / 100) * arr.length) - 1;\n    return arr[Math.max(0, index)];\n}\n\n// Create dynamic benchmarks\nconst benchmarks = {\n    engagement_rate: {\n        poor: getPercentile(engagementRates, 25),      // Bottom 25%\n        average: getPercentile(engagementRates, 50),    // Median\n        good: getPercentile(engagementRates, 75),       // Top 25%\n        excellent: getPercentile(engagementRates, 90)   // Top 10%\n    },\n    bookmark_rate: {\n        poor: getPercentile(bookmarkRates, 25),\n        average: getPercentile(bookmarkRates, 50),\n        good: getPercentile(bookmarkRates, 75),\n        excellent: getPercentile(bookmarkRates, 90)\n    },\n    amplification_rate: {\n        poor: getPercentile(amplificationRates, 25),\n        average: getPercentile(amplificationRates, 50),\n        good: getPercentile(amplificationRates, 75),\n        excellent: getPercentile(amplificationRates, 90)\n    }\n};\n\n// BENCHMARKS FOR REFERENCE:\n// These are calculated dynamically from your dataset\n// Example output might look like:\n// engagement_rate: { poor: 1.2, average: 2.8, good: 4.5, excellent: 6.2 }\n// bookmark_rate: { poor: 0.3, average: 1.1, good: 2.4, excellent: 3.8 }\n// amplification_rate: { poor: 0.1, average: 0.2, good: 0.4, excellent: 0.8 }\n\n// Third pass: Add performance classifications\nconst finalTweets = enhancedTweets.map(item => {\n    const tweet = item.json;\n    \n    // Classify engagement rate\n    let engagementClass = 'poor';\n    if (tweet.engagement_rate >= benchmarks.engagement_rate.excellent) engagementClass = 'excellent';\n    else if (tweet.engagement_rate >= benchmarks.engagement_rate.good) engagementClass = 'good';\n    else if (tweet.engagement_rate >= benchmarks.engagement_rate.average) engagementClass = 'average';\n    \n    // Classify bookmark rate\n    let bookmarkClass = 'poor';\n    if (tweet.bookmark_rate >= benchmarks.bookmark_rate.excellent) bookmarkClass = 'excellent';\n    else if (tweet.bookmark_rate >= benchmarks.bookmark_rate.good) bookmarkClass = 'good';\n    else if (tweet.bookmark_rate >= benchmarks.bookmark_rate.average) bookmarkClass = 'average';\n    \n    // Classify amplification rate\n    let amplificationClass = 'poor';\n    if (tweet.amplification_rate >= benchmarks.amplification_rate.excellent) amplificationClass = 'excellent';\n    else if (tweet.amplification_rate >= benchmarks.amplification_rate.good) amplificationClass = 'good';\n    else if (tweet.amplification_rate >= benchmarks.amplification_rate.average) amplificationClass = 'average';\n    \n    // Overall performance score (for agent decision making)\n    let overallPerformance = 'poor';\n    const classScores = {\n        'poor': 1,\n        'average': 2,\n        'good': 3,\n        'excellent': 4\n    };\n    \n    const avgScore = (classScores[engagementClass] + classScores[bookmarkClass] + classScores[amplificationClass]) / 3;\n    \n    if (avgScore >= 3.5) overallPerformance = 'excellent';\n    else if (avgScore >= 2.5) overallPerformance = 'good';\n    else if (avgScore >= 1.5) overallPerformance = 'average';\n    \n    return {\n        json: {\n            ...tweet,\n            engagement_class: engagementClass,\n            bookmark_class: bookmarkClass,\n            amplification_class: amplificationClass,\n            overall_performance: overallPerformance\n        }\n    };\n});\n\nreturn finalTweets;\n\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        96,
-        1152
-      ],
-      "id": "4e741a69-c3ec-486f-90ba-9d5f45f1891c",
-      "name": "Add Rates & Indicators1"
-    },
-    {
-      "parameters": {
-        "url": "https://api.twitterapi.io/twitter/tweet/advanced_search",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpHeaderAuth",
-        "sendQuery": true,
-        "queryParameters": {
-          "parameters": [
-            {
-              "name": "query",
-              "value": "={{ $json.query }}"
-            },
-            {
-              "name": "limit",
-              "value": "={{ $json.limit }}"
-            },
-            {
-              "name": "result_type",
-              "value": "={{ $json.result_type }}"
-            }
-          ]
-        },
-        "sendHeaders": true,
-        "specifyHeaders": "json",
-        "jsonHeaders": "{\n  \"Accept\": \"application/json\"\n}",
-        "options": {}
-      },
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [
-        -880,
-        1152
-      ],
-      "id": "3560d02e-a5a0-4467-a8a6-9201bc0f2c85",
-      "name": "Get Tweets1",
-      "credentials": {
-        "httpHeaderAuth": {
-          "id": "Y9mqglloyte4NEfz",
-          "name": "Twitter API"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "14770443-872a-4d20-bf8b-927263c2801d",
-              "name": "query",
-              "value": "={{ $json.topic }} within_time:3d min_faves:50 lang:en",
-              "type": "string"
-            },
-            {
-              "id": "6f64d503-5b18-48ed-9898-ea6a44701fb7",
-              "name": "limit",
-              "value": 10,
-              "type": "number"
-            },
-            {
-              "id": "884d3ac4-bbdd-4b35-b1e4-11531c9465a2",
-              "name": "result_type",
-              "value": "top",
-              "type": "string"
-            },
-            {
-              "id": "bc16ed32-f357-49c3-bb16-f48764fb82bc",
-              "name": "topic",
-              "value": "={{ $json.topic }}",
-              "type": "string"
-            },
-            {
-              "id": "5a1e0334-b35a-4004-8be2-76685bb58236",
-              "name": "",
-              "value": "",
-              "type": "string"
-            },
-            {
-              "id": "959f0762-1e09-43bd-ae3b-7ec1e736cf32",
-              "name": "",
-              "value": "",
-              "type": "string"
-            }
-          ]
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.set",
-      "typeVersion": 3.4,
-      "position": [
-        -1136,
-        1152
-      ],
-      "id": "1d54ac34-99d9-4671-bf93-c5bf87e060b3",
-      "name": "Set API Query1"
+      "id": "84a6a632-09b5-47c7-b7e8-2f6ce8d12b5f",
+      "name": "Edit Fields"
     },
     {
       "parameters": {
@@ -508,24 +562,11 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        288,
-        1152
-      ],
-      "id": "29c1949a-f6f6-4567-998e-9dc99fb8d325",
-      "name": "If Threads1"
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        -1440,
+        112,
         1136
       ],
-      "id": "0a0e9f34-558e-4efa-b44f-1347b0472787",
-      "name": "Loop Over Topics1"
+      "id": "29c1949a-f6f6-4567-998e-9dc99fb8d325",
+      "name": "If Threads"
     },
     {
       "parameters": {
@@ -891,11 +932,11 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.6,
       "position": [
-        800,
-        688
+        416,
+        832
       ],
       "id": "6f8136fe-3e69-4ad4-86a1-cbf0e33c753d",
-      "name": "Append or update tweets row1",
+      "name": "Append or update tweets row",
       "credentials": {
         "googleApi": {
           "id": "L4sljRXqrMaAo1pq",
@@ -905,57 +946,392 @@
     },
     {
       "parameters": {
-        "rule": {
-          "interval": [
-            {
-              "daysInterval": 2,
-              "triggerAtHour": 2
-            }
-          ]
-        }
-      },
-      "type": "n8n-nodes-base.scheduleTrigger",
-      "typeVersion": 1.2,
-      "position": [
-        -2112,
-        944
-      ],
-      "id": "e6be4306-1e9b-4af9-8567-4d57d30c61d1",
-      "name": "Schedule Trigger1"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1k3TqcRY49wyF_fsjAtLtezmibwMXksfNjhzCUHarA4w",
+          "mode": "list",
+          "cachedResultName": "n8n_tweets_data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1k3TqcRY49wyF_fsjAtLtezmibwMXksfNjhzCUHarA4w/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $json.topic }}_tweets",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "tweet_text": "={{ $json.tweet_text }}",
+            "tweet_id": "={{ $json.tweet_id }}",
+            "date_collected": "={{ $json.date_collected }}",
+            "created_at": "={{ $json.created_at }}",
+            "tweet_url": "={{ $json.tweet_url }}",
+            "author_username": "={{ $json.author_username }}",
+            "author_followers": "={{ $json.author_followers }}",
+            "like_count": "={{ $json.like_count }}",
+            "retweet_count": "={{ $json.retweet_count }}",
+            "bookmark_count": "={{ $json.bookmark_count }}",
+            "view_count": "={{ $json.view_count }}",
+            "quote_count": "={{ $json.quote_count }}",
+            "conversation_id": "={{ $json.conversation_id }}",
+            "has_media": "={{ $json.has_media }}",
+            "media_type": "={{ $json.media_type }}",
+            "media_urls": "={{ $json.media_urls }}",
+            "external_links": "={{ $json.external_links }}",
+            "topic": "={{ $json.topic }}",
+            "engagement_score": "={{ $json.engagement_score }}",
+            "days_old": "={{ $json.days_old }}",
+            "freshness_multiplier": "={{ $json.freshness_multiplier }}",
+            "base_score": "={{ $json.base_score }}",
+            "engagement_rate": "={{ $json.engagement_rate }}",
+            "bookmark_rate": "={{ $json.bookmark_rate }}",
+            "amplification_rate": "={{ $json.amplification_rate }}",
+            "thread_indicator": "={{ $json.thread_indicator }}",
+            "content_type": "={{ $json.content_type }}",
+            "call_to_action": "={{ $json.call_to_action }}",
+            "viral_status": "={{ $json.viral_status }}",
+            "engagement_class": "={{ $json.engagement_class }}",
+            "bookmark_class": "={{ $json.bookmark_class }}",
+            "amplification_class": "={{ $json.amplification_class }}",
+            "overall_performance": "={{ $json.overall_performance }}"
           },
-          "conditions": [
+          "matchingColumns": [
+            "tweet_id"
+          ],
+          "schema": [
             {
-              "id": "1289782f-d93b-4b47-8a64-e9ac00375f1f",
-              "leftValue": "={{ $json.has_next_page }}",
-              "rightValue": "",
-              "operator": {
-                "type": "boolean",
-                "operation": "true",
-                "singleValue": true
-              }
+              "id": "tweet_text",
+              "displayName": "tweet_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tweet_id",
+              "displayName": "tweet_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "date_collected",
+              "displayName": "date_collected",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tweet_url",
+              "displayName": "tweet_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "author_username",
+              "displayName": "author_username",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "author_followers",
+              "displayName": "author_followers",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "like_count",
+              "displayName": "like_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "retweet_count",
+              "displayName": "retweet_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bookmark_count",
+              "displayName": "bookmark_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "view_count",
+              "displayName": "view_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "quote_count",
+              "displayName": "quote_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "conversation_id",
+              "displayName": "conversation_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "has_media",
+              "displayName": "has_media",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "media_type",
+              "displayName": "media_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "media_urls",
+              "displayName": "media_urls",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "external_links",
+              "displayName": "external_links",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "topic",
+              "displayName": "topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "engagement_score",
+              "displayName": "engagement_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "days_old",
+              "displayName": "days_old",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "freshness_multiplier",
+              "displayName": "freshness_multiplier",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "base_score",
+              "displayName": "base_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "engagement_rate",
+              "displayName": "engagement_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bookmark_rate",
+              "displayName": "bookmark_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "amplification_rate",
+              "displayName": "amplification_rate",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "thread_indicator",
+              "displayName": "thread_indicator",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content_type",
+              "displayName": "content_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "call_to_action",
+              "displayName": "call_to_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "viral_status",
+              "displayName": "viral_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "engagement_class",
+              "displayName": "engagement_class",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "bookmark_class",
+              "displayName": "bookmark_class",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "amplification_class",
+              "displayName": "amplification_class",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "overall_performance",
+              "displayName": "overall_performance",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
             }
           ],
-          "combinator": "and"
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
         },
         "options": {}
       },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
       "position": [
-        -688,
-        1152
+        1296,
+        1296
       ],
-      "id": "3721ae92-e2d7-43c9-9e8d-2afc1aca3415",
-      "name": "Has Tweets1"
+      "id": "52e95335-b189-43d1-a35a-8b9e59ea522b",
+      "name": "Append or Update Thread row",
+      "credentials": {
+        "googleApi": {
+          "id": "L4sljRXqrMaAo1pq",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the main tweet from \"Loop Over Threads\" node\nconst mainTweet = $('Loop Over Threads').first().json;\n\n// Get the input data which contains the tweets array\nconst inputData = $input.first().json;\n\n// Extract the tweets array from the nested structure\nconst threadTweets = inputData.tweets || [];\n\n// Reverse to get chronological order (oldest to newest)\nconst orderedThreadTweets = threadTweets.reverse();\n\n// Extract just the text from each thread tweet\nconst threadTexts = orderedThreadTweets.map(tweet => tweet.text);\n\n// Build the combined text starting with main tweet\nlet combinedText = mainTweet.tweet_text;\n\n// Add each thread part with numbering starting from (2)\nthreadTexts.forEach((text, index) => {\n  combinedText += `\\n\\n(${index + 2}) ${text}`;\n});\n\n// Create the result maintaining the exact JSON structure from \"Loop Over Threads\"\nconst result = {\n  ...mainTweet, // Keep all original fields exactly as they were\n  tweet_text: combinedText // Update only the tweet_text field\n};\n\nreturn [result];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        1296
+      ],
+      "id": "29ecb420-d537-48cd-bcae-33b24a393230",
+      "name": "Construct Thread"
     },
     {
       "parameters": {
@@ -964,11 +1340,24 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        784,
-        1312
+        480,
+        1280
       ],
       "id": "57fe0ec0-67d0-4be9-bedc-d605c81916cd",
-      "name": "Loop Over Threads1"
+      "name": "Loop Over Threads"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the input data\nconst inputData = $input.all();\nconst results = [];\n\ninputData.forEach(item => {\n  const data = item.json;\n  \n  // Parse the created_at date\n  const createdAt = new Date(data.created_at);\n  \n  // Format the since time (set seconds to 00)\n  const sinceYear = createdAt.getUTCFullYear();\n  const sinceMonth = String(createdAt.getUTCMonth() + 1).padStart(2, '0');\n  const sinceDay = String(createdAt.getUTCDate()).padStart(2, '0');\n  const sinceHour = String(createdAt.getUTCHours()).padStart(2, '0');\n  const sinceMinute = String(createdAt.getUTCMinutes()).padStart(2, '0');\n  \n  const sinceTime = `${sinceYear}-${sinceMonth}-${sinceDay}_${sinceHour}:${sinceMinute}:00_UTC`;\n  \n  // Calculate until time (10 minutes later)\n  const untilDate = new Date(createdAt.getTime() + 10 * 60 * 1000); // Add 10 minutes\n  const untilYear = untilDate.getUTCFullYear();\n  const untilMonth = String(untilDate.getUTCMonth() + 1).padStart(2, '0');\n  const untilDay = String(untilDate.getUTCDate()).padStart(2, '0');\n  const untilHour = String(untilDate.getUTCHours()).padStart(2, '0');\n  const untilMinute = String(untilDate.getUTCMinutes()).padStart(2, '0');\n  \n  const untilTime = `${untilYear}-${untilMonth}-${untilDay}_${untilHour}:${untilMinute}:00_UTC`;\n  \n  // Construct the query\n  const query = `since:${sinceTime} until:${untilTime} from:${data.author_username} filter:self_threads`;\n  \n  // Return the result\n  results.push({\n    query: query,\n    original_tweet_id: data.tweet_id,\n    author_username: data.author_username,\n    created_at: data.created_at,\n    since_time: sinceTime,\n    until_time: untilTime\n  });\n});\n\nreturn results;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        1296
+      ],
+      "id": "05103235-51c9-4992-8385-34f09b6f0281",
+      "name": "Construct Thread Query"
     },
     {
       "parameters": {
@@ -1000,11 +1389,11 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        1248,
-        1328
+        896,
+        1296
       ],
       "id": "bf6b9f48-1cbe-4d1d-b508-5416b488e1af",
-      "name": "Get Thread1",
+      "name": "Get Thread",
       "credentials": {
         "httpHeaderAuth": {
           "id": "Y9mqglloyte4NEfz",
@@ -1014,414 +1403,12 @@
     },
     {
       "parameters": {
-        "jsCode": "// Get the main tweet from \"Loop Over Threads\" node\nconst mainTweet = $('Loop Over Threads1').first().json;\n\n// Get the input data which contains the tweets array\nconst inputData = $input.first().json;\n\n// Extract the tweets array from the nested structure\nconst threadTweets = inputData.tweets || [];\n\n// Reverse to get chronological order (oldest to newest)\nconst orderedThreadTweets = threadTweets.reverse();\n\n// Extract just the text from each thread tweet\nconst threadTexts = orderedThreadTweets.map(tweet => tweet.text);\n\n// Build the combined text starting with main tweet\nlet combinedText = mainTweet.tweet_text;\n\n// Add each thread part with numbering starting from (2)\nthreadTexts.forEach((text, index) => {\n  combinedText += `\\n\\n(${index + 2}) ${text}`;\n});\n\n// Create the result maintaining the exact JSON structure from \"Loop Over Threads\"\nconst result = {\n  ...mainTweet, // Keep all original fields exactly as they were\n  tweet_text: combinedText // Update only the tweet_text field\n};\n\nreturn [result];"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1472,
-        1328
-      ],
-      "id": "29ecb420-d537-48cd-bcae-33b24a393230",
-      "name": "Construct Thread1"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Get the input data\nconst inputData = $input.all();\nconst results = [];\n\ninputData.forEach(item => {\n  const data = item.json;\n  \n  // Parse the created_at date\n  const createdAt = new Date(data.created_at);\n  \n  // Format the since time (set seconds to 00)\n  const sinceYear = createdAt.getUTCFullYear();\n  const sinceMonth = String(createdAt.getUTCMonth() + 1).padStart(2, '0');\n  const sinceDay = String(createdAt.getUTCDate()).padStart(2, '0');\n  const sinceHour = String(createdAt.getUTCHours()).padStart(2, '0');\n  const sinceMinute = String(createdAt.getUTCMinutes()).padStart(2, '0');\n  \n  const sinceTime = `${sinceYear}-${sinceMonth}-${sinceDay}_${sinceHour}:${sinceMinute}:00_UTC`;\n  \n  // Calculate until time (10 minutes later)\n  const untilDate = new Date(createdAt.getTime() + 10 * 60 * 1000); // Add 10 minutes\n  const untilYear = untilDate.getUTCFullYear();\n  const untilMonth = String(untilDate.getUTCMonth() + 1).padStart(2, '0');\n  const untilDay = String(untilDate.getUTCDate()).padStart(2, '0');\n  const untilHour = String(untilDate.getUTCHours()).padStart(2, '0');\n  const untilMinute = String(untilDate.getUTCMinutes()).padStart(2, '0');\n  \n  const untilTime = `${untilYear}-${untilMonth}-${untilDay}_${untilHour}:${untilMinute}:00_UTC`;\n  \n  // Construct the query\n  const query = `since:${sinceTime} until:${untilTime} from:${data.author_username} filter:self_threads`;\n  \n  // Return the result\n  results.push({\n    query: query,\n    original_tweet_id: data.tweet_id,\n    author_username: data.author_username,\n    created_at: data.created_at,\n    since_time: sinceTime,\n    until_time: untilTime\n  });\n});\n\nreturn results;\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1056,
-        1328
-      ],
-      "id": "05103235-51c9-4992-8385-34f09b6f0281",
-      "name": "Construct Thread Query1"
-    },
-    {
-      "parameters": {
-        "authentication": "serviceAccount",
-        "operation": "appendOrUpdate",
-        "documentId": {
-          "__rl": true,
-          "value": "1k3TqcRY49wyF_fsjAtLtezmibwMXksfNjhzCUHarA4w",
-          "mode": "list",
-          "cachedResultName": "n8n_tweets_data",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1k3TqcRY49wyF_fsjAtLtezmibwMXksfNjhzCUHarA4w/edit?usp=drivesdk"
-        },
-        "sheetName": {
-          "__rl": true,
-          "value": "={{ $json.topic }}_tweets",
-          "mode": "name"
-        },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "tweet_text": "={{ $json.tweet_text }}",
-            "tweet_id": "={{ $json.tweet_id }}",
-            "date_collected": "={{ $json.date_collected }}",
-            "created_at": "={{ $json.created_at }}",
-            "tweet_url": "={{ $json.tweet_url }}",
-            "author_username": "={{ $json.author_username }}",
-            "author_followers": "={{ $json.author_followers }}",
-            "like_count": "={{ $json.like_count }}",
-            "retweet_count": "={{ $json.retweet_count }}",
-            "bookmark_count": "={{ $json.bookmark_count }}",
-            "view_count": "={{ $json.view_count }}",
-            "quote_count": "={{ $json.quote_count }}",
-            "conversation_id": "={{ $json.conversation_id }}",
-            "has_media": "={{ $json.has_media }}",
-            "media_type": "={{ $json.media_type }}",
-            "media_urls": "={{ $json.media_urls }}",
-            "external_links": "={{ $json.external_links }}",
-            "topic": "={{ $json.topic }}",
-            "engagement_score": "={{ $json.engagement_score }}",
-            "days_old": "={{ $json.days_old }}",
-            "freshness_multiplier": "={{ $json.freshness_multiplier }}",
-            "base_score": "={{ $json.base_score }}",
-            "engagement_rate": "={{ $json.engagement_rate }}",
-            "bookmark_rate": "={{ $json.bookmark_rate }}",
-            "amplification_rate": "={{ $json.amplification_rate }}",
-            "thread_indicator": "={{ $json.thread_indicator }}",
-            "content_type": "={{ $json.content_type }}",
-            "call_to_action": "={{ $json.call_to_action }}",
-            "viral_status": "={{ $json.viral_status }}",
-            "engagement_class": "={{ $json.engagement_class }}",
-            "bookmark_class": "={{ $json.bookmark_class }}",
-            "amplification_class": "={{ $json.amplification_class }}",
-            "overall_performance": "={{ $json.overall_performance }}"
-          },
-          "matchingColumns": [
-            "tweet_id"
-          ],
-          "schema": [
-            {
-              "id": "tweet_text",
-              "displayName": "tweet_text",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "tweet_id",
-              "displayName": "tweet_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true,
-              "removed": false
-            },
-            {
-              "id": "date_collected",
-              "displayName": "date_collected",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "created_at",
-              "displayName": "created_at",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "tweet_url",
-              "displayName": "tweet_url",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "author_username",
-              "displayName": "author_username",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "author_followers",
-              "displayName": "author_followers",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "like_count",
-              "displayName": "like_count",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "retweet_count",
-              "displayName": "retweet_count",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "bookmark_count",
-              "displayName": "bookmark_count",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "view_count",
-              "displayName": "view_count",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "quote_count",
-              "displayName": "quote_count",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "conversation_id",
-              "displayName": "conversation_id",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "has_media",
-              "displayName": "has_media",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "media_type",
-              "displayName": "media_type",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "media_urls",
-              "displayName": "media_urls",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "external_links",
-              "displayName": "external_links",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "topic",
-              "displayName": "topic",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "engagement_score",
-              "displayName": "engagement_score",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "days_old",
-              "displayName": "days_old",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "freshness_multiplier",
-              "displayName": "freshness_multiplier",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "base_score",
-              "displayName": "base_score",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "engagement_rate",
-              "displayName": "engagement_rate",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "bookmark_rate",
-              "displayName": "bookmark_rate",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "amplification_rate",
-              "displayName": "amplification_rate",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "thread_indicator",
-              "displayName": "thread_indicator",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "content_type",
-              "displayName": "content_type",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "call_to_action",
-              "displayName": "call_to_action",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "viral_status",
-              "displayName": "viral_status",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "engagement_class",
-              "displayName": "engagement_class",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "bookmark_class",
-              "displayName": "bookmark_class",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "amplification_class",
-              "displayName": "amplification_class",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            },
-            {
-              "id": "overall_performance",
-              "displayName": "overall_performance",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": true
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.googleSheets",
-      "typeVersion": 4.6,
-      "position": [
-        1696,
-        1328
-      ],
-      "id": "52e95335-b189-43d1-a35a-8b9e59ea522b",
-      "name": "Append or Update Thread row1",
-      "credentials": {
-        "googleApi": {
-          "id": "L4sljRXqrMaAo1pq",
-          "name": "Google Sheets account"
-        }
-      }
-    },
-    {
-      "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "S6n2cmAtmBGJAHYv",
+          "value": "7ynylpF8yqILu7A8",
           "mode": "list",
-          "cachedResultUrl": "/workflow/S6n2cmAtmBGJAHYv",
-          "cachedResultName": "My project — AI KOLs and Topics"
+          "cachedResultUrl": "/workflow/7ynylpF8yqILu7A8",
+          "cachedResultName": "My project — Enrich Tweets Data"
         },
         "workflowInputs": {
           "mappingMode": "defineBelow",
@@ -1432,32 +1419,14 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -1856,
-        944
+        -144,
+        1136
       ],
-      "id": "8c2392fb-c001-4364-8c21-582d5905e40b",
-      "name": "Call 'AI KOLs and Topics'"
+      "id": "355e4329-c669-4a74-bf12-23e174a98b7c",
+      "name": "Call 'Enrich Tweets Data'"
     }
   ],
-  "pinData": {
-    "Schedule Trigger1": [
-      {
-        "json": {
-          "timestamp": "2025-10-27T00:00:47.008+01:00",
-          "Readable date": "October 27th 2025, 12:00:47 am",
-          "Readable time": "12:00:47 am",
-          "Day of week": "Monday",
-          "Year": "2025",
-          "Month": "October",
-          "Day of month": "27",
-          "Hour": "00",
-          "Minute": "00",
-          "Second": "47",
-          "Timezone": "Europe/Warsaw (UTC+01:00)"
-        }
-      }
-    ]
-  },
+  "pinData": {},
   "repo_name": "n8n",
   "repo_owner": "thalderg",
   "repo_path": "workflows",
@@ -1481,12 +1450,12 @@
     },
     "node:Schedule Trigger1": {
       "recurrenceRules": [
-        321
+        323
       ]
     }
   },
   "tags": [],
   "triggerCount": 1,
-  "updatedAt": "2025-11-05T11:44:57.000Z",
-  "versionId": "0bdc79e6-060d-429d-ac91-9adf1c2a5850"
+  "updatedAt": "2025-11-20T11:37:15.000Z",
+  "versionId": "9bb6969a-c19b-4b2e-9a6b-e93a36d755f2"
 }
