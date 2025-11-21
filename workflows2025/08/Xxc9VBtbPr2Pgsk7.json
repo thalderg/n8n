@@ -6,7 +6,7 @@
       "main": [
         [
           {
-            "node": "Add Score",
+            "node": "Call 'Enrich Tweets Data'",
             "type": "main",
             "index": 0
           }
@@ -18,28 +18,6 @@
         [
           {
             "node": "Edit Fields",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Add Score": {
-      "main": [
-        [
-          {
-            "node": "Add Rates & Indicators",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Add Rates & Indicators": {
-      "main": [
-        [
-          {
-            "node": "If Threads",
             "type": "main",
             "index": 0
           }
@@ -62,24 +40,6 @@
         [
           {
             "node": "Get Tweets",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "If Threads": {
-      "main": [
-        [
-          {
-            "node": "Append or update tweets row",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Loop Over Threads",
             "type": "main",
             "index": 0
           }
@@ -205,6 +165,35 @@
         [
           {
             "node": "Loop Over Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If  Not Threads": {
+      "main": [
+        [
+          {
+            "node": "Append or update tweets row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Threads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Enrich Tweets Data'": {
+      "main": [
+        [
+          {
+            "node": "If  Not Threads",
             "type": "main",
             "index": 0
           }
@@ -339,8 +328,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        1280,
-        -64
+        1312,
+        -80
       ],
       "id": "19022196-db94-44e7-a391-be02834995ce",
       "name": "Edit Fields"
@@ -359,32 +348,6 @@
       ],
       "id": "35c14c2a-dfff-4cf8-99ca-9b7240c1820a",
       "name": "Split Out"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Engagement Score Calculator with Freshness Factor (0-100 scale)\nconst tweets = $input.all();\nconst scoredTweets = [];\n\n// Get all tweets for normalization\nconst allTweets = tweets.map(item => item.json);\nconst viewCounts = allTweets.map(t => parseInt(t.view_count) || 1);\nconst followerCounts = allTweets.map(t => parseInt(t.author_followers) || 1);\n\nconst maxViews = Math.max(...viewCounts);\nconst maxFollowers = Math.max(...followerCounts);\n\nfor (const item of tweets) {\n    const tweet = item.json;\n    \n    // Parse numeric values\n    const likes = parseInt(tweet.like_count) || 0;\n    const retweets = parseInt(tweet.retweet_count) || 0;\n    const bookmarks = parseInt(tweet.bookmark_count) || 0;\n    const views = parseInt(tweet.view_count) || 1;\n    const quotes = parseInt(tweet.quote_count) || 0;\n    const followers = parseInt(tweet.author_followers) || 1;\n    \n    // FRESHNESS CALCULATION\n    const now = new Date();\n    const tweetDate = new Date(tweet.created_at);\n    const hoursOld = (now - tweetDate) / (1000 * 60 * 60);\n    const daysOld = hoursOld / 24;\n    \n    // Freshness multiplier (decays over time)\n    // for now set to 1 as we want the agent to decide\n    let freshnessMultiplier = 1.0;\n    \n    if (daysOld <= 1) {\n        freshnessMultiplier = 1.5;      // 50% boost for content < 1 day\n    } else if (daysOld <= 1.5) {\n        freshnessMultiplier = 1.3;      // 30% boost for content < 1.5 days\n    } else if (daysOld <= 2) {\n        freshnessMultiplier = 1.1;      // 10% boost for content < 2 days\n    } else if (daysOld <= 2.5) {\n        freshnessMultiplier = 0.9;      // 10% penalty for content < 2.5 days\n    } else if (daysOld <= 3) {\n        freshnessMultiplier = 0.8;      // 20% penalty for content < 3 days\n    } else {\n        freshnessMultiplier = 0.5;      // 50% penalty for content > 3 days\n    }\n    \n    // Core engagement calculation\n    const totalEngagements = likes + retweets + bookmarks + quotes;\n    const engagementRate = (totalEngagements / views) * 100;\n    \n    // Base scoring (before freshness)\n    const engagementScore = Math.min(engagementRate * 10, 40);\n    \n    const bookmarkRate = (bookmarks / views) * 100;\n    const bookmarkScore = Math.min(bookmarkRate * 12.5, 25);\n    \n    const amplificationRate = ((retweets + quotes) / views) * 100;\n    const amplificationScore = Math.min(amplificationRate * 10, 20);\n    \n    const authorityScore = (followers / maxFollowers) * 10;\n    \n    let mediaBonus = 0;\n    if (tweet.has_media === \"true\") {\n        mediaBonus = tweet.media_type === \"video\" ? 5 : 3;\n    }\n    \n    // Viral bonuses\n    let viralBonus = 0;\n    if (likes > 1000) viralBonus = 10;\n    if (likes > 5000) viralBonus = 20;\n    if (likes > 10000) viralBonus = 30;\n    \n    // Base score (before freshness)\n    const baseScore = engagementScore + bookmarkScore + amplificationScore + authorityScore + mediaBonus + viralBonus;\n    \n    // Apply freshness multiplier\n    const finalScore = Math.min(Math.round(baseScore * freshnessMultiplier), 100);\n    \n    scoredTweets.push({\n        json: {\n            ...tweet,\n            engagement_score: finalScore,\n            days_old: Math.round(daysOld * 10) / 10,  // Round to 1 decimal\n            freshness_multiplier: Math.round(freshnessMultiplier * 100) / 100,  // Round to 2 decimals\n            base_score: Math.round(baseScore)  // Score before freshness\n        }\n    });\n}\n\n// Sort by engagement score (highest first)\nscoredTweets.sort((a, b) => b.json.engagement_score - a.json.engagement_score);\n\nreturn scoredTweets;\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1472,
-        -64
-      ],
-      "id": "bd7d7a77-2157-4664-a99e-c5fa30628ba6",
-      "name": "Add Score"
-    },
-    {
-      "parameters": {
-        "jsCode": "// Enhanced Analytics Code Node with Dynamic Benchmarks\nconst tweets = $input.all();\nconst enhancedTweets = [];\n\n// First pass: Calculate all metrics\nfor (const item of tweets) {\n    const tweet = item.json;\n    \n    // Parse numbers safely\n    const likes = parseInt(tweet.like_count) || 0;\n    const retweets = parseInt(tweet.retweet_count) || 0;\n    const bookmarks = parseInt(tweet.bookmark_count) || 0;\n    const quotes = parseInt(tweet.quote_count) || 0;\n    const views = parseInt(tweet.view_count) || 1;\n    \n    // Calculate engagement metrics\n    const totalEngagements = likes + retweets + bookmarks + quotes;\n    const engagementRate = parseFloat(((totalEngagements / views) * 100).toFixed(2));\n    const bookmarkRate = parseFloat(((bookmarks / views) * 100).toFixed(2));\n    const amplificationRate = parseFloat((((retweets + quotes) / views) * 100).toFixed(2));\n    \n    // Thread detection\n    const text = tweet.tweet_text;\nconst threadIndicator = \n    text.includes(\"🧵\") ||\n    text.match(/\\d+\\/\\d+/) ||\n    text.includes(\"Thread:\") ||\n    text.includes(\"THREAD\") ||\n    text.match(/:\\s*$/) ||  // ends with colon (with optional whitespace)\n    text.match(/below\\s*[:.]*\\s*$/i) ||  // ends with \"below\" (case insensitive)\n    text.match(/\\(\\d+(?:\\/[a-zA-Z0-9]+)?\\)/) ||  // numbered tweets like (1), (2), (1/x), (1/10), etc.\n    text.includes(\"a thread\") ||\n    text.includes(\"thread 👇\") ||\n    text.includes(\"👇\") ||  // pointing down emoji\n    text.includes(\"⬇️\") ||  // down arrow emoji\n    text.includes(\"continued\") ||\n    text.includes(\"continue\") ||\n    text.includes(\"more...\") ||\n    text.includes(\"...\") && text.length > 250 ||  // long tweets ending with ellipsis\n    text.match(/\\d+\\.\\s/) ||  // numbered list format \"1. \"\n    text.match(/^\\d+[\\)\\.]/) ||  // starts with number and ) or . like \"1)\" or \"1.\"\n    text.match(/\\(\\d+(?:\\/(?:[a-zA-Z]|[1-9]|[12][0-9]|30))?\\)/) ||  // numbered tweets like (1), (2), (1/x), (1/30)\n    text.match(/:\\s*https?:\\/\\/t\\.co\\/\\w+\\s*$/i) ||  // ends with colon and Twitter URL\n    text.includes(\"let's dive in\") ||\n    text.includes(\"here's how\") ||\n    text.includes(\"step by step\") ||\n    text.includes(\"breakdown\")\n    //(tweet.conversation_id !== tweet.tweet_id)\n    ? \"thread\" : \"single\";\n\n    // Content type analysis\n    let contentType = \"educational\";\n    if (text.includes(\"comment\") || text.includes(\"follow\")) {\n        contentType = \"engagement_bait\";\n    } else if (text.includes(\"$\") || text.includes(\"money\")) {\n        contentType = \"monetization\";\n    } else if (text.includes(\"here's\") || text.includes(\"setup\")) {\n        contentType = \"tutorial\";\n    }\n    \n    // Call to action detection\n    const hasCallToAction = /comment|follow|repost|dm|share|like this/i.test(text);\n    \n    // Viral status based on engagement score\n    let viralStatus = \"low\";\n    if (tweet.engagement_score >= 80) viralStatus = \"viral\";\n    else if (tweet.engagement_score >= 60) viralStatus = \"high\";\n    else if (tweet.engagement_score >= 40) viralStatus = \"medium\";\n    \n    enhancedTweets.push({\n        json: {\n            ...tweet,\n            engagement_rate: engagementRate,\n            bookmark_rate: bookmarkRate,\n            amplification_rate: amplificationRate,\n            thread_indicator: threadIndicator,\n            content_type: contentType,\n            call_to_action: hasCallToAction,\n            viral_status: viralStatus\n        }\n    });\n}\n\n// Second pass: Calculate benchmarks from all tweets\nconst allTweets = enhancedTweets.map(item => item.json);\nconst engagementRates = allTweets.map(t => t.engagement_rate).sort((a, b) => a - b);\nconst bookmarkRates = allTweets.map(t => t.bookmark_rate).sort((a, b) => a - b);\nconst amplificationRates = allTweets.map(t => t.amplification_rate).sort((a, b) => a - b);\n\n// Calculate percentiles\nfunction getPercentile(arr, percentile) {\n    const index = Math.ceil((percentile / 100) * arr.length) - 1;\n    return arr[Math.max(0, index)];\n}\n\n// Create dynamic benchmarks\nconst benchmarks = {\n    engagement_rate: {\n        poor: getPercentile(engagementRates, 25),      // Bottom 25%\n        average: getPercentile(engagementRates, 50),    // Median\n        good: getPercentile(engagementRates, 75),       // Top 25%\n        excellent: getPercentile(engagementRates, 90)   // Top 10%\n    },\n    bookmark_rate: {\n        poor: getPercentile(bookmarkRates, 25),\n        average: getPercentile(bookmarkRates, 50),\n        good: getPercentile(bookmarkRates, 75),\n        excellent: getPercentile(bookmarkRates, 90)\n    },\n    amplification_rate: {\n        poor: getPercentile(amplificationRates, 25),\n        average: getPercentile(amplificationRates, 50),\n        good: getPercentile(amplificationRates, 75),\n        excellent: getPercentile(amplificationRates, 90)\n    }\n};\n\n// BENCHMARKS FOR REFERENCE:\n// These are calculated dynamically from your dataset\n// Example output might look like:\n// engagement_rate: { poor: 1.2, average: 2.8, good: 4.5, excellent: 6.2 }\n// bookmark_rate: { poor: 0.3, average: 1.1, good: 2.4, excellent: 3.8 }\n// amplification_rate: { poor: 0.1, average: 0.2, good: 0.4, excellent: 0.8 }\n\n// Third pass: Add performance classifications\nconst finalTweets = enhancedTweets.map(item => {\n    const tweet = item.json;\n    \n    // Classify engagement rate\n    let engagementClass = 'poor';\n    if (tweet.engagement_rate >= benchmarks.engagement_rate.excellent) engagementClass = 'excellent';\n    else if (tweet.engagement_rate >= benchmarks.engagement_rate.good) engagementClass = 'good';\n    else if (tweet.engagement_rate >= benchmarks.engagement_rate.average) engagementClass = 'average';\n    \n    // Classify bookmark rate\n    let bookmarkClass = 'poor';\n    if (tweet.bookmark_rate >= benchmarks.bookmark_rate.excellent) bookmarkClass = 'excellent';\n    else if (tweet.bookmark_rate >= benchmarks.bookmark_rate.good) bookmarkClass = 'good';\n    else if (tweet.bookmark_rate >= benchmarks.bookmark_rate.average) bookmarkClass = 'average';\n    \n    // Classify amplification rate\n    let amplificationClass = 'poor';\n    if (tweet.amplification_rate >= benchmarks.amplification_rate.excellent) amplificationClass = 'excellent';\n    else if (tweet.amplification_rate >= benchmarks.amplification_rate.good) amplificationClass = 'good';\n    else if (tweet.amplification_rate >= benchmarks.amplification_rate.average) amplificationClass = 'average';\n    \n    // Overall performance score (for agent decision making)\n    let overallPerformance = 'poor';\n    const classScores = {\n        'poor': 1,\n        'average': 2,\n        'good': 3,\n        'excellent': 4\n    };\n    \n    const avgScore = (classScores[engagementClass] + classScores[bookmarkClass] + classScores[amplificationClass]) / 3;\n    \n    if (avgScore >= 3.5) overallPerformance = 'excellent';\n    else if (avgScore >= 2.5) overallPerformance = 'good';\n    else if (avgScore >= 1.5) overallPerformance = 'average';\n    \n    return {\n        json: {\n            ...tweet,\n            engagement_class: engagementClass,\n            bookmark_class: bookmarkClass,\n            amplification_class: amplificationClass,\n            overall_performance: overallPerformance\n        }\n    };\n});\n\nreturn finalTweets;\n\n"
-      },
-      "type": "n8n-nodes-base.code",
-      "typeVersion": 2,
-      "position": [
-        1680,
-        -64
-      ],
-      "id": "dea03cb5-a232-4049-b21d-0ea2c0a6e700",
-      "name": "Add Rates & Indicators"
     },
     {
       "parameters": {
@@ -480,39 +443,6 @@
       ],
       "id": "08bf6c5d-9423-453c-be1d-140f226c7b85",
       "name": "Set API Query"
-    },
-    {
-      "parameters": {
-        "conditions": {
-          "options": {
-            "caseSensitive": true,
-            "leftValue": "",
-            "typeValidation": "strict",
-            "version": 2
-          },
-          "conditions": [
-            {
-              "id": "e8d17d4e-345b-4428-90ee-ecaa6f0c35f6",
-              "leftValue": "={{ $json.thread_indicator }}",
-              "rightValue": "single",
-              "operator": {
-                "type": "string",
-                "operation": "equals"
-              }
-            }
-          ],
-          "combinator": "and"
-        },
-        "options": {}
-      },
-      "type": "n8n-nodes-base.if",
-      "typeVersion": 2.2,
-      "position": [
-        1872,
-        -64
-      ],
-      "id": "8b569264-0f7e-43ea-9db3-472e7ad63a7f",
-      "name": "If Threads"
     },
     {
       "parameters": {
@@ -891,8 +821,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.6,
       "position": [
-        2384,
-        -528
+        2160,
+        -480
       ],
       "id": "b5237b20-1179-4ba4-a128-9aaa594b4971",
       "name": "Append or update tweets row",
@@ -961,8 +891,8 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        2368,
-        96
+        2208,
+        64
       ],
       "id": "00a377a4-baca-4da4-b63f-748689f5dbf2",
       "name": "Loop Over Threads"
@@ -997,8 +927,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        2832,
-        112
+        2784,
+        80
       ],
       "id": "02ae6140-684c-4b99-adc0-68508518274e",
       "name": "Get Thread",
@@ -1016,8 +946,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3056,
-        112
+        2992,
+        80
       ],
       "id": "26993911-1d2d-4e8e-a6c0-bf7c500ccbb8",
       "name": "Construct Thread"
@@ -1029,8 +959,8 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2640,
-        112
+        2528,
+        80
       ],
       "id": "36debb93-5f69-44a3-8d02-8f1bde96c3f1",
       "name": "Construct Thread Query"
@@ -1399,8 +1329,8 @@
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.6,
       "position": [
-        3280,
-        112
+        3184,
+        80
       ],
       "id": "2f88fa30-dcfd-4df3-91a5-e838b84f5dc5",
       "name": "Append or Update Thread row",
@@ -1434,6 +1364,63 @@
       ],
       "id": "e1f30a6d-968c-4570-9fa9-2c8ceca88093",
       "name": "Call 'Crypto Topics'"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e8d17d4e-345b-4428-90ee-ecaa6f0c35f6",
+              "leftValue": "={{ $json.thread_indicator }}",
+              "rightValue": "single",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1728,
+        -80
+      ],
+      "id": "8b569264-0f7e-43ea-9db3-472e7ad63a7f",
+      "name": "If  Not Threads"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "7ynylpF8yqILu7A8",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/7ynylpF8yqILu7A8",
+          "cachedResultName": "My project — Enrich Tweets Data"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {}
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1488,
+        -80
+      ],
+      "id": "449792a2-0ad4-4177-beb7-35782e4b5dd7",
+      "name": "Call 'Enrich Tweets Data'"
     }
   ],
   "pinData": {
@@ -1498,6 +1485,6 @@
     }
   ],
   "triggerCount": 1,
-  "updatedAt": "2025-10-30T09:54:17.000Z",
-  "versionId": "61241fcc-bf03-43bf-9c3d-c76dd01839d7"
+  "updatedAt": "2025-11-20T11:34:44.000Z",
+  "versionId": "9180f919-b262-4b64-ac04-9a34f75951a3"
 }
