@@ -18,7 +18,7 @@
         [],
         [
           {
-            "node": "Call Main Topic Workflow",
+            "node": "If KOLs2",
             "type": "main",
             "index": 0
           }
@@ -51,7 +51,7 @@
       "main": [
         [
           {
-            "node": "Remove Duplicates",
+            "node": "Add mainTopic",
             "type": "main",
             "index": 0
           }
@@ -100,7 +100,7 @@
       "main": [
         [
           {
-            "node": "Get row(s) in sheet",
+            "node": "If Personals",
             "type": "main",
             "index": 0
           }
@@ -203,7 +203,7 @@
       "main": [
         [
           {
-            "node": "Insert Supabase Vector Store",
+            "node": "Call 'XRAG'",
             "type": "main",
             "index": 0
           }
@@ -290,13 +290,7 @@
     },
     "Insert Supabase Vector Store": {
       "main": [
-        [
-          {
-            "node": "Aggregate all",
-            "type": "main",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "Retrieve Supabase Vector Store": {
@@ -320,6 +314,97 @@
           }
         ]
       ]
+    },
+    "Get row(s)": {
+      "main": [
+        [
+          {
+            "node": "Explode Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If KOLs2": {
+      "main": [
+        [
+          {
+            "node": "Call Main Topic Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Operation, Personal stuff",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Personals": {
+      "main": [
+        [
+          {
+            "node": "Get row(s)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Operation, Personal stuff": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Sheet Name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'XRAG'": {
+      "main": [
+        [
+          {
+            "node": "Aggregate all",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add mainTopic": {
+      "main": [
+        [
+          {
+            "node": "Remove Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Explode Metadata": {
+      "main": [
+        [
+          {
+            "node": "Add mainTopic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "createdAt": "2025-10-30T09:33:55.891Z",
@@ -328,7 +413,7 @@
   "meta": {
     "templateCredsSetupCompleted": true
   },
-  "name": "RAG",
+  "name": "XRAG Loader",
   "nodes": [
     {
       "parameters": {},
@@ -350,20 +435,20 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        -1104,
-        -208
+        -1168,
+        -144
       ],
       "id": "368d4dda-cfdc-40d1-9e36-40aea221dc27",
       "name": "Loop Over Topic"
     },
     {
       "parameters": {
-        "jsCode": "const topicWorkflows = [\n  {\n    mainTopic: \"crypto_KOLs\",\n    workflowId: \"0EyBOf0axlCox1sp\",\n    sheetId: \"1ogx9HwuMS246j6ddaUGTi6KhLmeMAky7ogqfmtZVl08\"\n  },\n  //{\n  //  mainTopic: \"crypto_underdogs\",\n  //  workflowId: \"ghi789jkl012\"  // Replace with your actual workflow ID\n  //},\n  {\n    mainTopic: \"AI\",\n    workflowId: \"S6n2cmAtmBGJAHYv\",\n    sheetId: \"1k3TqcRY49wyF_fsjAtLtezmibwMXksfNjhzCUHarA4w\"\n  },\n  //{\n  //  mainTopic: \"Motivational\",\n  //  workflowId: \"stu901vwx234\"  // Replace with your actual workflow ID\n  //},\n  //{\n   // mainTopic: \"Bookmarks\",\n   // workflowId: \"yza567bcd890\"  // Replace with your actual workflow ID\n  //},\n  // {\n  //  mainTopic: \"Personal\",\n  //  workflowId: \"efg123hij456\"  // Replace with your actual workflow ID\n  //}\n];\n\n// Return as items\nreturn topicWorkflows.map(item => ({\n  json: {\n    mainTopic: item.mainTopic,\n    workflowId: item.workflowId,\n    sheetId: item.sheetId\n  }\n}));"
+        "jsCode": "const topicWorkflows = [\n  {\n    mainTopic: \"crypto_KOLs\",\n    workflowId: \"0EyBOf0axlCox1sp\",\n    sheetID: \"1ogx9HwuMS246j6ddaUGTi6KhLmeMAky7ogqfmtZVl08\"\n  },\n  //{\n  //  mainTopic: \"crypto_underdogs\",\n  //  workflowId: \"ghi789jkl012\"  // Replace with your actual workflow ID\n  //},\n  {\n    mainTopic: \"AI\",\n    workflowId: \"S6n2cmAtmBGJAHYv\",\n    sheetID: \"1k3TqcRY49wyF_fsjAtLtezmibwMXksfNjhzCUHarA4w\"\n  },\n  //{\n  //  mainTopic: \"Motivational\",\n  //  workflowId: \"stu901vwx234\"  // Replace with your actual workflow ID\n  //},\n  {\n    mainTopic: \"Bookmarks\",\n    sheetID: \"gJAB6tAevM48B8Cz\"  // Replace with your actual workflow ID\n  },\n  \n  {\n   mainTopic: \"Personal\",\n   sheetID: \"F5FElHiOY1tMR6Ee\"  // Replace with your actual workflow ID\n  }\n];\n\n// Return as items\nreturn topicWorkflows.map(item => ({\n  json: {\n    mainTopic: item.mainTopic,\n    workflowId: item.workflowId,\n    sheetId: item.sheetId\n  }\n}));"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        -1424,
+        -1472,
         -128
       ],
       "id": "f2d54eff-b9bf-49ef-b5f0-a5c346321d90",
@@ -391,8 +476,8 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.3,
       "position": [
-        -832,
-        -192
+        -752,
+        -144
       ],
       "id": "bec2a9cd-9a7e-4bf0-b974-d37b497f7557",
       "name": "Call Main Topic Workflow"
@@ -418,21 +503,21 @@
         "authentication": "serviceAccount",
         "documentId": {
           "__rl": true,
-          "value": "={{ $json.sheet_id }}",
+          "value": "={{ $json.sheetID }}",
           "mode": "id"
         },
         "sheetName": {
           "__rl": true,
           "value": "={{ $json.topic + \"_tweets\" }}",
-          "mode": "name"
+          "mode": "id"
         },
         "options": {}
       },
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.7,
       "position": [
-        -1456,
-        496
+        -1264,
+        768
       ],
       "id": "4e0ea7db-0015-490b-913d-90d5b0c28dbe",
       "name": "Get row(s) in sheet",
@@ -577,7 +662,11 @@
               },
               {
                 "name": "main_topic",
-                "value": "={{ $(\"Execute Workflow Trigger\").item.json.main_topic }}"
+                "value": "={{ $(\"Execute Workflow Trigger\").item.json.mainTopic }}"
+              },
+              {
+                "name": "createdAt",
+                "value": "={{ $json.created_at }}"
               }
             ]
           }
@@ -586,8 +675,8 @@
       "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
       "typeVersion": 1.1,
       "position": [
-        -544,
-        640
+        1376,
+        1360
       ],
       "id": "66221400-ffbe-46d7-8f9c-93ddf510556d",
       "name": "Default Data Loader"
@@ -599,8 +688,8 @@
       "type": "@n8n/n8n-nodes-langchain.textSplitterCharacterTextSplitter",
       "typeVersion": 1,
       "position": [
-        -640,
-        800
+        1120,
+        1696
       ],
       "id": "8a4e02ac-2743-4d02-a7c7-7b40686c6a57",
       "name": "Character Text Splitter"
@@ -612,8 +701,8 @@
       "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
       "typeVersion": 1.2,
       "position": [
-        -1248,
-        832
+        576,
+        1456
       ],
       "id": "c5896377-ab49-45b5-afff-cbf4b85f15b5",
       "name": "Embedding 3-small1",
@@ -631,8 +720,8 @@
       "type": "n8n-nodes-base.executeWorkflowTrigger",
       "typeVersion": 1.1,
       "position": [
-        -1664,
-        448
+        -1744,
+        560
       ],
       "id": "b1c1e931-3bd9-49ae-9a63-050a8eeac2c8",
       "name": "Execute Workflow Trigger"
@@ -707,7 +796,7 @@
       "type": "n8n-nodes-base.splitInBatches",
       "typeVersion": 3,
       "position": [
-        -336,
+        -320,
         -128
       ],
       "id": "58b79bec-f559-414d-8b8c-d6e77076ac1e",
@@ -779,7 +868,7 @@
       "typeVersion": 1,
       "position": [
         -1776,
-        -400
+        -384
       ],
       "id": "a93e38a3-9449-4b3e-9739-5cb1efd22246",
       "name": "Sticky Note1"
@@ -806,13 +895,13 @@
           "assignments": [
             {
               "id": "8744484e-1691-4f29-b963-d0c8fbeb71ab",
-              "name": "sheet_id",
+              "name": "sheetID",
               "value": "={{ $(\"Loop Over Topic\").item.json.sheetId }}",
               "type": "string"
             },
             {
               "id": "f691d51d-bbaa-49f5-9962-d9a3c78071bd",
-              "name": "main_topic",
+              "name": "mainTopic",
               "value": "={{ $(\"Loop Over Topic\").item.json.mainTopic }}",
               "type": "string"
             }
@@ -824,8 +913,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -592,
-        -192
+        -576,
+        -144
       ],
       "id": "29aa2cd5-5d6b-4c9a-9427-9e23391bf2a2",
       "name": "Add Fields"
@@ -833,7 +922,7 @@
     {
       "parameters": {
         "operation": "removeItemsSeenInPreviousExecutions",
-        "dedupeValue": "={{ $json.tweet_id }}",
+        "dedupeValue": "={{ $json.tweet_id + \"-\" + $json.mainTopic }}",
         "options": {
           "scope": "workflow",
           "historySize": 100000
@@ -842,8 +931,8 @@
       "type": "n8n-nodes-base.removeDuplicates",
       "typeVersion": 2,
       "position": [
-        -1280,
-        496
+        -880,
+        416
       ],
       "id": "bcf323d2-c15b-4fcd-b807-c3ae1c7eecd6",
       "name": "Remove Duplicates",
@@ -877,8 +966,8 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        -1120,
-        496
+        -752,
+        576
       ],
       "id": "54841ef4-812c-4e40-9dad-075920d4acc7",
       "name": "If New"
@@ -888,8 +977,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        -768,
-        912
+        -464,
+        768
       ],
       "id": "0e3d006d-f5fb-4e31-b075-10f5f2348b6b",
       "name": "No Operation, do nothing on duplicated"
@@ -911,8 +1000,8 @@
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
       "position": [
-        -128,
-        640
+        0,
+        544
       ],
       "id": "7b5fd1b3-6576-4108-b762-f2a2b8b24b7b",
       "name": "Return"
@@ -924,8 +1013,8 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        -320,
-        512
+        -160,
+        464
       ],
       "id": "61d2bd20-de2b-4a84-a8df-1bc576c4caed",
       "name": "Wait",
@@ -955,8 +1044,8 @@
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 2.2,
       "position": [
-        -784,
-        1136
+        -208,
+        1296
       ],
       "id": "6ea486af-ca36-43d6-839e-1e0e527a9f68",
       "name": "AI Agent"
@@ -1032,8 +1121,8 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
       "typeVersion": 1.3,
       "position": [
-        -832,
-        400
+        1024,
+        1152
       ],
       "id": "c43eff4f-f5cb-4378-837d-d081872b080d",
       "name": "Insert Supabase Vector Store",
@@ -1062,8 +1151,8 @@
       "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
       "typeVersion": 1.3,
       "position": [
-        -1248,
-        1152
+        128,
+        1744
       ],
       "id": "8e707e76-5df1-455a-98cf-9928ed0018b6",
       "name": "Retrieve Supabase Vector Store",
@@ -1088,7 +1177,7 @@
       "type": "n8n-nodes-base.aggregate",
       "typeVersion": 1,
       "position": [
-        -512,
+        -368,
         416
       ],
       "id": "d3360b7e-c159-4698-af56-3656418197e9",
@@ -1103,19 +1192,210 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        -416,
+        -304,
         336
       ],
       "id": "9b39b769-8ed5-4dd6-926c-72bce9aa3813",
       "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "={{ $json.sheetID }}",
+          "mode": "id"
+        },
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1,
+      "position": [
+        -1344,
+        416
+      ],
+      "id": "f70d6676-1b46-456d-9643-144cc829d058",
+      "name": "Get row(s)"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "64db6a4b-5135-44cd-910b-34f8d7452eda",
+              "leftValue": "={{ $json.mainTopic }}",
+              "rightValue": "crypto_KOLs",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "b4d51a69-7304-4fd3-800d-cf681f3e16f0",
+              "leftValue": "={{ $json.mainTopic }}",
+              "rightValue": "=AI",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -960,
+        -128
+      ],
+      "id": "bc90ac92-f409-43ba-8856-b1284ba793d9",
+      "name": "If KOLs2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "64db6a4b-5135-44cd-910b-34f8d7452eda",
+              "leftValue": "={{ $json.mainTopic }}",
+              "rightValue": "=Bookmarks",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "b4d51a69-7304-4fd3-800d-cf681f3e16f0",
+              "leftValue": "={{ $json.mainTopic }}",
+              "rightValue": "Personal",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1552,
+        560
+      ],
+      "id": "53ff3fa4-f45e-4602-a7ed-cc9087e2e5c4",
+      "name": "If Personals"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        128
+      ],
+      "id": "3f83a0da-3019-4058-b83f-593f5b37bbce",
+      "name": "No Operation, Personal stuff"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "p3gUL7SZDCOZxvxL",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/p3gUL7SZDCOZxvxL",
+          "cachedResultName": "My project — XRAG"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {}
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        -560,
+        416
+      ],
+      "id": "7cec07e5-49b5-4223-8ca9-6876b3ebc989",
+      "name": "Call 'XRAG'"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "52266833-0264-49f9-b9d7-7ff86f9fe1e8",
+              "name": "mainTopic",
+              "value": "={{ $(\"Execute Workflow Trigger\").item.json.mainTopic }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1024,
+        576
+      ],
+      "id": "341cc80b-93a6-42a6-bfcd-d1b7ff51bde9",
+      "name": "Add mainTopic"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop through all input items\nreturn items.map(item => {\n  // Parse the metadata JSON string and return only those fields\n  const metadata = JSON.parse(item.json.metadata);\n  \n  return {\n    json: metadata\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1152,
+        416
+      ],
+      "id": "7228faf6-fea0-4537-a40a-bfe3d2078164",
+      "name": "Explode Metadata"
     }
   ],
-  "pinData": {},
+  "pinData": {
+    "Execute Workflow Trigger": [
+      {
+        "json": {
+          "mainTopic": "Bookmarks",
+          "sheetID": "gJAB6tAevM48B8Cz"
+        }
+      }
+    ]
+  },
   "repo_name": "n8n",
   "repo_owner": "thalderg",
   "repo_path": "workflows",
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "errorWorkflow": "UcFf87XN25RLiIE9"
   },
   "shared": [
     {
@@ -1129,6 +1409,6 @@
   "staticData": null,
   "tags": [],
   "triggerCount": 0,
-  "updatedAt": "2025-11-17T12:35:24.000Z",
-  "versionId": "bca943e6-e659-4325-af26-b52d73d7d135"
+  "updatedAt": "2025-11-22T14:11:27.000Z",
+  "versionId": "a9389ba8-c5af-4a70-a062-09153c67a99e"
 }
