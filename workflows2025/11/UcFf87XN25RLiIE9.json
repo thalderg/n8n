@@ -1,0 +1,105 @@
+{
+  "": "",
+  "active": false,
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "createdAt": "2025-11-21T12:24:41.511Z",
+  "id": "UcFf87XN25RLiIE9",
+  "isArchived": false,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "name": "Rag Error  Logs",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "39f755a9-11a3-4f8c-88ec-8aef62b8c7b9",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "const execution = $input.item.json;\n\nconst errorData = {\n  workflow_name: execution.workflow?.name || 'Unknown',\n  workflow_id: execution.workflow?.id || 'Unknown',\n  execution_id: execution.execution?.id || $execution.id,\n  error_message: execution.error?.message || 'No error message',\n  last_node: execution.lastNodeExecuted || 'Unknown',\n  timestamp: new Date().toISOString()\n};\n\nreturn [{ json: errorData }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "139239e6-1d09-4017-9282-a6b28d1fa170",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "sendTo": "gioben@protonmail.com",
+        "subject": "🚨 RAG Workflow CRASHED",
+        "message": "=Workflow: {{ $json.workflow_name }}\nLast Node: {{ $json.last_node }}\nTime: {{ $json.timestamp }}\n\nERROR:\n{{ $json.error_message }}\n\nView: https://gioben.app.n8n.cloud/workflow/{{ $json.workflow_id }}/executions/{{ $json.execution_id }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "6da14787-1ca1-4e6d-9ec7-be724185a5b6",
+      "name": "Send a message",
+      "webhookId": "44ebc20f-0319-4eca-9388-a0e833d84099",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "EdToD3kB7ULzhVZc",
+          "name": "Gmail account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "repo_name": "n8n",
+  "repo_owner": "thalderg",
+  "repo_path": "workflows",
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "shared": [
+    {
+      "createdAt": "2025-11-21T12:24:41.516Z",
+      "updatedAt": "2025-11-21T12:24:41.516Z",
+      "role": "workflow:owner",
+      "workflowId": "UcFf87XN25RLiIE9",
+      "projectId": "rwZmgF8pMPgWdXwq"
+    }
+  ],
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-11-21T12:27:05.000Z",
+  "versionId": "7e916c70-cbcb-4096-bb3f-804c593c7fb7"
+}
