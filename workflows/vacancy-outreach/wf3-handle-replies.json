@@ -1,0 +1,1330 @@
+{
+  "name": "Vacancy Outreach | WF3 — Handle Replies",
+  "description": "Starts when a new email arrives in Gmail (checked every minute). Labels replies to the outreach emails sent by \"Vacancy Outreach | WF2 — Send And Follow Up\" and updates the lead.",
+  "nodes": [
+    {
+      "id": "acdb82af-5421-5e4b-bc0f-a2a2c40c49b5",
+      "name": "Note Read And Label Reply",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        420
+      ],
+      "parameters": {
+        "content": "## Read And Label Reply\n\nTriggered by: a new email in the Gmail inbox (checked every minute).\n\nWhat it does, step by step:\n1. Reads the Offer and Leads tabs.\n2. Keeps the email only if its thread belongs to a lead that is not stopped, and its Gmail id is not yet in the lead's reply_ids (the Gmail trigger can send the same email twice).\n3. A model labels the reply: interested, not_now, unsubscribe or out_of_office. For interested it also writes a short suggested reply.\n4. Sends the lead to the matching action.\n\nServices called: Gmail (trigger), Google Sheets (Offer, Leads), Venice (model).",
+        "height": 630,
+        "width": 2420,
+        "color": 4
+      }
+    },
+    {
+      "id": "c8a6de2b-0116-5bd4-956f-2e80febd121f",
+      "name": "Note Act On The Reply",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2480,
+        420
+      ],
+      "parameters": {
+        "content": "## Act On The Reply\n\nTriggered by: runs inline after Read And Label Reply.\n\nWhat it does, step by step:\n1. Interested: status replied. The first interested reply from a lead gets a suggested answer in Telegram with three buttons: Approve, Reject, Edit. The run waits up to 24 hours.\n2. Approve sends the suggested answer in the same thread. Reject or no answer sends nothing. Edit opens a form with the answer filled in; Save and send sends the edited answer.\n3. Later interested replies get only a Telegram alert with a link to the thread: the owner answers by hand (CVs, attachments, personal emails).\n4. Unsubscribe: adds the email and domain to the Suppression tab and stops the lead. No email goes there again.\n5. Not now and out of office: status paused (resume by hand in this version).\n6. Every path saves the reply's Gmail id in reply_ids, so a copy sent again is skipped.\n\nServices called: Google Sheets (Leads, Suppression), Telegram (review, alerts), Gmail (reply in thread).",
+        "height": 970,
+        "width": 2280,
+        "color": 2
+      }
+    },
+    {
+      "id": "7bd20211-001d-5be1-acf1-b25b1d10fb23",
+      "name": "Note Title",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Vacancy Outreach | WF3 — Handle Replies\n\nReads every new email in the inbox. If it answers one of our outreach emails, a model labels it and the lead is updated. Opt-outs go on the Suppression tab and are never contacted again.\n\n**Starts:** a new email in Gmail (checked every minute). It works with the leads that \"Vacancy Outreach | WF1 — Find And Draft Leads\" saved and \"Vacancy Outreach | WF2 — Send And Follow Up\" sent.\n\n**Sections on this canvas, left to right:** Read And Label Reply, Act On The Reply.\n\n**Labels:** interested (Telegram approval, then the suggested answer is sent), unsubscribe (Suppression tab, lead stopped), not now and out of office (lead paused, resume by hand).\n\n**Services called:** Gmail (trigger, reply in thread), Google Sheets (Offer, Leads, Suppression), Venice (label model, 1 call per reply), Telegram (approval).\n\n**Setup:** see the README next to this workflow file.",
+        "height": 360,
+        "width": 4800,
+        "color": 7
+      }
+    },
+    {
+      "id": "b2e39499-7e35-5632-bb8c-e1bb8058d0e5",
+      "name": "Receive Reply Email",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        40,
+        820
+      ],
+      "parameters": {
+        "event": "messageReceived",
+        "simple": true,
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "labelIds": [
+            "INBOX"
+          ]
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "id": "ac2dd60e-21a5-5e08-a31e-56ffa64f7832",
+      "name": "Read Offer Settings",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "position": [
+        300,
+        820
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Offer",
+          "mode": "name"
+        },
+        "filtersUI": {},
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "1c6c17ca-8454-5145-8fd9-e7a981de5064",
+      "name": "Build Settings Object",
+      "notesInFlow": true,
+      "notes": "Turns the key/value rows into one settings object with safe defaults.",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        820
+      ],
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst s = {};\nfor (const r of rows) { if (r.key) s[String(r.key).trim()] = (r.value === undefined || r.value === null) ? '' : String(r.value).trim(); }\nconst num = (v, d) => { const n = Number(v); return (String(v).trim() !== '' && Number.isFinite(n)) ? n : d; };\nreturn [{ json: {\n  what_we_sell: s.what_we_sell || '',\n  who_buys: s.who_buys || '',\n  signal_titles: (s.signal_titles || '').split(',').map(x => x.trim()).filter(Boolean),\n  source_mode: (s.source_mode || 'sample').toLowerCase(),\n  location: s.location || '',\n  skip_recruiters: (s.skip_recruiters || 'yes').toLowerCase() === 'yes',\n  max_post_age_days: num(s.max_post_age_days, 45),\n  min_score: num(s.min_score, 4),\n  daily_cap: num(s.daily_cap, 5),\n  approval_mode: (s.approval_mode || 'on').toLowerCase(),\n  sender_name: s.sender_name || '',\n  sender_company: s.sender_company || '',\n  postal_address: s.postal_address || '',\n  tone: s.tone || ''\n} }];",
+        "mode": "runOnceForAllItems"
+      }
+    },
+    {
+      "id": "cf10a380-7429-51d7-8719-46f02316d591",
+      "name": "Read Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "position": [
+        820,
+        820
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "filtersUI": {},
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "870c9a31-068c-5177-81f7-ad726ab5b9c0",
+      "name": "Find Lead For Thread",
+      "notesInFlow": true,
+      "notes": "Keeps only replies in a thread we started. Others end here.",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1080,
+        820
+      ],
+      "parameters": {
+        "jsCode": "const leads = $('Read Leads').all().map(i => i.json).filter(l => l.thread_id);\n// Reply ids already handled per lead: from the reply_ids column, plus the ones taken in this run.\nconst handled = {};\nconst interestedSeen = {};\nconst out = [];\n// Gmail's preview has HTML codes (&lt;) and the quoted history: keep a clean, short version for Telegram.\nconst decode = s => s.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '\"').replace(/&#39;/g, \"'\").replace(/&amp;/g, '&');\nconst newPart = s => s.split(/\\s*(?:-{3,}\\s*Original Message|\\bOn [^\\n]{3,80}?wrote:?|Sent (?:from|with) Proton Mail|Sent from my )/)[0].trim();\nfor (const it of $('Receive Reply Email').all()) {\n  const m = it.json;\n  const lead = leads.find(l => String(l.thread_id) === String(m.threadId));\n  if (!lead || lead.status === 'stopped' || !m.id) continue;\n  const key = String(lead.lead_id);\n  if (!handled[key]) handled[key] = String(lead.reply_ids || '').split(',').map(s => s.trim()).filter(Boolean);\n  // A copy the Gmail trigger sends again has the same id: skip it.\n  if (handled[key].includes(m.id)) continue;\n  handled[key].push(m.id);\n  const firstInterested = lead.reply_label !== 'interested' && !interestedSeen[key];\n  interestedSeen[key] = true;\n  out.push({ json: Object.assign({}, lead, {\n    reply_text: decode(String(m.text || m.snippet || '')).slice(0, 1500),\n    reply_short: (newPart(decode(String(m.text || m.snippet || ''))) || decode(String(m.text || m.snippet || ''))).slice(0, 400),\n    reply_from: m.From || m.from || '',\n    reply_message_id: m.id,\n    reply_ids_new: handled[key].join(','),\n    first_interested: firstInterested,\n  }) });\n}\nreturn out;",
+        "mode": "runOnceForAllItems"
+      }
+    },
+    {
+      "id": "47765021-348c-5f35-8caf-0935a43baef9",
+      "name": "Build Reply Label Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        820
+      ],
+      "parameters": {
+        "jsCode": "const S = $('Build Settings Object').first().json;\nconst schema = { type: 'object', additionalProperties: false, required: ['label', 'reason', 'suggested_reply'],\n  properties: { label: { type: 'string', enum: ['interested', 'not_now', 'unsubscribe', 'out_of_office'] }, reason: { type: 'string' }, suggested_reply: { type: 'string' } } };\nconst system = `<role>\nYou read one reply to a cold email and label it.\n</role>\n<seller>\nSender name: ${S.sender_name}\nCompany: ${S.sender_company}\nWhat we sell: ${S.what_we_sell}\nTone: ${S.tone}\n</seller>\n<rules>\n1. interested: the person wants profiles, information, a call or asks a question about the offer.\n2. unsubscribe: the person asks to stop, to be removed, or not to be contacted. Also words like STOP or unsubscribe. If in doubt between unsubscribe and any other label, choose unsubscribe.\n3. out_of_office: an automatic reply about absence.\n4. not_now: a polite no, or not at this time.\n5. suggested_reply: only for interested. 40 to 70 words, plain text. Greet the contact by first name. Answer only what was asked. The input has the job post (company, role, description) and our first email: use those facts and never ask for anything already in them (the trade, the role, the location, the company). Ask at most one question, only about something they do not say (for example how many people or the start date), or offer a short call. Sign with the sender name. Make no promise about people, prices or dates. For every other label write an empty string.\n6. reason: one short sentence.\n</rules>\n<example>\n  <input>{\"reply\":\"Thanks, we are fully staffed until spring.\"}</input>\n  <output>{\"label\":\"not_now\",\"reason\":\"Polite no for now.\",\"suggested_reply\":\"\"}</output>\n</example>\nThe example only shows the shape of an answer: never reuse its content.`;\nreturn $input.all().map(it => ({ json: { lead: it.json, request: { model: 'z-ai-glm-5-3-flash', temperature: 0, max_tokens: 3000, reasoning_effort: 'low',\n  messages: [{ role: 'system', content: system }, { role: 'user', content: JSON.stringify({ job: { company: it.json.company, role: it.json.job_title, description: it.json.job_description, contact_name: it.json.contact_name }, our_first_email: String(it.json.email_body || '').slice(0, 1500), reply: it.json.reply_text }) }],\n  response_format: { type: 'json_schema', json_schema: { name: 'reply_label', strict: true, schema } } } } }));",
+        "mode": "runOnceForAllItems"
+      }
+    },
+    {
+      "id": "68229817-8dca-5076-9918-fa709d32b979",
+      "name": "Label Reply (Venice)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "position": [
+        1600,
+        820
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.venice.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.request) }}",
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "name": "Venice API (OpenAI-compatible)"
+        }
+      }
+    },
+    {
+      "id": "ddc901ef-af9a-5c47-a381-e9fe008d2ff4",
+      "name": "Read Reply Label",
+      "notesInFlow": true,
+      "notes": "Fails when the answer is cut off or not valid JSON.",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1860,
+        820
+      ],
+      "parameters": {
+        "jsCode": "const req = $('Build Reply Label Request').all();\nconst out = [];\n$input.all().forEach((it, i) => {\n  const r = it.json;\n  const ch = r.choices && r.choices[0];\n  if (!ch || ch.finish_reason !== 'stop' || !ch.message || !ch.message.content) {\n    throw new Error('Reply label answer cut off or empty (finish_reason: ' + (ch && ch.finish_reason) + ')');\n  }\n  let o;\n  try { o = JSON.parse(ch.message.content); } catch (e) { throw new Error('Reply label answer is not valid JSON'); }\n  out.push({ json: Object.assign({}, req[i].json.lead, { answer: o }) });\n});\nreturn out;",
+        "mode": "runOnceForAllItems"
+      }
+    },
+    {
+      "id": "7201d5ca-ea7a-58dd-8d0e-60d5be0475ec",
+      "name": "Route Reply Label",
+      "notesInFlow": true,
+      "notes": "Four labels, four outputs.",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2120,
+        820
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c1",
+                    "leftValue": "={{ $json.answer.label === 'interested' }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Interested"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c1",
+                    "leftValue": "={{ $json.answer.label === 'unsubscribe' }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Unsubscribe"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c1",
+                    "leftValue": "={{ $json.answer.label === 'not_now' }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Not now"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c1",
+                    "leftValue": "={{ $json.answer.label === 'out_of_office' }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Out of office"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "032c12f3-dc3e-5296-b0fb-2739065f4bbf",
+      "name": "Mark Lead Replied",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2520,
+        820
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "lead_id": "={{ $('Read Reply Label').item.json.lead_id }}",
+            "status": "replied",
+            "reply_label": "interested",
+            "reply_ids": "={{ $('Read Reply Label').item.json.reply_ids_new }}"
+          },
+          "matchingColumns": [
+            "lead_id"
+          ],
+          "schema": [
+            {
+              "id": "lead_id",
+              "displayName": "lead_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reply_label",
+              "displayName": "reply_label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reply_ids",
+              "displayName": "reply_ids",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "d570ab1d-ce0c-5a08-828b-8b9dfa1fcfa4",
+      "name": "Send Approved Reply",
+      "webhookId": "3eb8de44-9e86-40fc-a7e1-53c40b680393",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        4060,
+        820
+      ],
+      "parameters": {
+        "resource": "thread",
+        "operation": "reply",
+        "threadId": "={{ $('Read Reply Label').first().json.thread_id }}",
+        "emailType": "html",
+        "message": "={{ $('Read Reply Label').first().json.answer.suggested_reply.split('\\n').map(p => '<p>' + p + '</p>').join('') }}",
+        "options": {},
+        "messageId": "={{ $('Read Reply Label').first().json.reply_message_id }}"
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "id": "d873b2da-65be-59e6-8992-7ba315e2ecea",
+      "name": "Add To Suppression List",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2520,
+        990
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Suppression",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $('Read Reply Label').item.json.contact_email }}",
+            "domain": "={{ $('Read Reply Label').item.json.domain }}",
+            "date": "={{ $now.toFormat('yyyy-MM-dd') }}",
+            "reason": "unsubscribe reply"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "domain",
+              "displayName": "domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "a883093c-7d80-5825-b1a6-90dedc3bc51e",
+      "name": "Mark Lead Stopped",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2780,
+        990
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "lead_id": "={{ $('Read Reply Label').item.json.lead_id }}",
+            "status": "stopped",
+            "reply_label": "unsubscribe",
+            "reply_ids": "={{ $('Read Reply Label').item.json.reply_ids_new }}"
+          },
+          "matchingColumns": [
+            "lead_id"
+          ],
+          "schema": [
+            {
+              "id": "lead_id",
+              "displayName": "lead_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reply_label",
+              "displayName": "reply_label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reply_ids",
+              "displayName": "reply_ids",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "4f3badb6-f441-50e0-826b-7e277f59838e",
+      "name": "Mark Lead Paused",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2520,
+        1160
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "lead_id": "={{ $('Read Reply Label').item.json.lead_id }}",
+            "status": "paused",
+            "reply_label": "={{ $('Read Reply Label').item.json.answer.label }}",
+            "reply_ids": "={{ $('Read Reply Label').item.json.reply_ids_new }}"
+          },
+          "matchingColumns": [
+            "lead_id"
+          ],
+          "schema": [
+            {
+              "id": "lead_id",
+              "displayName": "lead_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reply_label",
+              "displayName": "reply_label",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reply_ids",
+              "displayName": "reply_ids",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "e47b0eec-159b-4bf8-92d9-a0d5ed26608e",
+      "name": "Send Reply For Review",
+      "webhookId": "f6d40aca-4844-445a-9d25-1ce21eb8bea4",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3040,
+        820
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "={{ ('Reply from ' + $('Read Reply Label').first().json.company + ' (' + $('Read Reply Label').first().json.contact_email + '):\\n' + '\"' + $('Read Reply Label').first().json.reply_short + '\"' + '\\n\\nSuggested answer:\\n' + $('Read Reply Label').first().json.answer.suggested_reply).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Approve",
+                    "additionalFields": {
+                      "url": "={{ $execution.resumeUrl + ($execution.resumeUrl.includes('?') ? '&' : '?') + 'action=approve' }}"
+                    }
+                  },
+                  {
+                    "text": "Reject",
+                    "additionalFields": {
+                      "url": "={{ $execution.resumeUrl + ($execution.resumeUrl.includes('?') ? '&' : '?') + 'action=reject' }}"
+                    }
+                  },
+                  {
+                    "text": "Edit",
+                    "additionalFields": {
+                      "url": "={{ $execution.resumeUrl + ($execution.resumeUrl.includes('?') ? '&' : '?') + 'action=edit' }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "parse_mode": "HTML",
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram (your approvals bot)"
+        }
+      }
+    },
+    {
+      "id": "751ab21a-6f4d-4d9a-9a72-f4f9e3d6886c",
+      "name": "Wait For Reply Choice",
+      "webhookId": "4001fef2-ae6e-4fef-996c-55e252eec33b",
+      "notes": "Waits up to 24 hours for one of the three buttons.",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3300,
+        820
+      ],
+      "parameters": {
+        "resume": "webhook",
+        "httpMethod": "GET",
+        "limitWaitTime": true,
+        "limitType": "afterTimeInterval",
+        "resumeAmount": 24,
+        "resumeUnit": "hours",
+        "options": {
+          "ignoreBots": true
+        },
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "id": "9b1f59eb-f678-4408-8119-65984e837f0a",
+      "name": "Route Reply Choice",
+      "notes": "Reject or no answer: nothing is sent. Approve: send the answer. Edit: form first.",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        3800,
+        820
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "r1",
+                    "leftValue": "={{ $json.query && $json.query.action === 'reject' }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Reject"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "r2",
+                    "leftValue": "={{ $json.query && $json.query.action === 'approve' }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Approve"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "r3",
+                    "leftValue": "={{ $json.query && $json.query.action === 'edit' }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Edit"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a0f80c0b-b96b-4099-aec8-b7f33822c1cd",
+      "name": "Ask For Edited Reply",
+      "webhookId": "b6c78808-7f6f-4dc5-ad7d-4b4b80affb00",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        4060,
+        990
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendAndWait",
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "message": "={{ 'Edit the answer to ' + $('Read Reply Label').first().json.company + ': open the form, change the text, then press Save and send.' }}",
+        "responseType": "customForm",
+        "defineForm": "fields",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Text",
+              "fieldType": "textarea",
+              "requiredField": true,
+              "defaultValue": "={{ $('Read Reply Label').first().json.answer.suggested_reply }}"
+            }
+          ]
+        },
+        "options": {
+          "messageButtonLabel": "Edit answer",
+          "responseFormTitle": "Edit the answer",
+          "responseFormButtonLabel": "Save and send",
+          "limitWaitTime": {
+            "values": {
+              "limitType": "afterTimeInterval",
+              "resumeAmount": 24,
+              "resumeUnit": "hours"
+            }
+          },
+          "responseFormCustomCss": "#submitted-form { text-align: center; }\n#submitted-header { font-size: 0; }\n#submitted-header::before { content: '✅'; display: block; font-size: 72px; line-height: 1; margin-bottom: 20px; }\n#submitted-header::after { content: 'Answer approved'; display: block; font-size: 34px; }\n#submitted-content { font-size: 0; }\n#submitted-content::after { content: 'Your edited answer is being sent in the same email thread.'; font-size: 19px; color: #5b6475; }\n#submitted-form .n8n-link { display: none; }"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram (your approvals bot)"
+        }
+      }
+    },
+    {
+      "id": "bbfb3284-7c17-45cb-aa27-4074f3ae5a66",
+      "name": "Edit Saved?",
+      "notes": "Yes: send the edited answer. No answer in 24 hours: nothing is sent.",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4300,
+        990
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "e1",
+              "leftValue": "={{ !!($json.data && $json.data.Text) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "26a5d249-4b46-4d61-9755-c0fb6a3f0704",
+      "name": "Send Edited Reply",
+      "webhookId": "eb93cb02-fe2d-4d60-a52d-4415b9851359",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        4540,
+        990
+      ],
+      "parameters": {
+        "resource": "thread",
+        "operation": "reply",
+        "threadId": "={{ $('Read Reply Label').first().json.thread_id }}",
+        "messageId": "={{ $('Read Reply Label').first().json.reply_message_id }}",
+        "emailType": "html",
+        "message": "={{ $json.data.Text.split('\\n').map(p => '<p>' + p + '</p>').join('') }}",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "id": "3ea7300c-4a68-415d-b1a9-8f43f9188c3c",
+      "name": "Show Confirmation Page",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "onError": "continueRegularOutput",
+      "position": [
+        3560,
+        820
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ '<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Vacancy Outreach</title></head><body style=\"margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:#f6f7f9;color:#1d2433;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center\"><div style=\"padding:32px\"><div style=\"font-size:72px;line-height:1\">' + ({ approve: '✅', reject: '❌', edit: '✏️' }[($json.query || {}).action] || '✔️') + '</div><h1 style=\"font-size:34px;margin:20px 0 8px\">' + ({ approve: 'Answer approved', reject: 'Not sent', edit: 'Opening the editor…' }[($json.query || {}).action] || 'Done') + '</h1><p style=\"font-size:19px;color:#5b6475;max-width:420px;margin:0 auto\">' + ({ approve: 'The answer is being sent in the same email thread.', reject: 'No answer goes to this contact.', edit: 'Open the Edit answer message in Telegram to change the text.' }[($json.query || {}).action] || 'You can close this page.') + '</p></div></body></html>' }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "b59e382c-e46c-4b17-aadf-186c51dc86d5",
+      "name": "First Interested Reply?",
+      "notes": "Yes: suggested answer for review. No (later reply): alert only, answer by hand.",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2780,
+        820
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "f1",
+              "leftValue": "={{ $('Read Reply Label').item.json.first_interested === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "142ceed9-612a-4ac6-b70a-4986be7f2899",
+      "name": "Alert New Reply",
+      "webhookId": "2a921a1d-0eb0-49b9-98e8-192449406f68",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        3040,
+        990
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "={{ ('New reply from ' + $('Read Reply Label').item.json.contact_name + ' (' + $('Read Reply Label').item.json.company + ')\\n' + $('Read Reply Label').item.json.job_title + ', posted ' + Math.max(0, Math.floor($now.diff(DateTime.fromISO(String($('Read Reply Label').item.json.job_posted_date)), 'days').days)) + ' days ago\\n\\n\"' + $('Read Reply Label').item.json.reply_short + '\"').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '\\n\\nAnswer by hand in Gmail: <a href=\"https://mail.google.com/mail/u/0/#all/' + $('Read Reply Label').item.json.thread_id + '\">open the thread</a>' }}",
+        "additionalFields": {
+          "parse_mode": "HTML",
+          "appendAttribution": false,
+          "disable_web_page_preview": true
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram (your approvals bot)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Receive Reply Email": {
+      "main": [
+        [
+          {
+            "node": "Read Offer Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Offer Settings": {
+      "main": [
+        [
+          {
+            "node": "Build Settings Object",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Settings Object": {
+      "main": [
+        [
+          {
+            "node": "Read Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Leads": {
+      "main": [
+        [
+          {
+            "node": "Find Lead For Thread",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Lead For Thread": {
+      "main": [
+        [
+          {
+            "node": "Build Reply Label Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Reply Label Request": {
+      "main": [
+        [
+          {
+            "node": "Label Reply (Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Label Reply (Venice)": {
+      "main": [
+        [
+          {
+            "node": "Read Reply Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Reply Label": {
+      "main": [
+        [
+          {
+            "node": "Route Reply Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Reply Label": {
+      "main": [
+        [
+          {
+            "node": "Mark Lead Replied",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Add To Suppression List",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Lead Paused",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Lead Paused",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add To Suppression List": {
+      "main": [
+        [
+          {
+            "node": "Mark Lead Stopped",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reply For Review": {
+      "main": [
+        [
+          {
+            "node": "Wait For Reply Choice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Reply Choice": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Send Approved Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask For Edited Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask For Edited Reply": {
+      "main": [
+        [
+          {
+            "node": "Edit Saved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Saved?": {
+      "main": [
+        [
+          {
+            "node": "Send Edited Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait For Reply Choice": {
+      "main": [
+        [
+          {
+            "node": "Show Confirmation Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Show Confirmation Page": {
+      "main": [
+        [
+          {
+            "node": "Route Reply Choice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Lead Replied": {
+      "main": [
+        [
+          {
+            "node": "First Interested Reply?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "First Interested Reply?": {
+      "main": [
+        [
+          {
+            "node": "Send Reply For Review",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alert New Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "demo"
+    },
+    {
+      "name": "trigger"
+    },
+    {
+      "name": "email"
+    }
+  ],
+  "active": false
+}

@@ -1,0 +1,180 @@
+{
+  "name": "Vacancy Outreach | WF4 — Send Weekly Report",
+  "description": "Starts itself every Monday at 08:00 (schedule). Sends a Telegram summary of the Leads tab filled by \"Vacancy Outreach | WF1 — Find And Draft Leads\", \"Vacancy Outreach | WF2 — Send And Follow Up\" and \"Vacancy Outreach | WF3 — Handle Replies\".",
+  "nodes": [
+    {
+      "id": "c315eb21-2bea-5620-bfd0-414c8b191bcc",
+      "name": "Note Count And Send Report",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        420
+      ],
+      "parameters": {
+        "content": "## Count And Send Report\n\nTriggered by: the weekly schedule (Monday 08:00).\n\nWhat it does, step by step:\n1. Reads the Leads tab.\n2. Counts leads by status and the emails sent in the last 7 days.\n3. Sends one short message in Telegram.\n\nServices called: Google Sheets (Leads), Telegram.",
+        "height": 630,
+        "width": 1120,
+        "color": 5
+      }
+    },
+    {
+      "id": "20de9ec5-ce6c-571f-a9da-8f6844a542a8",
+      "name": "Note Title",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Vacancy Outreach | WF4 — Send Weekly Report\n\nSends one short Telegram message every Monday with the counts from the Leads tab that \"Vacancy Outreach | WF1 — Find And Draft Leads\", \"Vacancy Outreach | WF2 — Send And Follow Up\" and \"Vacancy Outreach | WF3 — Handle Replies\" fill.\n\n**Starts:** the weekly schedule, Monday 08:00.\n\n**Services called:** Google Sheets (Leads), Telegram.\n\n**Setup:** see the README next to this workflow file.",
+        "height": 360,
+        "width": 1120,
+        "color": 7
+      }
+    },
+    {
+      "id": "ca05bb25-3e12-5488-97fd-d648cb23bf4e",
+      "name": "Start Weekly Report",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        40,
+        820
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "f48c8e9b-f993-5cf7-9685-361c10300816",
+      "name": "Read Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "alwaysOutputData": true,
+      "position": [
+        300,
+        820
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "filtersUI": {},
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "b42dfba9-f445-5a44-a0de-b564abc32b21",
+      "name": "Count Leads By Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        820
+      ],
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json).filter(r => r.lead_id);\nconst by = (s) => rows.filter(r => r.status === s).length;\nconst weekAgo = Date.now() - 7 * 86400000;\nconst sentWeek = rows.filter(r => r.sent_date && new Date(r.sent_date).getTime() >= weekAgo).length;\nconst optOut = rows.filter(r => r.reply_label === 'unsubscribe').length;\nconst text = 'Vacancy Outreach weekly report\\n'\n  + 'Leads in total: ' + rows.length + '\\n'\n  + 'Waiting for approval: ' + by('new') + '\\n'\n  + 'Approved, not sent: ' + by('ready') + '\\n'\n  + 'Emails sent in the last 7 days: ' + sentWeek + '\\n'\n  + 'In sequence (follow-up 1 sent): ' + by('followup1') + '\\n'\n  + 'Replied: ' + by('replied') + '\\n'\n  + 'Paused: ' + by('paused') + '\\n'\n  + 'Opted out: ' + optOut + '\\n'\n  + 'Stopped: ' + by('stopped') + '\\n'\n  + 'No website found: ' + by('no_domain') + ', no contact found: ' + by('no_contact') + ', rejected: ' + by('rejected');\nreturn [{ json: { text } }];",
+        "mode": "runOnceForAllItems"
+      }
+    },
+    {
+      "id": "5310d7e4-c316-51e5-9ab3-f433194ceb4e",
+      "name": "Send Weekly Report",
+      "webhookId": "53cf6299-9cfa-45c3-98ed-7afcd32f90fb",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        820,
+        820
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "={{ $json.text }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram (your approvals bot)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Start Weekly Report": {
+      "main": [
+        [
+          {
+            "node": "Read Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Leads": {
+      "main": [
+        [
+          {
+            "node": "Count Leads By Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Count Leads By Status": {
+      "main": [
+        [
+          {
+            "node": "Send Weekly Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "scheduled"
+    },
+    {
+      "name": "demo"
+    }
+  ],
+  "active": false
+}
