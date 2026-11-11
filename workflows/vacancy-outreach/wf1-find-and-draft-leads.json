@@ -1,0 +1,2472 @@
+{
+  "name": "Vacancy Outreach | WF1 — Find And Draft Leads",
+  "description": "Starts itself every day at 07:00 (schedule). Finds, scores and drafts leads and waits for approval in Telegram; \"Vacancy Outreach | WF2 — Send And Follow Up\" sends the approved ones. Its loop also calls this same workflow once per lead (the \"Process One Lead\" block below the loop); nothing else may call it.",
+  "nodes": [
+    {
+      "id": "1cd558c6-8c4e-5ccd-87bc-3241a09f86db",
+      "name": "Note Get Vacancies",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        432
+      ],
+      "parameters": {
+        "content": "## Get Vacancies\n\nTriggered by: the daily schedule (07:00).\n\nWhat it does, step by step:\n1. Reads the Offer tab and turns it into one settings object.\n2. Sample mode reads the Sample Vacancies tab. Live mode searches Google Jobs by location (SerpApi).\n3. Puts both sources into one format and turns \"5 days ago\" into a date.\n\nServices called: Google Sheets (Offer, Sample Vacancies), SerpApi Google Jobs.",
+        "height": 800,
+        "width": 1900,
+        "color": 4
+      }
+    },
+    {
+      "id": "5be353bb-a60e-5232-9afb-e3ac33d54bb5",
+      "name": "Note Clean And Score Vacancies",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1968,
+        432
+      ],
+      "parameters": {
+        "content": "## Clean And Score Vacancies\n\nTriggered by: runs inline after \"Get Vacancies\".\n\nWhat it does, step by step:\n1. Drops posts older than the age limit.\n2. Reads Leads, Suppression and Bench once.\n3. Drops known companies, opted-out companies and agencies (name rules). One company with several roles becomes one lead.\n4. A model scores the fit 1 to 5 and says if the poster is an agency.\n5. Keeps the best fits up to the daily cap.\n\nServices called: Google Sheets (Leads, Suppression, Bench), Venice (model).",
+        "height": 630,
+        "width": 2420,
+        "color": 6
+      }
+    },
+    {
+      "id": "01a4a003-fb42-5a2a-840f-379c0bb11aa2",
+      "name": "Note Find Website And Contact",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        672,
+        1312
+      ],
+      "parameters": {
+        "content": "## Find Website And Contact\n\nTriggered by: runs inline after \"Process One Lead\" (one lead per call).\n\nWhat it does, step by step:\n1. Sample leads already hold website and contact, so they skip the lookups.\n2. Live leads: Hunter Domain Finder returns candidate websites. Only an exact company-name match is kept; job boards are rejected. No match: saved as no_domain.\n3. Hunter Domain Search returns contacts. Keeps a verified email with a hiring title. None: saved as no_contact.\n\nServices called: Hunter (Domain Finder, Domain Search), Google Sheets (Leads).",
+        "height": 970,
+        "width": 2160,
+        "color": 5
+      }
+    },
+    {
+      "id": "221e4efd-547e-51ff-bb8d-f75a2f9ba79b",
+      "name": "Note Write And Check Email",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2880,
+        1312
+      ],
+      "parameters": {
+        "content": "## Write And Check Email\n\nTriggered by: runs inline after \"Find Website And Contact\" (or straight from \"Process One Lead\" for sample leads).\n\nWhat it does, step by step:\n1. A model writes a short email about the specific open role. It may use matching bench profiles, never invented facts.\n2. Adds the footer: sender, company, postal address, opt-out line.\n3. Stops with an error if sender details are still placeholders. Skips a contact on the Suppression tab.\n4. Saves the lead as new.\n\nServices called: Venice (model), Google Sheets (Suppression, Leads).",
+        "height": 630,
+        "width": 1640,
+        "color": 3
+      }
+    },
+    {
+      "id": "bb9e5729-9796-5163-9e46-bef51fdcdd6e",
+      "name": "Note Approve And Mark Ready",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4592,
+        1312
+      ],
+      "parameters": {
+        "content": "## Approve And Mark Ready\n\nTriggered by: runs inline after Write And Check Email.\n\nWhat it does, step by step:\n1. Approval is needed when approval_mode is on, or the score is below 5.\n2. Telegram shows the draft with three buttons: Approve, Reject, Edit. The run waits up to 24 hours.\n3. Approve: status ready. Reject: status rejected. No answer: the lead stays new.\n4. Edit: a second message opens a form with the subject and text filled in. Save and approve stores the edited email and sets status ready.\n5. This lead's run ends here. The loop above then takes the next lead.\n\nServices called: Telegram (review), Google Sheets (Leads).",
+        "height": 800,
+        "width": 1900,
+        "color": 2
+      }
+    },
+    {
+      "id": "b8087701-2807-5a72-b45c-531200531e91",
+      "name": "Note Title",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Vacancy Outreach | WF1 — Find And Draft Leads\n\nFinds employers with open jobs, scores the fit, finds a hiring contact, writes a personal email and asks a person to approve it. Used by a recruiting agency (or any seller whose product helps a company that is hiring).\n\n**Starts:** the daily schedule at 07:00. Two later workflows read the same Google Sheet: \"Vacancy Outreach | WF2 — Send And Follow Up\" sends the approved emails, and \"Vacancy Outreach | WF3 — Handle Replies\" reads the answers.\n\n**Sections on this canvas.** Top row, left to right: Get Vacancies, Clean And Score Vacancies, Draft Each Lead (the loop). Bottom row, the block the loop calls once per lead: Process One Lead, Find Website And Contact, Write And Check Email, Approve And Mark Ready.\n\n**Modes:** sample mode reads the Sample Vacancies tab (no Hunter call). Live mode searches Google Jobs by location and uses Hunter.\n\n**Services called:** Google Sheets (Offer, Sample Vacancies, Leads, Suppression, Bench), SerpApi Google Jobs, Hunter (Domain Finder, Domain Search), Venice (score and draft model, 2 calls per lead), Telegram (approval).\n\n**Setup:** see the README next to this workflow file.",
+        "height": 360,
+        "width": 6500,
+        "color": 7
+      }
+    },
+    {
+      "id": "825652a1-5932-5667-bc1a-7bb3b2fff4fc",
+      "name": "Start Daily Search",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        48,
+        832
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "1379d8b7-a8d8-520a-85bc-da96969759bc",
+      "name": "Read Offer Settings",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "alwaysOutputData": true,
+      "position": [
+        304,
+        832
+      ],
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Offer",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "b71f6482-1176-5e05-927d-266274a16b1c",
+      "name": "Build Settings Object",
+      "notesInFlow": true,
+      "notes": "Turns the key/value rows into one settings object with safe defaults.",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        832
+      ],
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(i => i.json);\nconst s = {};\nfor (const r of rows) { if (r.key) s[String(r.key).trim()] = (r.value === undefined || r.value === null) ? '' : String(r.value).trim(); }\nconst num = (v, d) => { const n = Number(v); return (String(v).trim() !== '' && Number.isFinite(n)) ? n : d; };\nreturn [{ json: {\n  what_we_sell: s.what_we_sell || '',\n  who_buys: s.who_buys || '',\n  signal_titles: (s.signal_titles || '').split(',').map(x => x.trim()).filter(Boolean),\n  source_mode: (s.source_mode || 'sample').toLowerCase(),\n  location: s.location || '',\n  skip_recruiters: (s.skip_recruiters || 'yes').toLowerCase() === 'yes',\n  max_post_age_days: num(s.max_post_age_days, 45),\n  min_score: num(s.min_score, 4),\n  daily_cap: num(s.daily_cap, 5),\n  approval_mode: (s.approval_mode || 'on').toLowerCase(),\n  sender_name: s.sender_name || '',\n  sender_company: s.sender_company || '',\n  postal_address: s.postal_address || '',\n  tone: s.tone || ''\n} }];"
+      }
+    },
+    {
+      "id": "791a098f-ee46-5441-be2e-72a18d089a9b",
+      "name": "Use Live Search?",
+      "notesInFlow": true,
+      "notes": "Live: search Google Jobs. Sample: read the Sample Vacancies tab.",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        832,
+        832
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.source_mode === 'live' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "24bab489-080a-592b-970d-6520d45eee7d",
+      "name": "Search Live Vacancies (SerpApi)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        1088,
+        832
+      ],
+      "parameters": {
+        "url": "https://serpapi.com/search.json",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "serpApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google_jobs"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.signal_titles.slice(0, 3).join(' OR ') }}"
+            },
+            {
+              "name": "location",
+              "value": "={{ $json.location }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "serpApi": {
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "id": "3ad046f1-7828-577e-a012-377d10d802a1",
+      "name": "Split Live Jobs",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1344,
+        832
+      ],
+      "parameters": {
+        "fieldToSplitOut": "jobs_results",
+        "options": {}
+      }
+    },
+    {
+      "id": "b40ef2e5-112b-5c2b-b914-2a41e7ed56a7",
+      "name": "Read Sample Vacancies",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "alwaysOutputData": true,
+      "position": [
+        1088,
+        992
+      ],
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sample Vacancies",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "72fdc37e-02ff-508d-9248-c6fd0539fa7b",
+      "name": "Normalise Vacancies",
+      "notesInFlow": true,
+      "notes": "Both sources become one format. \"N days ago\" becomes a date.",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        832
+      ],
+      "parameters": {
+        "jsCode": "const daysFrom = (t) => {\n  if (t === undefined || t === null || t === '') return 0;\n  const s = String(t).toLowerCase();\n  const n = parseInt(s.replace(/[^0-9]/g, ''), 10);\n  if (!Number.isFinite(n)) return 0;\n  if (s.includes('hour') || s.includes('minute') || s.includes('just')) return 0;\n  if (s.includes('month')) return n * 30;\n  if (s.includes('week')) return n * 7;\n  if (s.includes('+')) return n + 1;\n  return n;\n};\nconst iso = (d) => { const x = new Date(); x.setDate(x.getDate() - d); return x.toISOString().slice(0, 10); };\n// Job type: the sheet column (sample) or Google Jobs' schedule type (live), else words in the job text. Empty = not stated.\nconst engagementOf = (given, text) => {\n  const g = String(given || '').trim();\n  if (/contractor|temporary/i.test(g)) return 'Contract';\n  if (/contract|perman/i.test(g)) return g;\n  const t = String(text || '');\n  const p = /\\bpermanent\\b/i.test(t), c = /\\b(contract|temporary)\\b/i.test(t);\n  return p && c ? 'Contract, Permanent' : p ? 'Permanent' : c ? 'Contract' : '';\n};\n// Live jobs: Google's own summary (Qualifications, Responsibilities, Benefits) goes first, then the job text.\nconst highlightsOf = (r) => Array.isArray(r.job_highlights) ? r.job_highlights.map(h => (h.title ? h.title + ': ' : '') + (h.items || []).join('; ')).join('\\n') : '';\nconst out = [];\nfor (const it of $input.all()) {\n  const r = it.json;\n  if (r.company_name !== undefined || r.job_id !== undefined) {\n    const days = daysFrom(r.detected_extensions && r.detected_extensions.posted_at);\n    out.push({ json: { company: r.company_name || '', job_title: r.title || '', location: r.location || '', days_ago: days, job_posted_date: iso(days), description: [highlightsOf(r), String(r.description || '')].filter(Boolean).join('\\n').slice(0, 1500), domain: '', contact_name: '', contact_title: '', contact_email: '', engagement: engagementOf(r.detected_extensions && r.detected_extensions.schedule_type, highlightsOf(r) + ' ' + (r.description || '')) } });\n  } else {\n    const days = Number(r.posted_days_ago) || 0;\n    out.push({ json: { company: r.company || '', job_title: r.job_title || '', location: r.location || '', days_ago: days, job_posted_date: iso(days), description: String(r.description || '').slice(0, 1500), domain: r.domain || '', contact_name: r.contact_name || '', contact_title: r.contact_title || '', contact_email: r.contact_email || '', engagement: engagementOf(r.engagement, r.description) } });\n  }\n}\nreturn out.filter(x => x.json.company && x.json.job_title);"
+      }
+    },
+    {
+      "id": "86931e60-8241-55ac-b0fa-072ba0314aa3",
+      "name": "Drop Old Posts",
+      "notesInFlow": true,
+      "notes": "Keeps posts up to the age limit in the Offer tab.",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        2000,
+        832
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.days_ago <= $('Build Settings Object').first().json.max_post_age_days }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "5ddfda91-cb98-53a8-b05f-7cf7d2802a42",
+      "name": "Read Existing Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "position": [
+        2272,
+        832
+      ],
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "a2d50d68-1b20-5d80-968c-f613f2584569",
+      "name": "Read Suppression List",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "position": [
+        2528,
+        832
+      ],
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Suppression",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "4f0c15ac-c951-5026-be0f-2211e597e333",
+      "name": "Read Bench",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "position": [
+        2784,
+        832
+      ],
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Bench",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "cef4e589-b2f2-5089-a175-590a39a3b1ae",
+      "name": "Drop Known Companies And Agencies",
+      "notesInFlow": true,
+      "notes": "Drops known, opted-out and agency companies. Several roles of one company become one lead.",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3040,
+        832
+      ],
+      "parameters": {
+        "jsCode": "const S = $('Build Settings Object').first().json;\nconst norm = (s) => String(s || '').toLowerCase().replace(/\\b(inc|ltd|llc|corp|co|limited|incorporated|company)\\b\\.?/g, '').replace(/[^a-z0-9]/g, '');\nconst leads = $('Read Existing Leads').all().map(i => i.json).filter(r => r.company);\nconst supp = $('Read Suppression List').all().map(i => i.json);\nconst sDomains = new Set(supp.map(r => String(r.domain || '').toLowerCase()).filter(Boolean));\nconst sEmails = new Set(supp.map(r => String(r.email || '').toLowerCase()).filter(Boolean));\nconst now = new Date();\nconst known = new Set();\nfor (const l of leads) {\n  const sd = l.sent_date ? new Date(l.sent_date) : null;\n  if (!sd || (now - sd) < 90 * 86400000) known.add(norm(l.company));\n}\nconst nameRx = /(staffing|recruit|talent|personnel|workforce|employment|headhunt)/i;\nconst textRx = /(our client|on behalf of)/i;\n// Two posts of one company: one type not stated = not stated overall; else both types.\nconst joinTypes = (a, b) => (!a || !b) ? '' : [...new Set((a + ',' + b).split(',').map(s => s.trim()).filter(Boolean))].join(', ');\nconst groups = new Map();\nfor (const it of $('Drop Old Posts').all()) {\n  const v = it.json;\n  const k = norm(v.company);\n  if (!k || known.has(k)) continue;\n  if (v.domain && sDomains.has(String(v.domain).toLowerCase())) continue;\n  if (v.contact_email && sEmails.has(String(v.contact_email).toLowerCase())) continue;\n  if (S.skip_recruiters && (nameRx.test(v.company) || textRx.test(v.description + ' ' + v.job_title))) continue;\n  const g = groups.get(k);\n  if (!g) { groups.set(k, Object.assign({}, v, { titles: [v.job_title] })); }\n  else {\n    if (!g.titles.includes(v.job_title)) g.titles.push(v.job_title);\n    g.engagement = joinTypes(g.engagement, v.engagement);\n    if (v.days_ago < g.days_ago) { g.days_ago = v.days_ago; g.job_posted_date = v.job_posted_date; }\n    g.description = (g.description + ' | ' + v.description).slice(0, 1500);\n  }\n}\nreturn [...groups.values()].map(g => ({ json: Object.assign({}, g, { job_title: g.titles.join('; ') }) }));"
+      }
+    },
+    {
+      "id": "f97632cf-6e75-5081-af27-89efba84933c",
+      "name": "Build Score Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3312,
+        832
+      ],
+      "parameters": {
+        "jsCode": "const S = $('Build Settings Object').first().json;\nconst bench = $('Read Bench').all().map(i => i.json).filter(r => r.profile_id);\n// A candidate fits a job when either type is not stated, or they share a type (contract / permanent).\nconst kinds = s => new Set(String(s || '').toLowerCase().split(/[,;\\/&]|\\band\\b/).map(x => x.trim()).map(x => x.startsWith('perm') ? 'permanent' : (x.startsWith('contract') || x.startsWith('temp')) ? 'contract' : '').filter(Boolean));\nconst fits = (job, cand) => { const j = kinds(job), c = kinds(cand); return !j.size || !c.size || [...j].some(t => c.has(t)); };\nconst benchFor = l => { const b = bench.filter(p => fits(l.engagement, p.engagement)); return bench.length ? (b.length ? b.map(p => `${p.profile_id}: ${p.trade}, ${p.certifications}, ${p.region}, available ${p.availability}, ${p.engagement || 'contract or permanent'}`).join('\\n') : 'No bench profile fits this job type.') : 'No bench data.'; };\nconst schema = { type: 'object', additionalProperties: false, required: ['employer_type', 'score', 'reason', 'matched_profiles'],\n  properties: { employer_type: { type: 'string', enum: ['direct_employer', 'staffing_agency', 'job_board', 'unknown'] }, score: { type: 'integer', enum: [1, 2, 3, 4, 5] }, reason: { type: 'string' }, matched_profiles: { type: 'array', items: { type: 'string' } } } };\nconst systemFor = (benchText) => `<role>\nYou judge whether an employer with an open job is a good prospect for a seller.\n</role>\n<seller>\nWhat we sell: ${S.what_we_sell}\nWho buys: ${S.who_buys}\nJob titles that count as a buying signal: ${S.signal_titles.join(', ')}\n</seller>\n<bench>\n${benchText}\n</bench>\n<rules>\n1. employer_type: direct_employer if the company hires for itself. staffing_agency if it recruits for clients (words like \"our client\", \"on behalf of\", or it is a recruiter). job_board if it only lists jobs. unknown if the text does not say.\n2. score 1 to 5. 5: a direct employer, a role that matches a signal title, and a bench profile in the same region. 4: a good match, no bench profile. 3: unclear fit. 2: weak fit. 1: no fit, the role is unrelated to what the seller sells.\n3. A post 14 to 45 days old means the employer is struggling to fill it. Add one point if the score is 3 or 4. Never go above 5.\n4. matched_profiles: the profile_id values from the bench that fit the role and the region. Empty array if none. Never invent an id.\n5. reason: one plain sentence, from the facts given only.\n</rules>\n<example>\n  <input>{\"company\":\"Dough Brothers Bakery\",\"open_roles\":\"Pastry Chef\",\"location\":\"Leeds\",\"days_open\":20,\"role_text\":\"Full-time pastry chef for a busy bakery.\"}</input>\n  <output>{\"employer_type\":\"direct_employer\",\"score\":4,\"reason\":\"A direct employer with an old open pastry role that matches the seller's catering staff offer.\",\"matched_profiles\":[\"B900\"]}</output>\n</example>\nThe example only shows the shape of an answer: never reuse its content.`;\nreturn $input.all().map(it => { const l = it.json; return { json: { lead: l, request: { model: 'z-ai-glm-5-3-flash', temperature: 0, max_tokens: 3000, reasoning_effort: 'low',\n  messages: [{ role: 'system', content: systemFor(benchFor(l)) }, { role: 'user', content: JSON.stringify({ company: l.company, open_roles: l.job_title, location: l.location, days_open: l.days_ago, role_text: String(l.description || '').slice(0, 1500), job_type: l.engagement || 'not stated' }) }],\n  response_format: { type: 'json_schema', json_schema: { name: 'vacancy_fit', strict: true, schema } } } } }; });"
+      }
+    },
+    {
+      "id": "0b5b6ca8-4bd0-557b-9907-c3421012338d",
+      "name": "Score Vacancy Fit (Venice)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "position": [
+        3568,
+        832
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.venice.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.request) }}",
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "name": "Venice API (OpenAI-compatible)"
+        }
+      }
+    },
+    {
+      "id": "c8c69ad1-57d8-5ea8-a392-12300d874b77",
+      "name": "Read Score Answer",
+      "notesInFlow": true,
+      "notes": "Fails when the answer is cut off or not valid JSON.",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3824,
+        832
+      ],
+      "parameters": {
+        "jsCode": "const req = $('Build Score Request').all();\nconst out = [];\n$input.all().forEach((it, i) => {\n  const r = it.json;\n  const ch = r.choices && r.choices[0];\n  if (!ch || ch.finish_reason !== 'stop' || !ch.message || !ch.message.content) {\n    throw new Error('Score answer cut off or empty (finish_reason: ' + (ch && ch.finish_reason) + ')');\n  }\n  let o;\n  try { o = JSON.parse(ch.message.content); } catch (e) { throw new Error('Score answer is not valid JSON'); }\n  out.push({ json: Object.assign({}, req[i].json.lead, { answer: o }) });\n});\nreturn out;"
+      }
+    },
+    {
+      "id": "cac2d3a3-c10f-5c42-856a-fb120c34d382",
+      "name": "Keep Top Fits Within Daily Cap",
+      "notesInFlow": true,
+      "notes": "Keeps score at or above the minimum, drops agencies, best first, up to the daily cap.",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4080,
+        832
+      ],
+      "parameters": {
+        "jsCode": "const S = $('Build Settings Object').first().json;\nconst bad = ['staffing_agency', 'job_board'];\nlet items = $input.all().map(i => i.json).filter(l => {\n  const a = l.answer;\n  if (!a) return false;\n  if (S.skip_recruiters && bad.includes(a.employer_type)) return false;\n  return a.score >= S.min_score;\n});\nitems.sort((a, b) => (b.answer.score - a.answer.score) || (b.days_ago - a.days_ago));\nitems = items.slice(0, S.daily_cap);\nconst stamp = Date.now().toString(36);\nreturn items.map((l, i) => ({ json: { lead_id: 'L' + stamp + i, company: l.company, domain: l.domain, job_title: l.job_title, job_posted_date: l.job_posted_date, job_description: l.description,\n  score: l.answer.score, score_reason: l.answer.reason, matched_profiles: l.answer.matched_profiles || [], contact_name: l.contact_name, contact_title: l.contact_title, contact_email: l.contact_email, days_ago: l.days_ago, location: l.location, engagement: l.engagement || '' } }));"
+      }
+    },
+    {
+      "id": "12e8d2e1-ccbd-55e7-a725-85289c552f54",
+      "name": "Loop Over Leads",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        4480,
+        832
+      ],
+      "parameters": {
+        "options": {}
+      }
+    },
+    {
+      "id": "c8ab90d8-ec28-5ee9-8c1e-3d982f235568",
+      "name": "Has Website And Contact?",
+      "notesInFlow": true,
+      "notes": "Yes (sample data): skip Hunter. No (live): look them up.",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        1712
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ !!$json.contact_email && !!$json.domain }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "a3c2141d-c17e-537e-aa8a-5f7350342dd1",
+      "name": "Find Company Website (Hunter)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        1232,
+        1872
+      ],
+      "parameters": {
+        "url": "https://api.hunter.io/v2/domain-finder",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "hunterApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "company",
+              "value": "={{ $json.company }}"
+            },
+            {
+              "name": "limit",
+              "value": "5"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "hunterApi": {
+          "name": "Hunter account"
+        }
+      }
+    },
+    {
+      "id": "e54109b7-800f-53d7-81d9-62f970210e76",
+      "name": "Pick Exact Website Match",
+      "notesInFlow": true,
+      "notes": "Keeps only an exact company-name match. Rejects job boards and opted-out domains.",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1488,
+        1872
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const lead = $('Take Lead From Call').first().json;\nconst norm = (s) => String(s || '').toLowerCase().replace(/\\b(inc|ltd|llc|corp|co|limited|incorporated|company)\\b\\.?/g, '').replace(/[^a-z0-9]/g, '');\nconst boards = /(indeed|linkedin|glassdoor|ziprecruiter|jooble|monster|workopolis|jobbank|facebook|kijiji|craigslist|careerbuilder|simplyhired|talent\\.com|adzuna)/i;\nconst supp = $('When Called By Loop Over Leads').first().json.suppression;\nconst sDomains = new Set(supp.map(r => String(r.domain || '').toLowerCase()).filter(Boolean));\nconst cands = ($json.data || []).filter(c => c && c.domain && !boards.test(c.domain));\nconst exact = cands.filter(c => norm(c.company_name) === norm(lead.company)).sort((a, b) => (b.email_count || 0) - (a.email_count || 0));\nconst pick = exact[0];\nconst dom = pick && !sDomains.has(String(pick.domain).toLowerCase()) ? pick.domain : '';\nreturn { json: Object.assign({}, lead, { domain: dom }) };"
+      }
+    },
+    {
+      "id": "70e6d8b9-7c59-57e8-9d47-8765000cd12c",
+      "name": "Website Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1744,
+        1872
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ !!$json.domain }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "7c9a1d93-93ec-50d1-a384-158ff929f613",
+      "name": "Find Hiring Contacts",
+      "type": "n8n-nodes-base.hunter",
+      "typeVersion": 1,
+      "alwaysOutputData": true,
+      "position": [
+        2000,
+        1872
+      ],
+      "parameters": {
+        "domain": "={{ $json.domain }}",
+        "limit": 10,
+        "filters": {}
+      },
+      "credentials": {
+        "hunterApi": {
+          "name": "Hunter account"
+        }
+      }
+    },
+    {
+      "id": "b26914eb-628a-56a9-82d2-ba8e6e4749ab",
+      "name": "Choose Best Verified Contact",
+      "notesInFlow": true,
+      "notes": "Keeps a verified email with a hiring title. Highest confidence first.",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2272,
+        1872
+      ],
+      "parameters": {
+        "jsCode": "const lead = $('Pick Exact Website Match').first().json;\nconst titleRx = /(owner|president|founder|ceo|operations|human resources|\\bhr\\b|hiring|general manager|recruit|office manager|talent|people|superintendent|plant manager|director)/i;\nconst emails = $input.all().map(i => i.json).filter(e => e.value || e.email);\nconst ok = emails.map(e => ({ email: e.value || e.email, first: e.first_name || '', last: e.last_name || '', title: e.position || '', status: e.verification && e.verification.status, conf: e.confidence || 0 }))\n  .filter(e => e.email && e.status === 'valid' && titleRx.test(e.title));\nok.sort((a, b) => b.conf - a.conf);\nconst best = ok[0];\nreturn [{ json: Object.assign({}, lead, best ? { contact_name: (best.first + ' ' + best.last).trim(), contact_title: best.title, contact_email: best.email } : { contact_name: '', contact_title: '', contact_email: '' }) }];"
+      }
+    },
+    {
+      "id": "da74eea5-0fb4-5ba6-93ae-7b52b04a3a0f",
+      "name": "Contact Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2528,
+        1872
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ !!$json.contact_email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "7d27840e-0532-5674-8983-b63dfaad3005",
+      "name": "Save Lead Without Website",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1744,
+        2048
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "lead_id": "={{ $json.lead_id }}",
+            "company": "={{ $json.company }}",
+            "domain": "={{ $json.domain }}",
+            "job_title": "={{ $json.job_title }}",
+            "job_posted_date": "={{ $json.job_posted_date }}",
+            "job_description": "={{ $json.job_description }}",
+            "score": "={{ $json.score }}",
+            "score_reason": "={{ $json.score_reason }}",
+            "status": "no_domain"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "lead_id",
+              "displayName": "lead_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "domain",
+              "displayName": "domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "job_title",
+              "displayName": "job_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "job_posted_date",
+              "displayName": "job_posted_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "job_description",
+              "displayName": "job_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score_reason",
+              "displayName": "score_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "e05b627d-b8d3-5b92-b791-cfd515825005",
+      "name": "Save Lead Without Contact",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        2528,
+        2048
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "lead_id": "={{ $json.lead_id }}",
+            "company": "={{ $json.company }}",
+            "domain": "={{ $json.domain }}",
+            "job_title": "={{ $json.job_title }}",
+            "job_posted_date": "={{ $json.job_posted_date }}",
+            "job_description": "={{ $json.job_description }}",
+            "score": "={{ $json.score }}",
+            "score_reason": "={{ $json.score_reason }}",
+            "status": "no_contact"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "lead_id",
+              "displayName": "lead_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "domain",
+              "displayName": "domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "job_title",
+              "displayName": "job_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "job_posted_date",
+              "displayName": "job_posted_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "job_description",
+              "displayName": "job_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score_reason",
+              "displayName": "score_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "92d325c5-209c-5005-84bd-3e9eeae9a8c0",
+      "name": "Build Draft Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2928,
+        1712
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const S = $('When Called By Loop Over Leads').first().json.settings;\nconst bench = $('When Called By Loop Over Leads').first().json.bench.filter(r => r.profile_id);\nconst lead = $json;\nconst matched = bench.filter(b => (lead.matched_profiles || []).includes(b.profile_id));\nconst first = String(lead.contact_name || '').split(' ')[0] || '';\nconst schema = { type: 'object', additionalProperties: false, required: ['subject', 'body'], properties: { subject: { type: 'string' }, body: { type: 'string' } } };\nconst system = `<role>\nYou write one short cold email from a seller to a hiring contact at a company that has an open job.\n</role>\n<seller>\nSender name: ${S.sender_name}\nCompany: ${S.sender_company}\nWhat we sell: ${S.what_we_sell}\nTone: ${S.tone}\n</seller>\n<rules>\n1. 90 to 120 words. Plain text. No markdown. No emojis.\n2. Name the specific open role and the company in the first two lines.\n3. Use only the facts given. Never invent names, numbers, results or claims.\n4. If matched candidates are given, say how many match and when they can start, using only the given data. Never give personal details. If none are given, offer to send profiles and do not claim that any exist.\n5. End with one question that is easy to answer.\n6. Sign with the sender name only. A footer is added later: do not write an address or an opt-out line.\n7. Greet with the contact first name. If it is empty, write \"Hello\".\n</rules>\n<example>\n  <input>{\"company\":\"Dough Brothers Bakery\",\"open_roles\":\"Pastry Chef\",\"location\":\"Leeds\",\"days_open\":20,\"contact_first_name\":\"Sam\",\"matched_candidates\":[{\"trade\":\"Pastry chef\",\"region\":\"Leeds\",\"available\":\"1 week\"}]}</input>\n  <output>{\"subject\":\"Your pastry chef opening\",\"body\":\"Hi Sam,\\n\\nI saw Dough Brothers Bakery has had a pastry chef role open for about 20 days. We have one pastry chef in Leeds who can start in a week.\\n\\nWould you like me to send a short profile?\\n\\nAlex\"}</output>\n</example>\nThe example only shows the shape of an answer: never reuse its content.`;\nconst user = JSON.stringify({ company: lead.company, open_roles: lead.job_title, location: lead.location, days_open: lead.days_ago, role_text: String(lead.job_description || '').slice(0, 1500), job_type: lead.engagement || 'not stated', contact_first_name: first, contact_title: lead.contact_title,\n  matched_candidates: matched.map(m => ({ trade: m.trade, certifications: m.certifications, region: m.region, available: m.availability, engagement: m.engagement || 'contract or permanent' })) });\nreturn { json: { lead, request: { model: 'z-ai-glm-5-3-flash', temperature: 0.3, max_tokens: 3000, reasoning_effort: 'low',\n  messages: [{ role: 'system', content: system }, { role: 'user', content: user }],\n  response_format: { type: 'json_schema', json_schema: { name: 'email_draft', strict: true, schema } } } } };"
+      }
+    },
+    {
+      "id": "83ef91a8-665b-53e8-b265-4e657164bf1c",
+      "name": "Write Outreach Email (Venice)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "position": [
+        3184,
+        1712
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.venice.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.request) }}",
+        "options": {
+          "timeout": 90000
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "name": "Venice API (OpenAI-compatible)"
+        }
+      }
+    },
+    {
+      "id": "01c4d9b1-0a48-556d-b9d2-a5c9e581938c",
+      "name": "Read Email Draft",
+      "notesInFlow": true,
+      "notes": "Fails when the answer is cut off or not valid JSON.",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3440,
+        1712
+      ],
+      "parameters": {
+        "jsCode": "const req = $('Build Draft Request').all();\nconst out = [];\n$input.all().forEach((it, i) => {\n  const r = it.json;\n  const ch = r.choices && r.choices[0];\n  if (!ch || ch.finish_reason !== 'stop' || !ch.message || !ch.message.content) {\n    throw new Error('Email draft answer cut off or empty (finish_reason: ' + (ch && ch.finish_reason) + ')');\n  }\n  let o;\n  try { o = JSON.parse(ch.message.content); } catch (e) { throw new Error('Email draft answer is not valid JSON'); }\n  out.push({ json: Object.assign({}, req[i].json.lead, { answer: o }) });\n});\nreturn out;"
+      }
+    },
+    {
+      "id": "e0fa273a-5612-5dbb-97bb-7cc6dab3ce33",
+      "name": "Add Footer And Check Compliance",
+      "notesInFlow": true,
+      "notes": "Adds the footer. Stops with an error if sender details are placeholders. Flags suppressed contacts.",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3712,
+        1712
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const S = $('When Called By Loop Over Leads').first().json.settings;\nconst l = $json;\nconst a = l.answer;\nif (!S.sender_name || /YOUR NAME/i.test(S.sender_name) || !S.postal_address || /REPLACE/i.test(S.postal_address)) {\n  throw new Error('Sender details missing: fill sender_name and postal_address in the Offer tab');\n}\nif (/REPLACE_WITH/i.test(l.contact_email)) {\n  throw new Error('Sample contact emails still hold REPLACE_WITH_YOUR_TEST_EMAIL: replace it with your own address');\n}\nconst supp = $('When Called By Loop Over Leads').first().json.suppression;\nconst email = String(l.contact_email).toLowerCase();\nconst dom = String(l.domain || '').toLowerCase();\nconst blocked = supp.some(r => (r.email && String(r.email).toLowerCase() === email) || (r.domain && dom && String(r.domain).toLowerCase() === dom));\nconst footer = '\\n\\n--\\n' + S.sender_name + '\\n' + S.sender_company + '\\n' + S.postal_address + '\\nReply STOP and I will not write again.';\nconst out = Object.assign({}, l);\ndelete out.answer;\nreturn { json: Object.assign(out, { email_subject: a.subject, email_body: String(a.body).trim() + footer, allowed: !blocked }) };"
+      }
+    },
+    {
+      "id": "632c494a-ce21-55ed-a877-59dbe997ff71",
+      "name": "Contact Allowed?",
+      "notesInFlow": true,
+      "notes": "Yes: save the lead. No (on the Suppression tab): skip it.",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3968,
+        1712
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.allowed }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c8253e4a-7464-548e-907e-85c2b8688417",
+      "name": "Save Draft As New Lead",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        4224,
+        1712
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "lead_id": "={{ $json.lead_id }}",
+            "company": "={{ $json.company }}",
+            "domain": "={{ $json.domain }}",
+            "job_title": "={{ $json.job_title }}",
+            "job_posted_date": "={{ $json.job_posted_date }}",
+            "job_description": "={{ $json.job_description }}",
+            "score": "={{ $json.score }}",
+            "score_reason": "={{ $json.score_reason }}",
+            "contact_name": "={{ $json.contact_name }}",
+            "contact_title": "={{ $json.contact_title }}",
+            "contact_email": "={{ $json.contact_email }}",
+            "email_subject": "={{ $json.email_subject }}",
+            "email_body": "={{ $json.email_body }}",
+            "status": "new"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "lead_id",
+              "displayName": "lead_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "domain",
+              "displayName": "domain",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "job_title",
+              "displayName": "job_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "job_posted_date",
+              "displayName": "job_posted_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "job_description",
+              "displayName": "job_description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score_reason",
+              "displayName": "score_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contact_name",
+              "displayName": "contact_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contact_title",
+              "displayName": "contact_title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "contact_email",
+              "displayName": "contact_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_subject",
+              "displayName": "email_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_body",
+              "displayName": "email_body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "32c0ce90-30fd-55cd-a871-637413389937",
+      "name": "Needs Approval?",
+      "notesInFlow": true,
+      "notes": "Approval is needed when approval_mode is on or the score is below 5.",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4624,
+        1712
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('When Called By Loop Over Leads').first().json.settings.approval_mode !== 'off' || $('Add Footer And Check Compliance').item.json.score < 5 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "7605e8f1-e62e-525d-bc87-044b0b714f51",
+      "name": "Mark Lead Ready",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        5840,
+        1904
+      ],
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "lead_id": "={{ $('Add Footer And Check Compliance').first().json.lead_id }}",
+            "status": "ready"
+          },
+          "matchingColumns": [
+            "lead_id"
+          ],
+          "schema": [
+            {
+              "id": "lead_id",
+              "displayName": "lead_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "d27d67d6-37d1-544d-932d-d1e14c429d7c",
+      "name": "Mark Lead Rejected",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        5840,
+        1536
+      ],
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "lead_id": "={{ $('Add Footer And Check Compliance').first().json.lead_id }}",
+            "status": "rejected"
+          },
+          "matchingColumns": [
+            "lead_id"
+          ],
+          "schema": [
+            {
+              "id": "lead_id",
+              "displayName": "lead_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "olw1ProcessCall",
+      "name": "Process One Lead (via this workflow)",
+      "notesInFlow": true,
+      "notes": "One lead per call; block below",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "alwaysOutputData": true,
+      "position": [
+        4752,
+        832
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $workflow.id }}"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "lead": "={{ $json }}",
+            "settings": "={{ $('Build Settings Object').first().json }}",
+            "bench": "={{ $('Read Bench').all().map(i => i.json) }}",
+            "suppression": "={{ $('Read Suppression List').all().map(i => i.json) }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "lead",
+              "displayName": "lead",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            },
+            {
+              "id": "settings",
+              "displayName": "settings",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object",
+              "removed": false
+            },
+            {
+              "id": "bench",
+              "displayName": "bench",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array",
+              "removed": false
+            },
+            {
+              "id": "suppression",
+              "displayName": "suppression",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "olw1BlockTrigger",
+      "name": "When Called By Loop Over Leads",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        48,
+        1712
+      ],
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "lead",
+              "type": "object"
+            },
+            {
+              "name": "settings",
+              "type": "object"
+            },
+            {
+              "name": "bench",
+              "type": "array"
+            },
+            {
+              "name": "suppression",
+              "type": "array"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "olw1TakeLead",
+      "name": "Take Lead From Call",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        304,
+        1712
+      ],
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={{ $json.lead }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "olw1NoteLoop",
+      "name": "Note Draft Each Lead",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4448,
+        432
+      ],
+      "parameters": {
+        "content": "## Draft Each Lead\n\nTriggered by: runs inline after \"Clean And Score Vacancies\".\n\nWhat it does, step by step:\n1. Takes one lead at a time.\n2. Sends it to the block below (\"Process One Lead\") with the settings, the Bench and the Suppression list.\n3. Waits until that lead is finished, including the Telegram approval. Then takes the next lead.",
+        "height": 630,
+        "width": 520,
+        "color": 5
+      }
+    },
+    {
+      "id": "olw1NoteBlock",
+      "name": "Note Process One Lead",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        1312
+      ],
+      "parameters": {
+        "content": "## Process One Lead\n\nTriggered by: called only by the loop above (\"Process One Lead (via this workflow)\"), once per lead.\n\nWhat it does, step by step:\n1. Receives the lead, the settings, the Bench and the Suppression list.\n2. Takes the lead out of the call data.\n3. The sections to the right run for this one lead. Every branch simply ends; the loop above then takes the next lead.",
+        "height": 970,
+        "width": 600,
+        "color": 5
+      }
+    },
+    {
+      "id": "85648903-e4bd-499c-89b0-26c10ebbd243",
+      "name": "Send Draft For Review",
+      "webhookId": "3f1160f1-146c-41db-9e8f-20ca28fc16f8",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        4864,
+        1712
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "={{ ('New lead: ' + $('Add Footer And Check Compliance').first().json.company + ' | ' + $('Add Footer And Check Compliance').first().json.job_title + '\\n' + 'Fit ' + $('Add Footer And Check Compliance').first().json.score + '/5: ' + $('Add Footer And Check Compliance').first().json.score_reason + '\\n' + 'To: ' + $('Add Footer And Check Compliance').first().json.contact_name + ' (' + $('Add Footer And Check Compliance').first().json.contact_title + ') <' + $('Add Footer And Check Compliance').first().json.contact_email + '>\\n\\n' + 'Subject: ' + $('Add Footer And Check Compliance').first().json.email_subject + '\\n\\n' + $('Add Footer And Check Compliance').first().json.email_body).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') }}",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Approve",
+                    "additionalFields": {
+                      "url": "={{ $execution.resumeUrl + ($execution.resumeUrl.includes('?') ? '&' : '?') + 'action=approve' }}"
+                    }
+                  },
+                  {
+                    "text": "Reject",
+                    "additionalFields": {
+                      "url": "={{ $execution.resumeUrl + ($execution.resumeUrl.includes('?') ? '&' : '?') + 'action=reject' }}"
+                    }
+                  },
+                  {
+                    "text": "Edit",
+                    "additionalFields": {
+                      "url": "={{ $execution.resumeUrl + ($execution.resumeUrl.includes('?') ? '&' : '?') + 'action=edit' }}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {
+          "parse_mode": "HTML",
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram (your approvals bot)"
+        }
+      }
+    },
+    {
+      "id": "1f484875-10b5-40b7-8ff9-4e2f3eb1390d",
+      "name": "Wait For Review Choice",
+      "webhookId": "f1d2f9fa-db05-45c6-bb1a-90414cfc498d",
+      "notes": "Waits up to 24 hours for one of the three buttons.",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        5104,
+        1712
+      ],
+      "parameters": {
+        "resume": "webhook",
+        "httpMethod": "GET",
+        "limitWaitTime": true,
+        "limitType": "afterTimeInterval",
+        "resumeAmount": 24,
+        "resumeUnit": "hours",
+        "options": {
+          "ignoreBots": true
+        },
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "id": "6bc48e3a-ab39-4909-a65c-d7fff249388d",
+      "name": "Route Review Choice",
+      "notes": "Reject: rejected. Edit: form. Approve: ready. No answer in 24 hours: lead stays new.",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        5584,
+        1712
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "r1",
+                    "leftValue": "={{ $json.query && $json.query.action === 'reject' }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Reject"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "r2",
+                    "leftValue": "={{ $json.query && $json.query.action === 'edit' }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Edit"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "r3",
+                    "leftValue": "={{ $json.query && $json.query.action === 'approve' }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Approve"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "08692523-c814-4c59-b704-290f6ea64bcd",
+      "name": "Ask For Edited Draft",
+      "webhookId": "1374b215-4f88-402b-a443-530522d65d13",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        5840,
+        1712
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendAndWait",
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "message": "={{ 'Edit the draft for ' + $('Add Footer And Check Compliance').first().json.company + ': open the form, change the text, then press Save and approve. Keep the footer.' }}",
+        "responseType": "customForm",
+        "defineForm": "fields",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Subject",
+              "fieldType": "text",
+              "requiredField": true,
+              "defaultValue": "={{ $('Add Footer And Check Compliance').first().json.email_subject }}"
+            },
+            {
+              "fieldLabel": "Text",
+              "fieldType": "textarea",
+              "requiredField": true,
+              "defaultValue": "={{ $('Add Footer And Check Compliance').first().json.email_body }}"
+            }
+          ]
+        },
+        "options": {
+          "messageButtonLabel": "Edit draft",
+          "responseFormTitle": "Edit the email",
+          "responseFormButtonLabel": "Save and approve",
+          "limitWaitTime": {
+            "values": {
+              "limitType": "afterTimeInterval",
+              "resumeAmount": 24,
+              "resumeUnit": "hours"
+            }
+          },
+          "responseFormCustomCss": "#submitted-form { text-align: center; }\n#submitted-header { font-size: 0; }\n#submitted-header::before { content: '✅'; display: block; font-size: 72px; line-height: 1; margin-bottom: 20px; }\n#submitted-header::after { content: 'Approved'; display: block; font-size: 34px; }\n#submitted-content { font-size: 0; }\n#submitted-content::after { content: 'Your edited email is saved as ready. It goes out with the next daily send.'; font-size: 19px; color: #5b6475; }\n#submitted-form .n8n-link { display: none; }"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram (your approvals bot)"
+        }
+      }
+    },
+    {
+      "id": "f56f8e9f-0799-4e35-9bfe-b8d471423711",
+      "name": "Edit Saved?",
+      "notes": "Yes: save the edited email as ready. No answer in 24 hours: lead stays new.",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6080,
+        1712
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "e1",
+              "leftValue": "={{ !!($json.data && $json.data.Text) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "58097610-77e0-413a-af60-ecfa0a5bb5c7",
+      "name": "Mark Lead Ready With Edits",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        6320,
+        1712
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SPREADSHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "lead_id": "={{ $('Add Footer And Check Compliance').first().json.lead_id }}",
+            "status": "ready",
+            "email_subject": "={{ $json.data.Subject }}",
+            "email_body": "={{ $json.data.Text }}"
+          },
+          "matchingColumns": [
+            "lead_id"
+          ],
+          "schema": [
+            {
+              "id": "lead_id",
+              "displayName": "lead_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_subject",
+              "displayName": "email_subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email_body",
+              "displayName": "email_body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "cellFormat": "RAW"
+        }
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "31be765e-4dad-40e6-8e4a-1af2bb3e47de",
+      "name": "Show Confirmation Page",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "onError": "continueRegularOutput",
+      "position": [
+        5344,
+        1712
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ '<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Vacancy Outreach</title></head><body style=\"margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;background:#f6f7f9;color:#1d2433;display:flex;align-items:center;justify-content:center;min-height:100vh;text-align:center\"><div style=\"padding:32px\"><div style=\"font-size:72px;line-height:1\">' + ({ approve: '✅', reject: '❌', edit: '✏️' }[($json.query || {}).action] || '✔️') + '</div><h1 style=\"font-size:34px;margin:20px 0 8px\">' + ({ approve: 'Approved', reject: 'Rejected', edit: 'Opening the editor…' }[($json.query || {}).action] || 'Done') + '</h1><p style=\"font-size:19px;color:#5b6475;max-width:420px;margin:0 auto\">' + ({ approve: 'The email is saved as ready. It goes out with the next daily send.', reject: 'This lead will not be contacted.', edit: 'Open the Edit draft message in Telegram to change the email.' }[($json.query || {}).action] || 'You can close this page.') + '</p></div></body></html>' }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Start Daily Search": {
+      "main": [
+        [
+          {
+            "node": "Read Offer Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Offer Settings": {
+      "main": [
+        [
+          {
+            "node": "Build Settings Object",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Settings Object": {
+      "main": [
+        [
+          {
+            "node": "Use Live Search?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use Live Search?": {
+      "main": [
+        [
+          {
+            "node": "Search Live Vacancies (SerpApi)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Sample Vacancies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Live Vacancies (SerpApi)": {
+      "main": [
+        [
+          {
+            "node": "Split Live Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Live Jobs": {
+      "main": [
+        [
+          {
+            "node": "Normalise Vacancies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Sample Vacancies": {
+      "main": [
+        [
+          {
+            "node": "Normalise Vacancies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Drop Old Posts": {
+      "main": [
+        [
+          {
+            "node": "Read Existing Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Existing Leads": {
+      "main": [
+        [
+          {
+            "node": "Read Suppression List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Suppression List": {
+      "main": [
+        [
+          {
+            "node": "Read Bench",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Bench": {
+      "main": [
+        [
+          {
+            "node": "Drop Known Companies And Agencies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Drop Known Companies And Agencies": {
+      "main": [
+        [
+          {
+            "node": "Build Score Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Score Request": {
+      "main": [
+        [
+          {
+            "node": "Score Vacancy Fit (Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score Vacancy Fit (Venice)": {
+      "main": [
+        [
+          {
+            "node": "Read Score Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Score Answer": {
+      "main": [
+        [
+          {
+            "node": "Keep Top Fits Within Daily Cap",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalise Vacancies": {
+      "main": [
+        [
+          {
+            "node": "Drop Old Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep Top Fits Within Daily Cap": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Website And Contact?": {
+      "main": [
+        [
+          {
+            "node": "Build Draft Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Company Website (Hunter)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Company Website (Hunter)": {
+      "main": [
+        [
+          {
+            "node": "Pick Exact Website Match",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Exact Website Match": {
+      "main": [
+        [
+          {
+            "node": "Website Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Website Found?": {
+      "main": [
+        [
+          {
+            "node": "Find Hiring Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save Lead Without Website",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Hiring Contacts": {
+      "main": [
+        [
+          {
+            "node": "Choose Best Verified Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Choose Best Verified Contact": {
+      "main": [
+        [
+          {
+            "node": "Contact Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Found?": {
+      "main": [
+        [
+          {
+            "node": "Build Draft Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Save Lead Without Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Draft Request": {
+      "main": [
+        [
+          {
+            "node": "Write Outreach Email (Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Outreach Email (Venice)": {
+      "main": [
+        [
+          {
+            "node": "Read Email Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Email Draft": {
+      "main": [
+        [
+          {
+            "node": "Add Footer And Check Compliance",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Footer And Check Compliance": {
+      "main": [
+        [
+          {
+            "node": "Contact Allowed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Contact Allowed?": {
+      "main": [
+        [
+          {
+            "node": "Save Draft As New Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Draft As New Lead": {
+      "main": [
+        [
+          {
+            "node": "Needs Approval?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs Approval?": {
+      "main": [
+        [
+          {
+            "node": "Send Draft For Review",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Lead Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Leads": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Process One Lead (via this workflow)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process One Lead (via this workflow)": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Called By Loop Over Leads": {
+      "main": [
+        [
+          {
+            "node": "Take Lead From Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Take Lead From Call": {
+      "main": [
+        [
+          {
+            "node": "Has Website And Contact?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Draft For Review": {
+      "main": [
+        [
+          {
+            "node": "Wait For Review Choice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Review Choice": {
+      "main": [
+        [
+          {
+            "node": "Mark Lead Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask For Edited Draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Lead Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask For Edited Draft": {
+      "main": [
+        [
+          {
+            "node": "Edit Saved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Saved?": {
+      "main": [
+        [
+          {
+            "node": "Mark Lead Ready With Edits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait For Review Choice": {
+      "main": [
+        [
+          {
+            "node": "Show Confirmation Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Show Confirmation Page": {
+      "main": [
+        [
+          {
+            "node": "Route Review Choice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "tags": [
+    {
+      "name": "scheduled"
+    },
+    {
+      "name": "sub-workflow"
+    },
+    {
+      "name": "demo"
+    }
+  ],
+  "active": false
+}
