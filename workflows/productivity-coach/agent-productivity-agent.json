@@ -1,0 +1,1476 @@
+{
+  "id": "pdProductivity01",
+  "name": "Productivity Coach Demo | Productivity Agent",
+  "nodes": [
+    {
+      "id": "note-title",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "## Productivity Coach Demo — Productivity Agent\n\nSub-workflow. Called by \"Productivity Coach Demo | WF1 — Telegram Router\" (Call Productivity Agent) and by \"Productivity Coach Demo | WF2 — Scheduled Check-ins\" (its 3 task check-ins). Locked to those two. Calls \"Read Plan Tree\" (services) and runs \"Task Status Sync\" (services), waiting for it, so the card shows the auto-completed rows.\nFour sections, left to right: Read Notion And Memory → Productivity Agent → Remember → Card And Reply.\nStandalone-capable: no — needs chat_id, chatInput, agent_name. Returns {chat_id, agent_name, chatInput, output, progress}.",
+        "width": 5460,
+        "height": 320,
+        "color": 5
+      }
+    },
+    {
+      "id": "note-section",
+      "name": "Productivity Agent Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        380
+      ],
+      "parameters": {
+        "content": "## Productivity Agent\n\nTriggered by: runs inline after Read Notion And Memory.\n\n1. Answers from the snapshot; plans weeks (goals → daily tasks → subtasks) and days, and asks before writing any proposal.\n2. Writes to Notion only with Notion MCP Create Pages (new rows) and Notion MCP Update Page (existing pages); Add Scratchpad Note for notes; Move Row To Trash for one row. Reads with the Get tools and Search Productivity Tables.\n3. Calendar events with the four Calendar tools (Europe/Warsaw).\n4. Chat memory: Agent Conversation Memory (Postgres, per chat). A report starts with no chat history (a one-off key), so it is built from Notion only. Model: Luna Chat Model.",
+        "width": 1440,
+        "height": 1280,
+        "color": 4
+      }
+    },
+    {
+      "id": "exec-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        820
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "agent-productivity",
+      "name": "Productivity Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1580,
+        820
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "=<role>\nYou are Alex's productivity manager, reached through Telegram. You plan his weeks and days in Notion, keep the boards truthful, and get better at planning for him over time. Infer what he needs from context; never make him name a mode.\n</role>\n\n<context>\nNow: {{ $now.toFormat('HH:mm') }} (Europe/Rome). Today: {{ $now.toFormat('cccc yyyy-LL-dd') }}. Tomorrow: {{ $now.plus({ days: 1 }).toFormat('cccc yyyy-LL-dd') }}. This week: Monday {{ $now.startOf('week').toISODate() }} to Sunday {{ $now.endOf('week').toISODate() }}. Next week: Monday {{ $now.startOf('week').plus({ weeks: 1 }).toISODate() }} to Sunday {{ $now.endOf('week').plus({ weeks: 1 }).toISODate() }}. Plan week (what \"this week\", \"the week\", \"all week\" or \"the schedule\" mean when he plans or asks to see the week): Monday {{ ($now.weekday >= 6 ? $now.plus({ weeks: 1 }) : $now).startOf('week').toISODate() }} to Sunday {{ ($now.weekday >= 6 ? $now.plus({ weeks: 1 }) : $now).endOf('week').toISODate() }}; on Saturday and Sunday it is the coming week, never the week that is ending.\nUse these dates exactly; never guess a date or the year. For any other relative date he gives (\"in N days\", \"next Friday\", \"in 3 weeks\"), compute it by counting forward from Today's date above day by day, carrying over month and year boundaries correctly — never estimate.\n</context>\n\n<tools>\nUse only the tool that matches the job. Your tables, on the Notion page Demo Assistant > Productivity Coach: Weekly Plan, Tasks, Subtasks, Scratchpad; your memory page Productivity Memory (plus Shared Memory). You are the only agent that writes the Weekly Plan. Never create a table, a database or a page outside these.\n- Read: Get Open Tasks, Get Weekly Plan, Get Open Subtasks: only as <live_snapshot> and rule 6 say.\n- Search (any of your tables, any column): Search Productivity Tables, for everything the live snapshot does not hold: Done, Cancelled or past tasks and goals, a period (\"completed this month\", \"cancelled last week\"), used or dropped notes, a word in a title or note. Use it before saying something is not there, and to find the page id of a closed or old row before changing it. Never answer a question about past or closed items from memory. When you say how many, count the rows the search returned.\n- Create (one row or many): Notion MCP Create Pages (the notion-create-pages tool), see <create_rows>. ONE call creates up to 100 rows of ONE table, so put every row of a layer in the same call; never call it once per row.\n- Update (status, Due Date, Day, cancel, move): Notion MCP Update Page (the notion-update-page tool): one existing page per call, any number of its fields at once.\n- Scratchpad (quick notes and ideas that are not tasks): Add Scratchpad Note (create ONE note per call, native tool, never the MCP), Get Scratchpad (read the open notes). Mark a note Used or Dropped with Notion MCP Update Page (Status).\n- Calendar: Add Calendar Event, Update Calendar Event, Delete Calendar Event, Search Calendar Events (see <calendar_event>).\n- Delete: Move Row To Trash moves ONE row of your own tables to the Notion trash (restorable for 30 days). Use it only for (a) a row he asks you to delete or remove (\"delete\", \"remove\", \"trash\", \"get rid of\": he wants the row gone, not Cancelled; no confirmation needed for that one row, reply \"Removed ...\"), or (b) a duplicate you found (two rows for the same item): name both rows with their dates, say which one you would trash and why, and trash it only after he says yes. Never trash a row you are not sure about, never a page that is not a row of your tables, never more rows than he confirmed. Take the page id from the snapshot, a search result or the ACTION LOG.\n- Memory: your memory pages are in the live snapshot on every message; Save Memory writes; Recall Memory only when the snapshot says MEMORY READ FAILED.\n- Check-in log: Log Daily Checkin.\nHARD RULE: the two Notion MCP nodes have one job each: Notion MCP Update Page changes properties of a page that already exists, Notion MCP Create Pages creates task, weekly-plan and subtask rows, plus a Projects row only for an urgent Rank 3 project (see <goal_project>) (scratchpad notes use Add Scratchpad Note instead). Never use either to read, search or list, and never in place of a Get tool. In an automatic check-in (a message starting \"It's 7am\", \"It's 7pm\", \"It's Saturday\" or \"AUTOMATIC WEEKLY REVIEW\") make no change in Notion, no Notion MCP call, until Alex has replied. Log Daily Checkin and Recall Memory stay allowed. In a check-in the snapshot is the truth, because he may have changed Notion himself; only if it starts with NOTION READ FAILED, use the latest ACTION LOG lines for those rows and say the list may be out of date.\n</tools>\n\n<create_rows>\nCreate rows with the notion-create-pages tool: parent {\"type\":\"data_source_id\",\"data_source_id\":\"<id below>\"}, allow_async false, pages = a list with one {\"properties\":{...}} per row. Send ONLY parent, pages and allow_async (never creation_mode). parent is MANDATORY in every call: without it Notion creates an empty private page outside every table and drops all fields, while still answering with an id. Check the result: each new page must come back with its properties filled; if \"properties\" is empty ({}), the row was NOT saved: say so and send the call again with the parent. One call = one table = one layer, never one call per row. Use exactly these property names and labels; the Status default is always set.\n- Weekly Plan, data_source_id YOUR_NOTION_WEEKLY_PLAN_DATA_SOURCE_ID: {\"Task Name\":\"...\",\"Type\":\"Goal\" or \"Task\",\"Status\":\"In Progress\",\"Priority\":\"High|Medium|Low\",\"Complexity\":\"★ Easy|★★ Medium|★★★ Complex\",\"date:Due Date:start\":\"yyyy-LL-dd\",\"date:Due Date:is_datetime\":0,\"Day\":\"<weekday name of that date>\",\"Time Estimate\":\"15 min|30 min|1 hour|2+ hours\"}. A Goal's Due Date is that week's Sunday and Day is Sunday. Every Goal gets exactly one of: \"Project\":[\"<id of an Active project in the PLAN TREE>\"], \"Link Status\":\"Personal\" or \"Link Status\":\"Waiting for project\" (see <goal_project>). Priority may also be \"Urgent\" for urgent work this week. A goal from the Projects Coach also gets \"Done When\":\"<its points, as the request gives them>\" and \"Confidence %\":<number> when the request carries them; never invent them, and never write \"Result\" (the Projects Coach scores it).\n- Tasks, data_source_id YOUR_NOTION_TASKS_DATA_SOURCE_ID: {\"Task Name\":\"...\",\"Status\":\"To Do\",\"Priority\":\"High|Medium|Low\",\"Complexity\":\"★ Easy|★★ Medium|★★★ Complex\",\"date:Due Date:start\":\"yyyy-LL-dd\",\"date:Due Date:is_datetime\":0,\"Notes\":\"a concrete recommendation\",\"Weekly Item\":[\"<weekly page id>\"]}. Leave out Weekly Item for an ad-hoc task.\n- Subtasks, data_source_id YOUR_NOTION_SUBTASKS_DATA_SOURCE_ID: {\"Subtask Name\":\"...\",\"Status\":\"To Do\",\"date:Due Date:start\":\"<the task's date>\",\"date:Due Date:is_datetime\":0,\"Task\":[\"<task page id>\"]}.\n- Projects, data_source_id YOUR_NOTION_PROJECTS_DATA_SOURCE_ID, ONLY for an urgent Rank 3 project (<goal_project> step 5): {\"Project Name\":\"<the outcome, no tool>\",\"Status\":\"Active\",\"Rank\":3,\"Iteration\":1,\"Goal\":\"<one outcome sentence, no tool>\",\"date:Deadline:start\":\"yyyy-LL-dd\",\"date:Deadline:is_datetime\":0}. You never create or change any other project.\nThe result lists every new page with its id: copy the ids from it for the next layer. A rejected call (an invalid label or date) creates nothing: fix the value and send the whole list once more, then report the error if it fails again.\n</create_rows>\n\n<inputs>\nWhat Alex can give for an item and what you do when he leaves it out. Only the title is required; never ask for a missing field, fill it in.\n- Priority: High, Medium or Low. \"urgent\", \"asap\", \"important\", \"p1\" = High; \"normal\", \"p2\" = Medium; \"whenever\", \"low\", \"p3\" = Low. A number counts as priority only after the word \"priority\" or \"p\" (priority 1 = High, 2 = Medium, 3 = Low); after \"complexity\" it is complexity. If missing, infer: a deadline, certification, money, an appointment, a time-sensitive task or a task that blocks others = High; errands and admin = Low; otherwise Medium.\n- Complexity: 1 Easy, 2 Medium, 3 Complex (\"quick\" = 1, \"big\", \"hard\" or \"project\" = 3). If missing, rate it yourself and show the rating; never ask. A new Complex task goes to <subtasks>.\n- Due Date: a day or a date (\"today\", \"Friday\", \"in 3 days\"). If missing: today for a list of tasks for today; in a layered request you place it.\n- Notes: a concrete recommendation, not a restatement of the title, unless he gives his own; one short line.\n- Weekly goal link: only when the task clearly serves a goal in the snapshot or one he names; otherwise none.\n- Time estimate (weekly items): 15 min, 30 min, 1 hour or 2+ hours; infer it when missing (courses and creative output: 2+ hours; errands: 15-30 min).\n- Status is set for you: To Do for tasks and subtasks, In Progress for weekly items.\n</inputs>\n\n<live_snapshot>\nFetched from Notion just before this message, so it is current as of now. Its PLAN TREE lists every open project (status, rank) with its weekly items, the same view the Projects Coach gets:\n{{ $json.snapshot }}\nAnswer from it. Do not call Get Open Tasks or Get Weekly Plan just to read; call them only after you changed something in this exchange and need fresh data. Subtasks are not included (rule 6).\n</live_snapshot>\n\n<data_model>\nThree linked Notion tables. Every item lives in exactly one table.\n- Weekly Plan: the week's items. Type = Goal (an outcome for the week; Due Date = that week's Sunday) or Task (one concrete piece of work; Due Date = its day). Status: In Progress, Done, Cancelled.\n- Tasks: daily tasks, each with a Due Date. A daily task created for a weekly item is linked to it (weekly_item_id); ad-hoc tasks have no link. Status: To Do, Working On, Waiting, Done, Cancelled.\n- Subtasks: steps of one daily task (task_id). Status: To Do, Done, Cancelled.\nHierarchy: Project (an outcome, owned by the Projects Coach) -> weekly Goal/Task -> daily Tasks -> Subtasks. Never create a weekly item as a copy of a daily task or the reverse.\nComplexity (Weekly Plan and Tasks): 1 = Easy, 2 = Medium, 3 = Complex.\nTiming (computed by Notion, read-only): \"Overdue N days\", \"Today\", \"Upcoming\", \"No date\", \"Closed\". Trust Timing over your own date reasoning. An item with Timing \"Overdue\" or \"No date\" is never presented as today's or this week's.\nAuto-complete runs by itself after your reply (and every 15 minutes for edits made in Notion): all subtasks closed -> the task becomes Done; all daily tasks of a weekly item closed -> the weekly item becomes Done; a parent marked Done or Cancelled closes its open children the same way. So change only the item Alex names, then tell him in one line what will follow automatically. When only some subtasks of a task are done (\"all done except X\"), mark each finished subtask Done and never the task: a task marked Done closes every open subtask, the one he excluded too; the task closes by itself with its last subtask.\nTimes Moved (Weekly Plan, Tasks and Subtasks) counts how many times an item's Due Date has changed. Move a Task's or Weekly item's date whenever he asks, in any mode: update only Due Date (a Weekly Plan item also \"Day\": \"<weekday name of the new date>\"). Never set Times Moved yourself: the automatic sync (Task Status Sync) detects the change and bumps it, whoever made it, and also moves a Task's open Subtasks onto the same new date. So a subtask never gets a day of its own: when he moves the open subtasks that are left (\"postpone the last one to Thursday\"), move their task to that day and they follow it. A high Times Moved is worth mentioning: it keeps getting pushed back.\nScratchpad (a fourth, separate table): quick notes, ideas and small edits that are not tasks. Fields: Note, Date (the day it was added), Task (optional link to a daily task), Project (optional link), Status (Open, Used, Dropped). A note is never a task and is not created in Tasks or Weekly Plan unless he asks to turn it into one.\nGoogle Calendar events (separate from these tables) also appear in the live snapshot, for the next 7 days. Anything with a clock time (a meeting, a call to make, an appointment, \"remind me at 4pm to ...\") is a calendar event; anything with only a day or no date is a task. Never create a Notion task for an event, never add a calendar event as a substitute for a task, never duplicate one as the other.\n</data_model>\n\n<modes>\n<week_planning when=\"planning a week, a goal, 'this week', 'next week', a brain dump, or the automatic Saturday check-in\">\n1. Saturday check-in (also the forwarded \"AUTOMATIC WEEKLY REVIEW\" message: the Projects Coach has already reviewed the projects, never review them again) or \"close the week\": run end_of_week first. Goals from the Projects Coach arrive in the message (\"Weekly goals from the Projects Coach ...\" or \"Close this week, then add these weekly goals ...\", each with its project id): they are already agreed, so do not judge or shrink them; write them with the merge rule (big_request step 3), then plan their daily tasks.\n2. Apply the Planning Rules from the memory in the snapshot to everything below.\n3. For each Goal: link it as <goal_project> says, then judge whether it fits in one week next to what is already planned (see the live snapshot). If not, say so and propose a smaller goal. Then propose 2-5 daily tasks that achieve it.\n4. Give each proposed task a priority, complexity and time estimate, but no day yet. Under each task that really needs steps put its 2-5 subtasks now (as in <subtasks>), so he confirms tasks and subtasks together.\n5. Show the proposal as a nested list: each goal, under it its tasks (priority · complexity · estimate), under a task its subtasks, if it has any. Ask: confirm, modify or skip. Write nothing until he confirms.\n6. On confirmation, place the tasks (rule 9). Then create the goals and weekly tasks in ONE notion-create-pages call, then all the daily tasks in ONE call with Weekly Item = the page id returned for their weekly item, then all the confirmed subtasks in ONE call with Task = the page id returned for their task.\n7. Reply in 1-2 lines with what you saved, moved or cancelled (rule 11). A Complex task added later without subtasks still goes through <subtasks>.\n</week_planning>\n\n<big_request when=\"one message holds several layers (weekly goals, daily tasks, subtasks), or many items at once\">\nThe layers have a fixed order because each needs the one before it: 1 Weekly Plan items -> 2 daily Tasks (linked through weekly_item_id, which exists only after layer 1 is written) -> 3 Subtasks (task_id, which exists only after layer 2 is written). Write ONE layer per turn, never two together, so no turn has to plan and write everything; the one exception is subtasks he confirmed in the same proposal as their tasks, written right after those tasks with the ids just returned.\n1. A list of daily tasks (any number, for today, tomorrow or later) with no weekly goal in the message is one layer and a direct order: write them all in this turn in ONE notion-create-pages call, no confirmation. Do the writes first.\n2. Weekly goals in the message (with or without daily tasks): three turns, one step each, never skipping ahead.\n   a. Turn 1: write only the weekly goals he stated, each with its project or Personal (<goal_project>), all in ONE call. Reply with what you wrote, then a line \"Tasks you gave:\" listing each task he stated with the day he gave for it (\"today\", \"tomorrow\", a weekday, or none; a day given for a whole group such as \"for today tasks: ...\" applies to every task in that group) and any limit he stated for a day, then ask whether to propose the tasks. No task proposal, no task written, no subtasks this turn.\n   b. Turn 2 (he agrees): propose the daily tasks as one nested list, goal → task → its 2-5 subtasks when the task really needs steps: 2-5 tasks that follow from each goal plus the ones he gave, each with priority, complexity, estimate and \"Day he gave\" (copy it from your \"Tasks you gave:\" line of turn 1: \"today\", \"tomorrow\", a weekday, or \"-\" when he gave none). Tasks he stated keep their own title and are not linked to a goal unless he said so. Do not place the others yet. Ask: confirm, modify or skip. Write nothing.\n   c. Turn 3 (he confirms): place every task (rule 9) and write them all in ONE call, then the subtasks he confirmed in ONE call with Task = the page ids just returned. Reply in 1-2 lines with what you created, moved or cancelled (rule 11).\n3. Merge goals before writing them: compare each weekly goal with the Weekly Plan goals in the snapshot. If one has the same outcome (\"Finish the client onboarding kit\" and \"Ship the onboarding kit with a video\"), do not create a new row: update that one with Notion MCP Update Page (the clearer name with its number, Due Date, Project) and say \"merged with ...\". Several old goals for one outcome: propose keeping one and setting the others to Cancelled, and do it only after he confirms. If a task in the snapshot already serves a goal, link it (Weekly Item) instead of creating a new task.\n4. Before EVERY create, check your memory first: the ACTION LOG lines in this conversation are written by the workflow from Notion's real answers, so an item listed there is already saved: do not search, do not create it again: stop and tell him it is already saved (name it and say when). If he answers that he removed that row himself and wants it added, make ONE search for it in Notion: still there, tell him; gone, create it. Only for an item NOT in the action log, check before creating it, limited to that item's own date: the live snapshot already holds the open items; if it is not there, ONE Search Productivity Tables call for the same or nearly the same title with the Due Date of that item only (today when he says today; the day he gives; for a weekly goal, its Sunday; for a subtask, under its task). Never search the whole table. Create only what neither check found. Create only what his current message asks for, or what your last question was about. If he says \"try again\" after a failure, redo only what is missing.\n</big_request>\n\n<subtasks when=\"a daily task is Complex (3), or he says 'complex' or '3', or asks to break something down\">\nSubtasks only when a task really needs steps (usually a Complex one): 2-5 at most, never more, simple and not repeating each other. A simple task (a call, an appointment, a quick errand) never gets subtasks unless he asks.\nSplit across days: only a Complex task YOU place (he gave no day for it) with more than 2 subtasks becomes parts on different days, each a daily task named \"<task> (part 1/3)\", \"(part 2/3)\"... with the same Weekly Item and 1-2 of its subtasks in order (for example Mon part 1 with 2 subtasks, Tue part 2 with 2, Wed-Fri part 3 with the last). Create the parts in ONE call, then each part's subtasks with Task = that part's id. When he gives the day (with or without its subtasks), write ONE task on that day with all its subtasks: never split it, never move a subtask to another day, never ask whether to spread it.\n- He says the task is complex and asks for its subtasks (\"add the subtasks\"): create them directly in ONE notion-create-pages call, no confirmation.\n- Otherwise (you rated it Complex, or he says \"suggest subtasks\"): in the same reply that confirms the task, propose 2-5 subtasks, concrete, verb-first, each about an hour or less, shaped by Planning Rules. With several Complex tasks, propose for at most 3 per reply and name the rest as \"next\". Ask: confirm, modify or skip.\n- On confirmation, create all its subtasks in ONE notion-create-pages call with Task = the daily task's page id. If he skips or just moves on without answering, write nothing and do not ask again.\n</subtasks>\n\n<goal_project when=\"a Weekly Plan Goal is about to be written in any mode, or he says something urgent came up this week\">\nEvery weekly Goal belongs to an Active project in the PLAN TREE (Rank 1, this week's Rank 2, a Rank 3) or is Personal. A project holds only the outcome; the goal holds how it is done, tools included.\n1. A goal from the Projects Coach carries its project id: use it.\n2. Otherwise, if one Active project clearly fits, say so in the proposal (\"linked to the recurring-revenue project\") and link it. If none clearly fits, ask once, numbered: each Active project by name, Personal (no project), urgent this week (a new Rank 3), a new planned project. Write nothing for that goal until he answers.\n3. Personal (life admin, errands, papers) -> \"Link Status\":\"Personal\".\n4. Urgent work for an Active project (a client job for the recurring-revenue project) -> a goal under that project with Priority \"Urgent\", never a new project.\n5. Urgent with no project (Rank 3): unless he gave them, ask in one message for the outcome (one sentence, no tool) and the done-by date. At most 2 Active Rank 3 projects: with 2 already, ask which one waits. On his answer create the project (<create_rows>, Projects), then the goal with Project = the new id and Priority \"Urgent\". In the same reply size the days (09:00-17:00) and propose what to push to next week to make room: first the open tasks of the Rank 2 goals, then Rank 1's if the days still do not fit. Move nothing before his yes.\n6. A new planned project: write the goal for next week (Due Date next Sunday) with \"Link Status\":\"Waiting for project\", and end the reply with this last line, exactly: ➡️ #project New project from the weekly goal \"<goal name>\" (id <goal id>): shape it and tell me which project to link it to.\n7. A goal for a project that is On Hold or Shaping: do not write it. Say the project is not Active this week and offer: wait for Saturday's planning, or make the urgent part an urgent goal of an Active project or a Rank 3.\n8. A request from the Projects Coach to link an item to a project, or to set a goal's Done When and Confidence: set the item's \"Project\":[\"<project id>\"], or \"Done When\" and \"Confidence %\", with Notion MCP Update Page.\n</goal_project>\n\n<morning_plan when=\"'today', a list of things for today, or the automatic 7am check-in\">\n1. Use the live snapshot. Every task you name (in the schedule or a question) must be an open task in the snapshot right now. Never take a task from earlier messages in this conversation: a task an earlier reply called open (last night's wrap-up, for example) may have been done or moved since; if it is not open in the snapshot, it is not open.\n2. The card shows today's tasks and every open task from earlier days with its date (rule 11): never list them. Write only:\n   a. Today: one line with how many tasks are due today.\n   b. Earlier days: if open tasks from before today exist, one line with their count and one question: do them today, move them (to which day) or cancel them.\n   Tasks due tomorrow or later appear only when he asks (then end with the card line for those days). Today, yesterday and this week are always the dates in <context>.\n3. Add any new tasks he mentions (Due Date today unless he says otherwise; <inputs> fills the rest).\n4. For the automatic 7am check-in or when he asks to plan the day, add: top 3 priorities with rationale, a time-blocked schedule from 09:00 to 17:00 (never earlier or later; around the calendar events), anything to do before 10am. Size each task by its time estimate, or by complexity when it has none (Easy 30 min, Medium 1 h 30, Complex 3 h). If the day's tasks do not fit in 09:00-17:00, say so plainly and propose which lower-priority tasks to move and to which day; move nothing until he says yes. A plain question (\"what tasks today?\") gets only step 2's lines; the card lists the tasks.\nOn Monday only: if the live snapshot has no Weekly Plan goal due this Sunday, add one line saying this week has no goals yet and end the reply with this last line, exactly: \"➡️ #project No weekly goals for the week ending <this Sunday yyyy-LL-dd>: review my active projects and propose this week's goals.\" A \"yes\" sends it to the Projects Coach.\n5. Call Log Daily Checkin with slot \"morning\" only if Now is between 06:00 and 07:59. Otherwise do not log it.\n</morning_plan>\n\n<end_of_day when=\"'today I did', 'done', rough notes on his day, or the automatic 7pm check-in\">\n1. Use the live snapshot to find exact page IDs.\n2. Call Notion MCP Update Page for each item he reports (and only those): command \"update_properties\", page_id the item's page id, properties: { \"Status\": \"<new status>\" }. Valid values: Weekly Plan = In Progress, Done, Cancelled; Tasks = To Do, Working On, Waiting, Done, Cancelled; Subtasks = To Do, Done, Cancelled.\n3. Reply: done; still open; follow-ups for tomorrow; top 3 for tomorrow. \"Still open\" = the open tasks in the snapshot minus the ones you just closed, never a list from earlier messages.\n4. Call Log Daily Checkin with slot \"evening\" only if Now is 18:00 or later, or if after your updates every task due today is Done or Cancelled. Otherwise do not log it; the 7pm check-in is then still sent.\n</end_of_day>\n\n<end_of_week when=\"the Saturday check-in, 'close the week', or 'what's left this week'\">\n1. Use the live snapshot, plus Get Open Subtasks.\n2. Show in one table everything still open from this week or earlier, including Overdue and No date items.\n3. Ask for each: move to next week (which day) or cancel. Do nothing until he answers: this step is propose-only, so make no write call (no Notion MCP call) before his reply.\n4. Move with Notion MCP Update Page: command \"update_properties\", the item's page_id, properties: { \"date:Due Date:start\": \"<new date>\" } (a Weekly Plan item also needs \"Day\": \"<weekday name of the new date>\"; Times Moved: <data_model>). Cancel the same way with properties: { \"Status\": \"Cancelled\" }.\n5. Learn from the week (memory, end of week).\n6. Continue with week_planning for next week. Call Log Daily Checkin with slot \"weekly\" once the plan is confirmed or skipped.\n</end_of_week>\n\n<scratchpad when=\"'scratchpad', 'add to scratchpad', 'put this in the scratchpad', 'what's in my scratchpad', or marking a scratchpad note used or dropped\">\n1. Add (one message may hold up to three notes): for each note, look in the live snapshot for the daily task it relates to. One clear match: link it, no question. Several plausible tasks: ask which one (or none) before writing that note. No task is plausible: save it unlinked. Never create a task for a note.\n2. Call Add Scratchpad Note once per note with note = his words (short), task_id = the page id copied from the snapshot or empty string. Never use the MCP for this.\n3. Reply with one line per note: what was saved and the task it is linked to, or \"not linked\".\n4. Read (\"what's in my scratchpad\", \"...for today\"): call Get Scratchpad, list the open notes newest first with their date and linked task (for today: only today's date), at most one line of commentary. Do not turn notes into tasks unless he asks.\n5. Mark a note Used or Dropped with Notion MCP Update Page, properties { \"Status\": \"Used\" } or { \"Status\": \"Dropped\" }. Never delete a note.\n</scratchpad>\n\n<cancel when=\"'cancel', 'drop', 'forget about' or 'I won't do' a weekly item, daily task or subtask, at any time of day (the weekly close is handled in end_of_week). 'Delete' or 'remove' is not a cancel: the row goes to the trash with Move Row To Trash\">\n1. Find the item's exact page ID in the live snapshot. If the name matches more than one item, ask which one.\n2. Call Notion MCP Update Page once per item: command \"update_properties\", page_id the item's page id, properties: { \"Status\": \"Cancelled\" }. Cancelled keeps the row as history.\n3. Reply in one line naming what you cancelled. If it has open children (daily tasks under a weekly item, subtasks under a task), say they will be closed automatically.\n4. Do not call Log Daily Checkin. A calendar event is not a task: use calendar_event for it.\n</cancel>\n\n<calendar_event when=\"he gives a clock time for something -- a meeting, a call to make, an appointment, a reminder at a time -- not just a day\">\n1. Never ask for a duration. Use the one he gives (an end time, \"for 2 hours\"); otherwise infer it: a call to make, a reminder or a quick action (call, book, email, pay, send) = 15 min; a meeting, an appointment or a visit = 1 hour; anything else = 30 min. Create the event at once and name its time in the reply (\"today 16:00-16:15\") so he can change it.\n   \"Remind me to X\" with a day but no clock time (\"remind me to book the dentist today\") is a task due that day, not an event: the morning plan and the 'today' list show it.\n2. Default timezone is Europe/Warsaw; if he names a different timezone, convert to Europe/Warsaw before creating or updating.\n3. Use Add Calendar Event to create, Update Calendar Event to reschedule or rename, Delete Calendar Event to cancel (confirm before deleting -- it cannot be undone), Search Calendar Events to find an event's ID or check a range beyond the live snapshot's 7-day window.\n</calendar_event>\n\n<out_of_scope when=\"the request belongs to another agent, or to none\">\nDecide this before using any tool, and write nothing in Notion for such a request. Agents of this assistant: productivity = tasks, subtasks, the weekly plan and the weekly goals the user states himself, the scratchpad (quick notes and ideas), the user's day and calendar events; project = projects and long-term goals, ideas and brainstorming, the Saturday project review, feeling confused about what to focus on or whether to make something a priority. Money, budgets and subscriptions are not part of this assistant (they live in the separate Budget Coach demo): for those, say so in one line and add no tag.\nSay in one short line that this is outside what you manage and which agent owns it, restate the request so the user can resend it, and end the reply with a new last line containing exactly \"➡️ #<agent>\" (productivity or project). If you cannot tell which agent owns it, add no tag.\n</out_of_scope>\n</modes>\n\n<memory>\nTwo Notion pages: your page \"productivity\" and the page \"shared\". Both are read on every message and shown at the top of the live snapshot (WHAT YOU KNOW ABOUT ALEX): apply every line to every reply, check-ins included; it is how he wants to work and be treated. Use Recall Memory only if the snapshot says MEMORY READ FAILED.\nWhen he says \"remember\", \"from now on\" or \"always\", save it at once: how he wants to be treated or spoken to, or a fact about him every agent needs -> the shared page (\"## Profile\" or \"## Procedures\"); a rule only about planning -> your page.\nIf memory has no answer and the request is still ambiguous, ask one short clarifying question.\n\nWrite only what will still matter next month, at the end of the exchange:\n- He states a preference or corrects you (\"no calls before 10\", \"too many subtasks\") -> Planning Rules, src:user, immediately. A correction beats any stored rule: update or delete the conflicting line.\n- You notice a pattern in what he does (a kind of task always moved, Complex tasks on Fridays never done, estimates too low) -> Observations with seen:1. Same pattern already there -> increase seen. At seen:2 -> add it to Planning Rules (src:observed) and delete the observation.\n- End of week -> one Recent Weeks line: planned, done, moved, cancelled, overall and for Complex items; delete the oldest line beyond 6.\n- Something left unfinished -> Open Threads; delete it when resolved.\n- A general fact about Alex, not about planning -> shared page, under \"## Profile\".\nNever store secrets, money details or task lists (Notion already holds them). Nothing new -> write nothing.\nLine format: \"- **ID** · YYYY-MM-DD · text · src:user|observed\", with the next unused ID (L-01 rules, O-01 observations, W-<Monday date> weeks, T-01 threads).\nADD: old_text = the section heading (e.g. \"## Planning Rules\"), new_text = the heading + a newline + the new line.\nUPDATE: old_text = the whole existing line copied exactly from the memory in the snapshot, new_text = the new line (same ID, today's date).\nDELETE: old_text = a newline + the whole existing line, new_text = \"\".\n</memory>\n\n<rules>\n1. Page IDs: pass only IDs copied from a tool result in this conversation. To find one, call the matching Get tool first.\n2. A proposal (plan, tasks, subtasks, moves) is written only after he confirms. A direct order (\"add X\", \"mark Y done\") needs no confirmation.\n3. Keep replies short and do not repeat advice already given; go longer only when he asks for detail or a plan. Never use tables. A proposal not yet written (rule 11) is a nested list in the card's shape: the weekly goal in bold, under it each task as \"Day · task (priority · complexity · estimate)\", under a task its subtasks. Name every item you created or changed. Never write an ACTION LOG line or a page id in your reply: the workflow keeps the action log.\n4. If a tool fails, never repeat the identical call: try once differently, then report the tool and the error in one line. A write whose result is an error (an \"error\" field, \"object_not_found\", \"Could not find\", a timeout) saved NOTHING: never take an id from an error (request_id, integration_id, a data_source id) as a saved page, never link anything to it, and say in one line that it was not saved. A page id is real only when it comes from the live snapshot, a search result or a successful create result (\"pages\":[{\"id\":...}]). Use only the data_source_ids written in <create_rows>, copied exactly. If Notion answers \"object_not_found\" for an id you sent, search that row again and copy its id exactly from the result (never retype an id from memory); never send the same id twice.\n5. Names: Alex's partner is Sam; write both names exactly like that in Notion and in every reply.\n6. Get Open Subtasks is opt-in: call it only when he explicitly asks for subtasks or the full list, when he names a subtask, or in end_of_week. Never for plain questions about tasks or the day. The Subtasks column of Get Open Tasks tells you whether a task has subtasks; you may mention the count and say he can ask \"with subtasks\".\n7. Daily load: he works best with 1, at most 2, Complex tasks (or parts of one) a day, and the heaviest first in the day. This applies only to tasks YOU place: a day he gave always wins, with no question and no warning. When you place a task yourself, never put a third Complex on a day, and before putting a second there, ask him to confirm.\n8. Projects: you never create, rename or change a project, except creating a Rank 3 in <goal_project> step 5, and you never write a tool or method into a project.\n9. Placing tasks on days (week_planning step 6, big_request turn 3): every task with a day he gave goes on that day (a day he gave always wins); if he said something about a day (for example tomorrow is only for testing agents), only matching tasks go there. Order the rest so a task that blocks or unlocks another comes first, then by priority (his, else inferred), hardest in the morning, only on days from today to Friday (on Saturday or Sunday: Monday to Friday of next week), at most 5 a day and at most 2 Complex tasks or parts a day (rule 7), heavier work (more subtasks) early in the week, Friday light, nothing outside the hours he stated (09:00-17:00 unless he says otherwise), and avoid the calendar events in the snapshot.\n10. Progress bars and the card layout are added by the workflow from Notion after your reply: never draw bars or emoji progress yourself.\n11. Tasks are shown only by the card: the workflow builds it from Notion after your reply, always in one format (the day or the range of days, then each weekly goal, its tasks with their day, every subtask, then the open tasks from earlier days with their date). NEVER list tasks or subtasks yourself, in any form or mode, even when he asks to see \"everything\" or \"all with subtasks\": the card shows every one of them. To choose what the card shows, end your reply with one last line: \"[card: yyyy-LL-dd]\" for one day or \"[card: yyyy-LL-dd to yyyy-LL-dd]\" for several days, the day(s) he asked about (\"Wednesday\", \"until Wednesday\", \"Monday to Friday\", \"today\", \"tomorrow\"; \"the week\" = the Plan week in <context>); \"[card: none]\" when he asked nothing about his tasks. A ➡️ hand-off line, when you write one, comes after the card line and stays the very last line. After you create, move, rename or remove tasks or subtasks, the card shows every day you touched by itself: add a card line only if he also asked to see other days. Your text says in 1-2 lines what you saved, moved or removed (for example \"Added 'Record the demo' to Tuesday.\"), plus your questions, and in check-ins the priorities and the schedule. A proposal not yet confirmed is not in Notion and not on the card: write it as rule 3 says.\n12. His structure is the structure: a task he gives with lines under it (dashes, numbers, indented lines, \"subtask one, two...\") is ONE task with those lines as its subtasks: create them as Subtasks rows, never as Notes and never as separate tasks; \"Main task:\" or a new day starts a new task. When his words match exactly one task or subtask (in the snapshot, or one you just named), act on it without asking; ask only when two or more rows match.\n13. The Notion MCP nodes do one job each (see <tools>): Update Page changes an existing page, Create Pages creates rows. Never use them to read, search or list, and never in an automatic check-in before he has replied.\n</rules>\n\n<example>\n<input>Goal this week: launch the client landing page</input>\n<output>I checked your week: 4 tasks already planned, so this goal fits if we keep it to the landing page only.\n\n**Launch the Siftly landing page**\n- Write landing page copy (Medium · Medium · 2+ hours)\n- Build the page in Framer (High · Complex · 2+ hours)\n  - Set up the page sections\n  - Style and test on mobile\n- Connect the waitlist form (Medium · Easy · 30 min)\n- Publish and share on LinkedIn (Medium · Easy · 30 min)\n\nConfirm, modify or skip? After that I'll place them across the week, the page build first, since the rest depends on it.\n[card: none]</output>\n</example>",
+          "maxIterations": 40,
+          "returnIntermediateSteps": true
+        }
+      }
+    },
+    {
+      "id": "model-flash",
+      "name": "Luna Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1580,
+        1060
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "openai-gpt-6-luna"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "temperature": 0.2,
+          "timeout": 120000,
+          "maxRetries": 2
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "venice api"
+        }
+      }
+    },
+    {
+      "id": "memory-postgres",
+      "name": "Agent Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        1810,
+        1060
+      ],
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=demo-{{ $('Build Live Snapshot').first().json.chat_id }}-{{ $('Build Live Snapshot').first().json.agent_name }}{{ $json.report === true ? '-report-' + $execution.id : '' }}",
+        "contextWindowLength": 20
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "tool-log-checkin",
+      "name": "Log Daily Checkin",
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1.1,
+      "position": [
+        2730,
+        1260
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_LOG_DATA_TABLE_ID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chat_id": "={{ $('Execute Workflow Trigger').item.json.chat_id }}",
+            "agent": "productivity",
+            "slot": "={{ $fromAI('slot','One of: morning, evening, weekly','string') }}",
+            "log_date": "={{ $now.toFormat('yyyy-LL-dd') }}"
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "exec-sync",
+      "name": "Trigger Status Sync",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        3860,
+        820
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "pdStatusSync0001"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "tool-get-open-tasks",
+      "name": "Get Open Tasks",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        2730,
+        1060
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "List every open daily task (not Done or Cancelled) with page ID, Due Date, Timing (Overdue N days / Today / Upcoming / No date), Status, Priority, Complexity, Times Moved and its linked Weekly Item and Subtasks. No input.",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_TASKS_DATA_SOURCE_ID"
+        },
+        "returnAll": true,
+        "filterType": "json",
+        "filterJson": "{\"and\":[{\"property\":\"Status\",\"select\":{\"does_not_equal\":\"Done\"}},{\"property\":\"Status\",\"select\":{\"does_not_equal\":\"Cancelled\"}}]}",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "tool-get-weekly",
+      "name": "Get Weekly Plan",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        1580,
+        1260
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "List Weekly Plan items that are still open (any week) or due this week or later, with page ID, Type (Goal/Task), Due Date, Timing, Status, Complexity, Times Moved and linked Daily Tasks. No input.",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_WEEKLY_PLAN_DATA_SOURCE_ID"
+        },
+        "returnAll": true,
+        "filterType": "json",
+        "filterJson": "={ \"or\": [ { \"and\": [ { \"property\": \"Status\", \"select\": { \"does_not_equal\": \"Done\" } }, { \"property\": \"Status\", \"select\": { \"does_not_equal\": \"Cancelled\" } } ] }, { \"property\": \"Due Date\", \"date\": { \"on_or_after\": \"{{ $now.startOf('week').toISODate() }}\" } } ] }",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "tool-get-subtasks",
+      "name": "Get Open Subtasks",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        1810,
+        1260
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "List every open subtask (not Done or Cancelled) with page ID, Due Date, Timing, Status, Times Moved and its parent Task ID. No input.",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_SUBTASKS_DATA_SOURCE_ID"
+        },
+        "returnAll": true,
+        "filterType": "json",
+        "filterJson": "{\"and\":[{\"property\":\"Status\",\"select\":{\"does_not_equal\":\"Done\"}},{\"property\":\"Status\",\"select\":{\"does_not_equal\":\"Cancelled\"}}]}",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "tool-recall-memory",
+      "name": "Recall Memory",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        1580,
+        1460
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Read one memory page as Markdown. page: \"productivity\" (Planning Rules, Observations, Recent Weeks, Open Threads) or \"shared\" (Profile and Procedures shared by all agents). Use only when memory can change your answer.",
+        "operation": "getMarkdown",
+        "pageId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ ({productivity: 'YOUR_NOTION_PRODUCTIVITY_MEMORY_PAGE_ID', shared: 'YOUR_NOTION_SHARED_MEMORY_PAGE_ID'})[$fromAI('page','productivity or shared','string')] }}"
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "tool-save-memory",
+      "name": "Save Memory",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        1810,
+        1460
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Edit one memory page by exact find-and-replace. page: \"productivity\" or \"shared\". old_text: text that exists on the page exactly once (a section heading such as \"## Planning Rules\" to ADD under it, or a full existing line copied from Recall Memory to UPDATE or DELETE it). new_text: the replacement (heading + newline + new line to ADD; the new line to UPDATE; empty string to DELETE).",
+        "operation": "updateMarkdown",
+        "pageId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ ({productivity: 'YOUR_NOTION_PRODUCTIVITY_MEMORY_PAGE_ID', shared: 'YOUR_NOTION_SHARED_MEMORY_PAGE_ID'})[$fromAI('page','productivity or shared','string')] }}"
+        },
+        "markdownUpdateType": "update_content",
+        "contentUpdates": {
+          "updates": [
+            {
+              "oldString": "={{ $fromAI('old_text','Exact existing text to replace','string') }}",
+              "newString": "={{ $fromAI('new_text','Replacement text, empty string to delete','string') }}"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "build-snapshot",
+      "name": "Build Live Snapshot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        820
+      ],
+      "parameters": {
+        "jsCode": "const trig = $('Execute Workflow Trigger').first().json;\n// Tasks, weekly items and projects come from the shared \"Read Plan Tree\" (the Projects Coach reads the same tree)\nlet tree = {};\ntry { tree = $('Read Plan Tree').first().json || {}; } catch (e) { tree = {}; }\nconst treeFailed = !Array.isArray(tree.tasks);\nconst open = (tree.tasks || []).filter((t) => t.status !== 'Done' && t.status !== 'Cancelled').sort((a, b) => String(a.due || '9999').localeCompare(String(b.due || '9999')));\nconst tl = open.map((t) => `- ${t.id} | ${t.name} | ${t.priority ?? '-'} | due ${t.due ?? '-'} | ${t.timing ?? '-'} | ${t.status ?? '-'} | ${t.complexity ?? 'no complexity'} | moved ${t.moved ?? 0} | weekly item ${t.weekly_item ?? '-'} | subtasks ${t.subtasks ?? 0}`);\nconst events = $('Fetch Calendar Events For Snapshot').all().map((i) => i.json).filter((e) => e && e.id);\nconst el = events.map((e) => `- ${e.id} | ${e.summary || '(no title)'} | ${(e.start && (e.start.dateTime || e.start.date)) || '-'} to ${(e.end && (e.end.dateTime || e.end.date)) || '-'}`);\n// Long-term memory from Notion, read on every message (the agent's own page and the shared page): what he asked to remember\nconst memText = (n) => { try { const j = $(n).first().json; return typeof j.markdown === 'string' ? j.markdown.split('\\n').filter((l) => !l.startsWith('>')).join('\\n').trim() : null; } catch (e) { return null; } };\nconst ownMem = memText('Fetch Agent Memory'), sharedMem = memText('Fetch Shared Memory');\nconst memFailed = [ownMem === null ? 'your memory page' : '', sharedMem === null ? 'the shared memory page' : ''].filter(Boolean);\nconst memory = 'WHAT YOU KNOW ABOUT ALEX (your Notion memory, read just now: apply every line)\\n' + (memFailed.length ? 'MEMORY READ FAILED for ' + memFailed.join(' and ') + ': call Recall Memory once.\\n' : '') + '# Shared page (all agents)\\n' + (sharedMem || '-') + '\\n# Your page\\n' + (ownMem || '-');\n// A read that failed returns an error item instead of rows: say so, so an empty list is not read as \"nothing open\"\nconst failedReads = ['Fetch Calendar Events For Snapshot'].filter((n) => { try { return $(n).all().some((i) => i.json && i.json.error); } catch (e) { return true; } });\nif (treeFailed) failedReads.push('Read Plan Tree');\nfor (const n of (tree.read_failed || [])) failedReads.push(n);\n// A MEMORY UPDATE note from \"Read Plan Tree\" (a rename or status change found by Notion page id) goes right after memory, so the agent sees it this turn; Prepare Memory Writes keeps it in the chat memory for later turns\nconst memNote = (() => { try { return String($('Read Plan Tree').first().json.memory_note || ''); } catch (e) { return ''; } })();\nconst snapshot = memory + '\\n\\n' + (memNote ? memNote + '\\n\\n' : '') + (failedReads.length ? 'NOTION READ FAILED: ' + failedReads.join(', ') + '. These lists may be incomplete.\\n\\n' : '') + `OPEN DAILY TASKS (${tl.length}):\\n${tl.join('\\n') || '(none)'}\\n\\n${tree.text || 'PLAN TREE: not available (Read Plan Tree failed).'}\\n\\nCALENDAR EVENTS, next 7 days (${el.length}):\\n${el.join('\\n') || '(none)'}`;\n// A report (the 7am plan, the 7pm wrap-up, \"what today / tomorrow / this week\", \"plan my day\") is built from Notion only: the agent gets no chat history for it\nconst report = /^It's (7am|7pm)|\\bplan (my|the) day\\b|today'?s plan|\\bwhat('?s| is| do i have)?( on| left)?( for| from)? (today|tomorrow|this week|next week)\\b/i.test(String(trig.chatInput || ''));\nreturn [{ json: { chat_id: trig.chat_id, chatInput: trig.chatInput, agent_name: trig.agent_name, snapshot, report } }];"
+      }
+    },
+    {
+      "id": "tool-mcp-update",
+      "name": "Notion MCP Update Page",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.4,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "position": [
+        2270,
+        1060
+      ],
+      "parameters": {
+        "endpointUrl": "https://mcp.notion.com/mcp",
+        "authentication": "mcpOAuth2Api",
+        "include": "selected",
+        "includeTools": [
+          "notion-update-page"
+        ],
+        "options": {
+          "timeout": 45000
+        }
+      },
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion MCP"
+        }
+      }
+    },
+    {
+      "id": "tool-add-calendar-event",
+      "name": "Add Calendar Event",
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        2040,
+        1460
+      ],
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_CALENDAR_ID",
+          "cachedResultName": "YOUR_CALENDAR_ID"
+        },
+        "start": "={{ DateTime.fromISO($fromAI('start_datetime', 'Event start date and time, e.g. 2026-10-05T14:00:00. Must already be in the default local time; if a different timezone was explicitly stated, convert to Europe/Warsaw time first.', 'string')).setZone('Europe/Warsaw', { keepLocalTime: true }).toISO() }}",
+        "end": "={{ DateTime.fromISO($fromAI('end_datetime', 'Event end date and time, same format and timezone rule as start_datetime.', 'string')).setZone('Europe/Warsaw', { keepLocalTime: true }).toISO() }}",
+        "additionalFields": {
+          "summary": "={{ $fromAI('summary', 'Short title for the calendar event', 'string') }}"
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Calendar"
+        }
+      }
+    },
+    {
+      "id": "tool-update-calendar-event",
+      "name": "Update Calendar Event",
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        2270,
+        1460
+      ],
+      "parameters": {
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_CALENDAR_ID",
+          "cachedResultName": "YOUR_CALENDAR_ID"
+        },
+        "eventId": "={{ $fromAI('event_id', 'The Google Calendar event ID to update, found via Search Calendar Events', 'string') }}",
+        "updateFields": {
+          "end": "={{ DateTime.fromISO($fromAI('end_datetime', 'New end date and time, or the event\\'s current end unchanged if only renaming. Same format and timezone rule as when creating an event.', 'string')).setZone('Europe/Warsaw', { keepLocalTime: true }).toISO() }}",
+          "start": "={{ DateTime.fromISO($fromAI('start_datetime', 'New start date and time, or the event\\'s current start unchanged if only renaming. Same format and timezone rule as when creating an event.', 'string')).setZone('Europe/Warsaw', { keepLocalTime: true }).toISO() }}",
+          "summary": "={{ $fromAI('summary', 'New event title, or the current title unchanged if only the time is changing', 'string') }}"
+        }
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Calendar"
+        }
+      }
+    },
+    {
+      "id": "tool-delete-calendar-event",
+      "name": "Delete Calendar Event",
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        2500,
+        1460
+      ],
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_CALENDAR_ID",
+          "cachedResultName": "YOUR_CALENDAR_ID"
+        },
+        "eventId": "={{ $fromAI('event_id', 'The Google Calendar event ID to delete, found via Search Calendar Events', 'string') }}",
+        "options": {}
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Calendar"
+        }
+      }
+    },
+    {
+      "id": "tool-search-calendar-events",
+      "name": "Search Calendar Events",
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        2730,
+        1460
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_CALENDAR_ID",
+          "cachedResultName": "YOUR_CALENDAR_ID"
+        },
+        "timeMin": "={{ DateTime.fromISO($fromAI('range_start', 'Start of the search range, ISO date/time. Convert to Europe/Warsaw time first if a different timezone was stated.', 'string')).setZone('Europe/Warsaw', { keepLocalTime: true }).toISO() }}",
+        "timeMax": "={{ DateTime.fromISO($fromAI('range_end', 'End of the search range, same format and timezone rule as range_start.', 'string')).setZone('Europe/Warsaw', { keepLocalTime: true }).toISO() }}",
+        "options": {}
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Calendar"
+        }
+      }
+    },
+    {
+      "id": "fetch-calendar-snapshot",
+      "name": "Fetch Calendar Events For Snapshot",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        560,
+        820
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_CALENDAR_ID",
+          "cachedResultName": "YOUR_CALENDAR_ID"
+        },
+        "returnAll": true,
+        "timeMin": "={{ $now.setZone('Europe/Warsaw').startOf('day').toISO() }}",
+        "timeMax": "={{ $now.setZone('Europe/Warsaw').startOf('day').plus({ days: 7 }).toISO() }}",
+        "options": {}
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Calendar"
+        }
+      }
+    },
+    {
+      "id": "tool-mcp-create",
+      "name": "Notion MCP Create Pages",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.4,
+      "position": [
+        2040,
+        1060
+      ],
+      "parameters": {
+        "endpointUrl": "https://mcp.notion.com/mcp",
+        "authentication": "mcpOAuth2Api",
+        "include": "selected",
+        "includeTools": [
+          "notion-create-pages"
+        ],
+        "options": {
+          "timeout": 45000
+        }
+      },
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion MCP"
+        }
+      }
+    },
+    {
+      "id": "tool-add-scratchpad",
+      "name": "Add Scratchpad Note",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        2040,
+        1260
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Create ONE note in the Scratchpad (quick ideas and small edits that are not tasks). note: the note text in his words, short. task_id: the page ID of the daily task it clearly relates to, copied from the live snapshot or a tool result; empty string when it relates to no task. project_id: the page ID of the related project only if it is visible in a tool result, otherwise empty string. Date is set to today and Status to Open automatically. Returns the new page.",
+        "resource": "databasePage",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_SCRATCHPAD_DATA_SOURCE_ID"
+        },
+        "title": "={{ $fromAI('note','The note text in his words, short','string') }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Date|date",
+              "includeTime": false,
+              "date": "={{ $now.toFormat('yyyy-LL-dd') }}"
+            },
+            {
+              "key": "Status|select",
+              "selectValue": "Open"
+            },
+            {
+              "key": "Task|relation",
+              "relationValue": [
+                "={{ $fromAI('task_id','Page ID of the related daily task, or empty string if none','string') }}"
+              ]
+            },
+            {
+              "key": "Project|relation",
+              "relationValue": [
+                "={{ $fromAI('project_id','Page ID of the related project if visible in a tool result, otherwise empty string','string') }}"
+              ]
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "tool-get-scratchpad",
+      "name": "Get Scratchpad",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        2270,
+        1260
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "List every open Scratchpad note (Status Open) with page ID, Note, Date, linked Task and Project. No input.",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_SCRATCHPAD_DATA_SOURCE_ID"
+        },
+        "returnAll": true,
+        "filterType": "json",
+        "filterJson": "{\"property\":\"Status\",\"select\":{\"equals\":\"Open\"}}",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "tool-search-prod",
+      "name": "Search Productivity Tables",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        2500,
+        1060
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Search any of your tables on any column: closed (Done, Cancelled, Used, Dropped) or past items, a period (\"completed this month\", \"cancelled last week\"), a word in a note, anything the live snapshot does not hold. Give table and filter. filter = a Notion filter as JSON text, on ANY column of the chosen table. Syntax by column type: select {\"property\":\"Status\",\"select\":{\"equals\":\"Done\"}} (also does_not_equal, is_empty); date {\"property\":\"Due Date\",\"date\":{\"on_or_after\":\"2026-10-01\"}} (also on_or_before, before, after, equals, is_empty, this_week:{}, past_week:{}, past_month:{}); title {\"property\":\"<title column>\",\"title\":{\"contains\":\"invoice\"}}; text {\"property\":\"Notes\",\"rich_text\":{\"contains\":\"x\"}} (also equals, is_empty); number {\"property\":\"Rank\",\"number\":{\"equals\":2}} (also greater_than, less_than, is_empty); formula {\"property\":\"<column>\",\"formula\":{\"number\":{\"greater_than\":50}}} (or \"string\":{\"equals\":\"Today\"}, \"checkbox\":{\"equals\":true}); rollup {\"property\":\"<column>\",\"rollup\":{\"number\":{\"greater_than\":0}}}; relation {\"property\":\"<column>\",\"relation\":{\"contains\":\"<page id>\"}}; created or edited time {\"timestamp\":\"last_edited_time\",\"last_edited_time\":{\"on_or_after\":\"2026-10-01\"}}; combine {\"and\":[...]} or {\"or\":[...]}; every row of the table: {\"timestamp\":\"created_time\",\"created_time\":{\"is_not_empty\":true}}. Use exact column names and option values below. Returns at most 100 rows, each with its page id (change one with Notion MCP Update Page). Read-only. TABLES: tasks: Task Name (title); Status (select: To Do, Working On, Waiting, Done, Cancelled); Due Date (date); Priority (select: High, Medium, Low); Complexity (select: ★ Easy, ★★ Medium, ★★★ Complex); Notes (text); Owner (text); Times Moved (number); Timing (formula string: No date, Closed, Overdue N days, Today, Upcoming); Weekly Item (relation to weekly_plan); Subtasks (relation) | weekly_plan: Task Name (title); Type (select: Goal, Task); Status (select: In Progress, Done, Cancelled); Due Date (date; a Goal is due on its Sunday); Day (select: Monday, Tuesday, Wednesday, Thursday, Friday, Sunday); Priority (select: Urgent, High, Medium, Low); Complexity (select: ★ Easy, ★★ Medium, ★★★ Complex); Time Estimate (select: 15 min, 30 min, 1 hour, 2+ hours); Times Moved (number); Timing (formula string); Project (relation to Projects); Link Status (select: Personal, Waiting for project; empty when linked to a project); Done When (text: the quality bar); Confidence % (number); Result (select: Met, Partly, Not met; set by the Projects Coach); Daily Tasks (relation to tasks) | subtasks: Subtask Name (title); Status (select: To Do, Done, Cancelled); Due Date (date); Task (relation to tasks); Times Moved (number); Timing (formula string) | scratchpad: Note (title); Status (select: Open, Used, Dropped); Date (date); Task (relation to tasks); Project (relation to Projects)",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ ({tasks: 'YOUR_NOTION_TASKS_DATA_SOURCE_ID', weekly_plan: 'YOUR_NOTION_WEEKLY_PLAN_DATA_SOURCE_ID', subtasks: 'YOUR_NOTION_SUBTASKS_DATA_SOURCE_ID', scratchpad: 'YOUR_NOTION_SCRATCHPAD_DATA_SOURCE_ID'})[$fromAI('table', 'One of: tasks, weekly_plan, subtasks, scratchpad', 'string')] }}"
+        },
+        "returnAll": false,
+        "limit": 100,
+        "filterType": "json",
+        "filterJson": "={{ $fromAI('filter', 'Notion filter as JSON text on any column of the chosen table, see the tool description', 'string') }}",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "code-action-log-prod",
+      "name": "Build Action Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3080,
+        820
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Notion writes this turn REALLY made, read from the agent's own tool calls and Notion's answers (never from the reply text).\n// A write whose answer carries no saved id is left out: nothing was saved.\n// Each line names the row (title from this run's reads or from the write itself) and the fields written, so memory alone shows what changed.\nconst SOURCES = [\"Read Plan Tree\", \"Fetch Calendar Events For Snapshot\"];\nconst out = $input.first().json;\nconst trig = $('Execute Workflow Trigger').first().json;\nconst WRITE = /create|update|add|confirm|mark|delete|trash|archive|log weekly/i;\nconst ID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g;\nconst TITLE_KEYS = ['Task Name', 'Subtask Name', 'Description', 'Name', 'Review', 'Title'];\nconst names = {};\nconst titleOf = (o) => {\n  if (typeof o.name === 'string' && o.name) return o.name;\n  if (typeof o.summary === 'string' && o.summary) return o.summary;\n  for (const [k, v] of Object.entries(o.properties || {})) {\n    if (v && v.type === 'title') return (v.title || []).map(t => t.plain_text).join('');\n    if (TITLE_KEYS.includes(k) && typeof v === 'string') return v;\n  }\n  return null;\n};\nconst collect = (x, depth = 0) => {\n  if (depth > 8) return;\n  if (typeof x === 'string') { if (!/^\\s*[\\[{]/.test(x)) return; try { x = JSON.parse(x); } catch (e) { return; } }\n  if (Array.isArray(x)) { x.forEach(v => collect(v, depth + 1)); return; }\n  if (!x || typeof x !== 'object') return;\n  if (typeof x.id === 'string' && !names[x.id]) { const t = titleOf(x); if (t) names[x.id] = t; }\n  for (const v of Object.values(x)) if (v && (typeof v === 'object' || typeof v === 'string')) collect(v, depth + 1);\n};\nfor (const n of SOURCES) { try { collect($(n).all().map(i => i.json)); } catch (e) { /* that read did not run */ } }\nconst steps = out.intermediateSteps || [];\nfor (const s of steps) collect(s.observation);\nconst short = (v) => (typeof v === 'string' ? v : JSON.stringify(v)).replace(/\\s+/g, ' ').slice(0, 150);\nconst lines = [];\nfor (const step of steps) {\n  const tool = String((step.action && step.action.tool) || '');\n  if (!WRITE.test(tool)) continue;\n  const obs = typeof step.observation === 'string' ? step.observation : JSON.stringify(step.observation ?? '');\n  // An error answer saved nothing, even though it carries ids (request_id, integration_id, the data_source id)\n  if (/APIResponseError|\"error\"\\s*:|object_not_found|validation_error|Could not find|MCP error|timed out/i.test(obs)) continue;\n  const ids = [...new Set(obs.match(ID) || [])];\n  if (!ids.length || /\"properties\":\\{\\}/.test(obs)) continue;\n  const inp = (step.action && step.action.toolInput) ?? {};\n  const label = (id) => (names[id] ? '\"' + names[id] + '\" (' + id + ')' : id);\n  // ids already in the input are the row being updated or rows the new one links to; the others are the rows just created\n  const inInput = JSON.stringify(inp);\n  const isCreate = /create|add/i.test(tool);\n  const saved = isCreate ? ids.filter(id => !inInput.includes(id)) : ids;\n  const linked = isCreate ? ids.filter(id => inInput.includes(id)) : [];\n  const fields = (p) => Object.entries(p).map(([k, v]) => k + ' = ' + short(v)).join('; ');\n  const props = inp && typeof inp === 'object' && inp.properties && typeof inp.properties === 'object' && !Array.isArray(inp.properties) ? inp.properties : null;\n  const pages = inp && typeof inp === 'object' && Array.isArray(inp.pages) ? inp.pages : null;\n  const written = props ? fields(props) : pages ? pages.map(p => fields(p.properties || {})).join(' || ') : JSON.stringify(inp).replace(/\\s+/g, ' ').slice(0, 700);\n  lines.push('- ' + tool + ' -> saved in Notion: ' + (saved.length ? saved : ids).map(label).join(', ') + (linked.length ? ' | linked to: ' + linked.map(label).join(', ') : '') + ' | written: ' + written);\n}\nconst action_log = lines.length\n  ? '[ACTION LOG, ' + $now.toFormat('yyyy-LL-dd HH:mm') + ', written by the workflow from the tool results of my previous reply: these Notion writes are DONE. Never make them again.]\\n' + lines.join('\\n')\n  : '';\nconst { intermediateSteps, ...reply } = out;\n// The agent sometimes copies an earlier action log from its chat memory into its reply: never send it\nif (typeof reply.output === 'string') reply.output = reply.output.replace(/\\s*\\[ACTION LOG[^\\]\\n]*\\][^\\n]*(\\n- [^\\n]*)*/g, '').trim();\nreturn [{ json: { ...reply, chat_id: String(trig.chat_id ?? ''), agent_name: trig.agent_name || 'productivity', action_log } }];\n"
+      }
+    },
+    {
+      "id": "tool-trash-prod",
+      "name": "Move Row To Trash",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        2500,
+        1260
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Move ONE row of your own tables to the Notion trash (restorable for 30 days). Only for a row he asked to delete or remove, or a duplicate he confirmed. Input: the row's page id.",
+        "resource": "page",
+        "operation": "archive",
+        "pageId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $fromAI('page_id', 'Exact Notion page id of the row to move to the trash', 'string') }}"
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "c3f15ca9-adc6-435f-a42e-4edc445bef5b",
+      "name": "Package Productivity Reply",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        5300,
+        820
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Execute Workflow Trigger').first().json.chat_id }}"
+            },
+            {
+              "id": "p2",
+              "name": "agent_name",
+              "type": "string",
+              "value": "={{ $('Execute Workflow Trigger').first().json.agent_name }}"
+            },
+            {
+              "id": "p3",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ $('Execute Workflow Trigger').first().json.chatInput }}"
+            },
+            {
+              "id": "p4",
+              "name": "output",
+              "type": "string",
+              "value": "={{ String($('Build Action Log').first().json.output || '').replace(/^\\s*\\[card:[^\\]\\n]*\\]\\s*$/gim, '').trim() }}"
+            },
+            {
+              "id": "p5",
+              "name": "progress",
+              "type": "object",
+              "value": "={{ $('Build Progress').isExecuted ? ($('Build Progress').first().json.progress || {}) : {} }}"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "if-needs-progress",
+      "name": "Needs Progress?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "executeOnce": true,
+      "position": [
+        4100,
+        820
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "needs-progress",
+              "leftValue": "={{ /^It's (7am|7pm|Saturday)|AUTOMATIC WEEKLY REVIEW/i.test(String($('Execute Workflow Trigger').first().json.chatInput || '')) || /\\b(today|tomorrow|this week|next week|week|tasks?|subtasks?|plan|schedule|agenda|goals?)\\b/i.test(String($('Execute Workflow Trigger').first().json.chatInput || '')) || /\\[card:/i.test(String($('Build Action Log').first().json.output || '')) || /Notion_MCP|Move_Row_To_Trash/.test(String($('Build Action Log').first().json.action_log || '')) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch-week-goals-progress",
+      "name": "Fetch Week Goals For Progress",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        4340,
+        1060
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_WEEKLY_PLAN_DATA_SOURCE_ID"
+        },
+        "returnAll": true,
+        "filterType": "json",
+        "filterJson": "={ \"and\": [ { \"property\": \"Due Date\", \"date\": { \"on_or_after\": \"{{ $now.startOf('week').toISODate() }}\" } }, { \"property\": \"Due Date\", \"date\": { \"on_or_before\": \"{{ $now.endOf('week').plus({ weeks: 1 }).toISODate() }}\" } } ] }",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "fetch-week-tasks-progress",
+      "name": "Fetch Week Tasks For Progress",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        4580,
+        1060
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_TASKS_DATA_SOURCE_ID"
+        },
+        "returnAll": true,
+        "filterType": "json",
+        "filterJson": "={ \"or\": [ { \"and\": [ { \"property\": \"Due Date\", \"date\": { \"on_or_after\": \"{{ $now.startOf('week').toISODate() }}\" } }, { \"property\": \"Due Date\", \"date\": { \"on_or_before\": \"{{ $now.endOf('week').plus({ weeks: 1 }).toISODate() }}\" } } ] }, { \"and\": [ { \"property\": \"Status\", \"select\": { \"does_not_equal\": \"Done\" } }, { \"property\": \"Status\", \"select\": { \"does_not_equal\": \"Cancelled\" } } ] } ] }",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "fetch-week-subtasks-progress",
+      "name": "Fetch Week Subtasks For Progress",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        4820,
+        1060
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_SUBTASKS_DATA_SOURCE_ID"
+        },
+        "returnAll": true,
+        "filterType": "json",
+        "filterJson": "={ \"or\": [ { \"and\": [ { \"property\": \"Due Date\", \"date\": { \"on_or_after\": \"{{ $now.startOf('week').toISODate() }}\" } }, { \"property\": \"Due Date\", \"date\": { \"on_or_before\": \"{{ $now.endOf('week').plus({ weeks: 1 }).toISODate() }}\" } } ] }, { \"and\": [ { \"property\": \"Status\", \"select\": { \"does_not_equal\": \"Done\" } }, { \"property\": \"Status\", \"select\": { \"does_not_equal\": \"Cancelled\" } } ] }, { \"property\": \"Due Date\", \"date\": { \"is_empty\": true } } ] }",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "build-progress",
+      "name": "Build Progress",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5060,
+        1060
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// The tasks card for Telegram, read from Notion AFTER this turn's writes. It is the only list he sees: the agent never lists tasks.\n// Which days: the agent's last line \"[card: <date>]\" or \"[card: <date> to <date>]\"; else, after a write, every day the write touched;\n// else the check-in or question (today, tomorrow, the week). \"[card: none]\" with no write = no card.\n// One day: a day heading, then weekly goal -> task -> subtasks. Several days: one heading for the range, the day before each task.\n// Every goal of the range, every task and every subtask, full names; Cancelled rows are left out; open tasks from earlier days come last.\nconst trig = $('Execute Workflow Trigger').first().json;\nconst act = $('Build Action Log').first().json;\nconst log = String(act.action_log || '');\nconst reply = String(act.output || '');\nconst rows = (n) => { try { return $(n).all().map((i) => i.json).filter((r) => r && r.id); } catch (e) { return []; } };\nconst goals = rows('Fetch Week Goals For Progress');\nconst tasks = rows('Fetch Week Tasks For Progress');\nconst subs = rows('Fetch Week Subtasks For Progress');\nconst taskById = Object.fromEntries(tasks.map((t) => [t.id, t]));\nconst subById = Object.fromEntries(subs.map((s) => [s.id, s]));\nconst goalById = Object.fromEntries(goals.map((g) => [g.id, g]));\n// Full title: Notion splits a title at a link (e.g. \"CLAUDE.md\"), so \"name\" may hold only its first piece\nconst title = (r) => String(r.property_task_name || r.property_subtask_name || r.name || '').trim();\nconst status = (r) => r.property_status || '';\nconst live = (r) => status(r) !== 'Cancelled';\nconst open = (r) => !['Done', 'Cancelled'].includes(status(r));\nconst due = (r) => ((r.property_due_date || {}).start || '').slice(0, 10);\nconst byDue = (a, b) => (due(a) < due(b) ? -1 : due(a) > due(b) ? 1 : 0);\nconst D = (iso) => DateTime.fromISO(iso, { zone: 'Europe/Rome' }).setLocale('en');\nconst count = (ids, byId) => {\n  let done = 0, total = 0;\n  for (const id of ids || []) {\n    const r = byId[id];\n    if (!r || !live(r)) continue;\n    total++;\n    if (status(r) === 'Done') done++;\n  }\n  return { done, total };\n};\nconst subList = (t) => (t.property_subtasks || []).map((id) => subById[id]).filter((s) => s && live(s)).map((s) => ({ name: title(s), status: status(s) }));\nconst taskView = (t, dayLabel) => { const c = count(t.property_subtasks, subById); return { name: title(t), status: status(t), done: c.done, total: c.total, day: dayLabel, due: due(t), subtasks: subList(t) }; };\nconst isGoal = (g) => (g.property_type || 'Goal') === 'Goal' && live(g);\nconst goalOf = (t) => (t.property_weekly_item || []).map((id) => goalById[id]).find((g) => g && isGoal(g));\nconst firstDue = (g) => (g.tasks.length ? g.tasks[0].due : '9999');\nconst byFirst = (a, b) => (firstDue(a) < firstDue(b) ? -1 : firstDue(a) > firstDue(b) ? 1 : 0);\n\n// The days to show\nconst today = $now.setZone('Europe/Rome').toISODate();\nconst weekend = $now.setZone('Europe/Rome').weekday >= 6;\n// When he plans or asks for \"the week\" on Saturday or Sunday, he means the coming week\nconst planMon = (weekend ? $now.plus({ weeks: 1 }) : $now).setZone('Europe/Rome').startOf('week');\nconst card = [...reply.matchAll(/\\[card:\\s*([^\\]\\n]*)\\]/gi)].pop();\nconst want = card ? card[1].trim().toLowerCase() : '';\nconst dates = want.match(/\\d{4}-\\d{2}-\\d{2}/g) || [];\nconst touched = new Set(log.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g) || []);\nconst touchedDays = new Set();\nfor (const id of touched) {\n  if (taskById[id] && live(taskById[id]) && due(taskById[id])) touchedDays.add(due(taskById[id]));\n  if (subById[id]) for (const tid of subById[id].property_task || []) if (taskById[tid] && due(taskById[tid])) touchedDays.add(due(taskById[tid]));\n}\n// A goal written with no task of it touched: show its week\nconst touchedGoals = goals.filter((g) => touched.has(g.id) && isGoal(g) && due(g));\nconst text = String(trig.chatInput || '');\nlet mode = 'none', from = '', to = '';\nif (dates.length) { mode = 'range'; from = dates[0]; to = dates[dates.length - 1]; if (to < from) [from, to] = [to, from]; }\nelse if (touchedDays.size) mode = 'days';\nelse if (touchedGoals.length) { mode = 'range'; const s = D(due(touchedGoals[0])); from = s.startOf('week').toISODate(); to = s.endOf('week').toISODate(); }\nelse if (want !== 'none') {\n  if (/^It's 7am/i.test(text)) { mode = 'range'; from = to = today; }\n  else if (/^It's 7pm/i.test(text)) { mode = 'range'; from = today; to = $now.plus({ days: 1 }).toISODate(); }\n  else if (/^It's Saturday|AUTOMATIC WEEKLY REVIEW/i.test(text)) mode = 'none';\n  else if (/\\btomorrow\\b/i.test(text)) { mode = 'range'; from = to = $now.plus({ days: 1 }).toISODate(); }\n  else if (/\\bnext week\\b/i.test(text)) { mode = 'range'; const m = $now.startOf('week').plus({ weeks: 1 }); from = m.toISODate(); to = m.endOf('week').toISODate(); }\n  else if (/\\bweek\\b/i.test(text)) { mode = 'range'; from = planMon.toISODate(); to = planMon.endOf('week').toISODate(); }\n  else if (/\\btoday\\b/i.test(text)) { mode = 'range'; from = to = today; }\n}\n\n// One block of days: goals of those days (in a week range also the week's goals with no task yet), then \"Other tasks\"\nconst block = (a, b, showDay) => {\n  const list = tasks.filter((t) => live(t) && due(t) >= a && due(t) <= b).sort(byDue);\n  const label = (t) => (showDay ? D(due(t)).toFormat('ccc d') : '');\n  const byGoal = new Map();\n  const loose = [];\n  for (const t of list) { const g = goalOf(t); if (g) { if (!byGoal.has(g.id)) byGoal.set(g.id, []); byGoal.get(g.id).push(t); } else loose.push(t); }\n  const weekGoals = showDay ? goals.filter((g) => isGoal(g) && due(g) >= a && due(g) <= D(b).endOf('week').toISODate() && due(g) >= D(a).startOf('week').toISODate()) : [];\n  for (const g of weekGoals) if (!byGoal.has(g.id)) byGoal.set(g.id, []);\n  const out = [...byGoal.entries()].map(([id, ts]) => {\n    const g = goalById[id];\n    const c = count(g.property_daily_tasks, taskById);\n    return { name: title(g), done: c.done, total: c.total, tasks: ts.map((t) => taskView(t, label(t))), empty: 'no tasks planned yet' };\n  });\n  out.sort(byFirst);\n  if (loose.length) out.push({ name: 'Other tasks', kind: 'other', done: 0, total: 0, tasks: loose.map((t) => taskView(t, label(t))) });\n  return out;\n};\nconst dayHeading = (iso) => D(iso).toFormat('cccc d LLL');\nconst sections = [];\nif (mode === 'days') {\n  for (const d of [...touchedDays].sort()) sections.push({ heading: dayHeading(d), goals: block(d, d, false) });\n} else if (mode === 'range') {\n  sections.push({ heading: from === to ? dayHeading(from) : D(from).toFormat('ccc d LLL') + ' – ' + D(to).toFormat('ccc d LLL'), goals: block(from, to, from !== to) });\n  // Open tasks from days before the range (and before today), with their date\n  const before = from < today ? from : today;\n  const late = tasks.filter((t) => open(t) && due(t) && due(t) < before).sort(byDue);\n  if (late.length) sections.push({ heading: 'Still open from earlier days', kind: 'overdue', goals: [{ name: 'Not done yet', kind: 'other', done: 0, total: 0, tasks: late.map((t) => taskView(t, D(due(t)).toFormat('ccc d LLL'))) }] });\n}\nconst shown = sections.filter((s) => s.goals.length);\nreturn [{ json: { progress: shown.length ? { sections: shown } : {} } }];\n"
+      }
+    },
+    {
+      "id": "fetch-agent-memory",
+      "name": "Fetch Agent Memory",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        800,
+        820
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.notion.com/v1/pages/YOUR_NOTION_PRODUCTIVITY_MEMORY_PAGE_ID/markdown",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2026-03-11"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "fetch-shared-memory",
+      "name": "Fetch Shared Memory",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        1040,
+        820
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.notion.com/v1/pages/YOUR_NOTION_SHARED_MEMORY_PAGE_ID/markdown",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2026-03-11"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "call-plan-tree",
+      "name": "Read Plan Tree",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        320,
+        820
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "pdPlanTree000001",
+          "cachedResultName": "Productivity Coach Demo | Read Plan Tree"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "prep-mem-writes",
+      "name": "Prepare Memory Writes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3320,
+        820
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// What this turn adds to the agent's chat memory (Postgres), saved in one go by Save To Memory, in this order:\n// 1. the MEMORY UPDATE note from \"Read Plan Tree\" (a project or goal renamed, or a project's status changed, matched by Notion page id);\n//    the agent already saw it in its snapshot this turn, the memory keeps it for later turns;\n// 2. a report (7am, 7pm, \"what today / tomorrow / this week\", \"plan my day\") ran with NO chat history:\n//    its question and answer are added to the chat, so a later reply is understood;\n// 3. the ACTION LOG: the Notion writes this turn really made (from Build Action Log).\n// Messages are stored exactly as the Chat Memory Manager stored them (notes and logs hidden).\nconst snap = $('Build Live Snapshot').first().json;\nconst session_id = 'demo-' + snap.chat_id + '-' + snap.agent_name;\nconst note = String($('Read Plan Tree').first().json.memory_note || '');\nconst log = String($('Build Action Log').first().json.action_log || '');\nconst human = (content) => ({ type: 'human', content, additional_kwargs: {}, response_metadata: {} });\nconst ai = (content, hidden) => ({ type: 'ai', content, tool_calls: [], additional_kwargs: hidden ? { hideFromUI: true } : {}, response_metadata: {}, invalid_tool_calls: [] });\nconst writes = [];\nconst add = (message) => writes.push({ op: 'add', session_id, message });\nif (note) add(ai(note, true));\nif (snap.report === true) {\n  add(human(String(snap.chatInput || '')));\n  add(ai(String($('Productivity Agent').first().json.output || '')));\n}\nif (log) add(ai(log, true));\nreturn [{ json: { writes } }];\n"
+      }
+    },
+    {
+      "id": "save-to-memory",
+      "name": "Save To Memory",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3560,
+        820
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Writes the list from Prepare Memory Writes into the chat memory table in one statement, in order.\n-- op 'clear' empties a session first (only the Projects Coach review uses it); op 'add' appends a message.\nWITH w AS (SELECT e->>'op' AS op, e->>'session_id' AS session_id, e->'message' AS message, n FROM jsonb_array_elements($1::jsonb) WITH ORDINALITY AS t(e, n)),\nd AS (DELETE FROM n8n_chat_histories WHERE session_id IN (SELECT session_id FROM w WHERE op = 'clear') RETURNING id),\nins AS (INSERT INTO n8n_chat_histories (session_id, message) SELECT session_id, message FROM w WHERE op = 'add' ORDER BY n RETURNING id)\nSELECT (SELECT count(*) FROM d) AS cleared, (SELECT count(*) FROM ins) AS saved",
+        "options": {
+          "queryReplacement": "={{ [ JSON.stringify($json.writes) ] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "read-notion-and-memory-section-note",
+      "name": "Read Notion And Memory Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        380
+      ],
+      "parameters": {
+        "content": "## Read Notion And Memory\n\nTriggered by: \"WF1\" (a Telegram message routed to productivity) or \"WF2\" (the 7am, 7pm and Saturday check-ins).\n\n1. Read Plan Tree calls \"Read Plan Tree\": open projects, weekly items and tasks (the same view the \"Projects Coach\" gets), plus a rename note when a project or goal changed name or status in Notion (matched by page id).\n2. Fetch Calendar Events For Snapshot reads the next 7 days of Google Calendar.\n3. Fetch Agent Memory and Fetch Shared Memory read the Notion memory pages.\n4. Build Live Snapshot turns it all into one text for the agent's prompt (memory first, then the rename note) and marks a report: 7am, 7pm, \"what today / tomorrow / this week\", \"plan my day\".",
+        "width": 1440,
+        "height": 1280,
+        "color": 3
+      }
+    },
+    {
+      "id": "remember-section-note",
+      "name": "Remember Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3000,
+        380
+      ],
+      "parameters": {
+        "content": "## Remember\n\nTriggered by: runs inline after the Productivity Agent.\n\n1. Build Action Log lists the Notion writes this turn really made (from the tool results, never from the reply text).\n2. Prepare Memory Writes lists what to add to the chat memory: the rename note, a report's question and answer, the action log.\n3. Save To Memory writes them in one go into the Postgres chat memory (an empty list writes nothing).",
+        "width": 720,
+        "height": 1280,
+        "color": 6
+      }
+    },
+    {
+      "id": "card-and-reply-section-note",
+      "name": "Card And Reply Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3780,
+        380
+      ],
+      "parameters": {
+        "content": "## Card And Reply\n\nTriggered by: runs inline after Remember.\n\n1. Trigger Status Sync runs \"Task Status Sync\" (parent/child auto-complete) and waits for it (1-5 s), so the card reads Notion after the auto-complete; a failed sync does not stop the reply. Needs Progress? passes one item only.\n2. Needs Progress? (a check-in, a question about tasks, the day or the week, or a write this turn) runs Fetch Week Goals / Tasks / Subtasks For Progress and Build Progress: the card, read from Notion after this turn's writes, tasks under their weekly goal by day (\"today\" shows only today's goals).\n3. Package Productivity Reply returns chat_id, chatInput, the reply and the card; the caller's \"Send And Log Reply\" draws it.",
+        "width": 1680,
+        "height": 1280,
+        "color": 2
+      }
+    }
+  ],
+  "connections": {
+    "Luna Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Open Tasks": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weekly Plan": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Open Subtasks": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Daily Checkin": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recall Memory": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Memory": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion MCP Update Page": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Calendar Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Calendar Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Calendar Event": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Calendar Events": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion MCP Create Pages": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Scratchpad Note": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Scratchpad": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Productivity Tables": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move Row To Trash": {
+      "ai_tool": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Status Sync": {
+      "main": [
+        [
+          {
+            "node": "Needs Progress?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs Progress?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Week Goals For Progress",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Package Productivity Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Week Goals For Progress": {
+      "main": [
+        [
+          {
+            "node": "Fetch Week Tasks For Progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Week Tasks For Progress": {
+      "main": [
+        [
+          {
+            "node": "Fetch Week Subtasks For Progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Week Subtasks For Progress": {
+      "main": [
+        [
+          {
+            "node": "Build Progress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Progress": {
+      "main": [
+        [
+          {
+            "node": "Package Productivity Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Calendar Events For Snapshot": {
+      "main": [
+        [
+          {
+            "node": "Fetch Agent Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Agent Memory": {
+      "main": [
+        [
+          {
+            "node": "Fetch Shared Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Shared Memory": {
+      "main": [
+        [
+          {
+            "node": "Build Live Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Read Plan Tree",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Plan Tree": {
+      "main": [
+        [
+          {
+            "node": "Fetch Calendar Events For Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Live Snapshot": {
+      "main": [
+        [
+          {
+            "node": "Productivity Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Productivity Agent": {
+      "main": [
+        [
+          {
+            "node": "Build Action Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Action Log": {
+      "main": [
+        [
+          {
+            "node": "Prepare Memory Writes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Memory Writes": {
+      "main": [
+        [
+          {
+            "node": "Save To Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save To Memory": {
+      "main": [
+        [
+          {
+            "node": "Trigger Status Sync",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "pdRouter00000001,pdCheckins000001",
+    "timezone": "Europe/Rome",
+    "binaryMode": "separate"
+  },
+  "active": false
+}

@@ -14,6 +14,8 @@ Automation systems I design and build with [n8n](https://n8n.io). Each system li
 | System | What it does | Services |
 |---|---|---|
 | [Vacancy Outreach](vacancy-outreach/) | Finds companies with open job vacancies, writes a personal email that offers matching candidates, asks you to approve it in Telegram, sends it, follows up and handles the replies. | Google Sheets, Gmail, Telegram, Venice (LLM), Hunter, SerpApi |
+| [Productivity Coach](productivity-coach/) | A Telegram planner and goal coach: projects → weekly goals → daily tasks → subtasks, a 07:00 plan, a 19:00 wrap-up and a Saturday weekly review led by an AI coach. Every list is a card built by code from Notion. | Telegram, Notion (MCP), Google Calendar, Venice (LLM), Postgres |
+| [Budget Coach](budget-coach/) | A Telegram family budget and subscription tracker: logs expenses from text, voice or receipt photos, warns at 80% and 100% of a budget, totals subscriptions and alerts 7 days before each renewal. | Telegram, Notion (MCP), Venice (LLM), Postgres, NBP and ECB exchange rates |
 
 ## What every system folder contains
 

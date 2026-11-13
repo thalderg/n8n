@@ -1,0 +1,1045 @@
+{
+  "id": "bdSubscription01",
+  "name": "Budget Coach Demo | Subscription Agent",
+  "nodes": [
+    {
+      "id": "note-title",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "## Budget Coach Demo — Subscription Agent\n\nSub-workflow. Called by \"Budget Coach Demo | WF1 — Telegram Router\" (node Call Subscription Agent) for your messages (add / keep / cancel / list / spending), and by \"Budget Coach Demo | WF2 — Scheduled Check-ins\" from its \"Renewal Check\" schedule every 2 days (mode = renewal_check). Locked to those two.\nStandalone-capable: no — needs chat_id, chatInput, agent_name passed in.\nEvery message of yours first passes the Snapshot section (whole Subscriptions table + live ECB exchange rates, read once), so the agent answers without waiting on Notion. Renewal checks skip it.\nReturns: {chat_id, agent_name, chatInput, output}. Returns nothing at all when a renewal check finds nothing to alert, so no message is sent.",
+        "height": 280,
+        "width": 1900,
+        "color": 5
+      }
+    },
+    {
+      "id": "note-entry",
+      "name": "Entry Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        352
+      ],
+      "parameters": {
+        "content": "## Entry\n\nTriggered by: the Execute Workflow Trigger.\n\nIf mode = renewal_check → the automatic check on the right. Anything else → the Snapshot section below, then the agent.",
+        "height": 440,
+        "width": 700,
+        "color": 7
+      }
+    },
+    {
+      "id": "note-renewal",
+      "name": "Renewal Check Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        768,
+        352
+      ],
+      "parameters": {
+        "content": "## Renewal Check (automatic)\n\nTriggered by: Entry, when mode = renewal_check.\n\n1. Asks Notion for subscriptions whose \"Needs Alert\" is true (renews within 7 days, not yet confirmed).\n2. None found → stops here, nothing is sent.\n3. Found → combines them and hands them to the agent to write one alert.",
+        "height": 440,
+        "width": 1140,
+        "color": 3
+      }
+    },
+    {
+      "id": "note-agent",
+      "name": "Subscription Agent Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        1536
+      ],
+      "parameters": {
+        "content": "## Subscription Agent\n\nTriggered by: the Snapshot section (your message) or the Renewal Check (alert text). Model: GPT-6 Luna (Venice).\n\n1. Adds new subscriptions to the Notion table, asking once for any missing essential field. With no fixed date it sets a Renewal Type (Indefinite, Included in a plan, Staking-based) and sends no reminders for it.\n2. Writes the renewal alert; \"keep\" stops reminders for that renewal, \"cancel\" searches the web for a step-by-step guide.\n3. Marks cancelled ones, updates price/cycle/date/payment-method changes, reads and edits the Notes, changes the Renewal Type.\n4. Answers lists and spending questions from the snapshot: totals in EUR (USD, GBP and CHF converted in code with the live rate, stated in one line at the end), a breakdown from most to least expensive, trials flagged, and a list of what is not included. The Calculator tool covers what-ifs. The notion tools stay for writing and for re-reading after a change.\n5. Merges its reply with the original input before returning.\nRemember and reply: Build Action Log reads the agent's real tool calls and Notion's answers; Prepare Memory Writes turns real writes into one hidden \"ACTION LOG\" message (none when nothing was written); Save To Memory writes it into the agent's Postgres memory (same session); Package Subscription Reply returns the reply. Before a create the agent checks that log first, then one search limited to the item's date. No delete tool: \"remove\" or \"delete\" marks the subscription Cancelled.",
+        "height": 1200,
+        "width": 1900,
+        "color": 4
+      }
+    },
+    {
+      "id": "exec-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        64,
+        640
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "if-renewal",
+      "name": "Is Renewal Check?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        352,
+        640
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.mode }}",
+              "rightValue": "renewal_check",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "id": "2fc32f7d-f82d-4e99-9c40-4d80c7a52b3a"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "get-alerts",
+      "name": "Get Subscriptions Needing Alert",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        832,
+        640
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_SUBSCRIPTIONS_DATA_SOURCE_ID"
+        },
+        "returnAll": true,
+        "filterType": "json",
+        "filterJson": "{\"property\":\"Needs Alert\",\"formula\":{\"checkbox\":{\"equals\":true}}}",
+        "simple": false,
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "aggregate-alerts",
+      "name": "Combine Alerts Into One List",
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1104,
+        640
+      ],
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      }
+    },
+    {
+      "id": "set-alert-instruction",
+      "name": "Build Alert Instruction",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1392,
+        640
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Execute Workflow Trigger').first().json.chat_id }}"
+            },
+            {
+              "id": "b2",
+              "name": "agent_name",
+              "type": "string",
+              "value": "={{ $('Execute Workflow Trigger').first().json.agent_name }}"
+            },
+            {
+              "id": "b3",
+              "name": "chatInput",
+              "type": "string",
+              "value": "(automatic renewal check)"
+            },
+            {
+              "id": "b4",
+              "name": "agentInput",
+              "type": "string",
+              "value": "=AUTOMATIC RENEWAL CHECK (today is {{ $now.toFormat('yyyy-LL-dd') }}). These subscriptions renew soon and I have not yet confirmed keeping them:\n\n{{ $json.data.map(p => '- id ' + p.id + ' | ' + p.properties.Name.title[0].plain_text + ' | ' + (p.properties.Amount.number ?? '?') + ' ' + (p.properties.Currency.select?.name ?? '') + ' billed ' + (p.properties['Billing Cycle'].select?.name ?? '?') + ' | renews ' + p.properties['Next Renewal'].formula.date.start + ' (in ' + p.properties['Days Until Renewal'].formula.number + ' days) | paid with ' + (p.properties['Payment Method'].select?.name ?? '?')).join('\\n') }}\n\nWrite ONE short Telegram alert listing each subscription with its cost, renewal date and days left. Ask whether I still need it: I can reply \"keep\" to stop the reminders for this renewal, or \"cancel\" and you will show me step by step how to cancel it. Say you will remind me again in 2 days if I do not answer."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "agent-subscription",
+      "name": "Subscription Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        336,
+        2130
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.agentInput ?? $json.chatInput }}",
+        "options": {
+          "systemMessage": "=<role>\nYou are my subscription manager. You keep my subscriptions in ONE Notion table using your dedicated tools, remind me before renewals, and help me cancel what I no longer need.\n</role>\n\n<context>\nToday is {{ $now.toFormat('yyyy-LL-dd') }} ({{ $now.toFormat('cccc') }}).\n</context>\n\n<table>\nColumns you fill: Name, Status (Active or Trial), Amount (price per billing cycle, a number), Currency (EUR, USD, GBP, CHF or Crypto), Billing Cycle (Monthly, Quarterly, Every 6 months, Yearly, One-time or Usage-based), Renewal Anchor (any known renewal or billing date), Payment Method (Revolut, Amex, ING, Virtual card, a new name if I give one, or Unknown), Use (Personal, Business or Both), Account (login email), Auto-Renew (true or false), Notes, Renewal Type (Date-based, Indefinite, Included in a plan or Staking-based).\nNotion calculates Next Renewal, Days Until Renewal and whether an alert is due. Never compute or write those, nor the Renewal display column (it shows the next date, or Indefinite / Included in a plan / Staking-based / Usage-based / Undefined).\n</table>\n\n<snapshot>\nAt the bottom of this message, inside <subscriptions_snapshot>, is a fresh read of my WHOLE Subscriptions table taken when my message arrived, with exact spending figures already calculated and the live exchange rates. It is newer than anything earlier in this conversation. Use it for lists, duplicate checks, page ids, current Notes and every spending question, instead of calling Get Subscriptions. Call Get Subscriptions only to re-read the table after you have written something and need the result. In an automatic renewal check there is no snapshot.\n</snapshot>\n\n<tools>\nUse only the tool that matches the job. Your table, on the Notion page Demo Assistant > Budget Coach: Subscriptions. Never create a table, a database or a page outside it.\n- Read: Get Subscriptions (only to re-read the table after you wrote something; the snapshot already holds it).\n- Search (any column): Search Subscriptions, to filter the table by status, payment method, currency, billing cycle, price, dates or a word (for example \"which cancelled subscriptions were on Revolut?\"). The snapshot holds every row too; use the search when a filter answers faster or more surely than reading the whole list. When you say how many, count the rows it returned.\n- Create: Add Subscription.\n- Alert replies: Confirm Keep Subscription, Mark Subscription Cancelled.\n- Update any detail field, the Notes or the Cancel Link of an existing row: Notion MCP Tools, which is the notion-update-page tool. This is the ONLY job of the MCP.\n- No deleting: you have no delete tool and never remove a row. \"Delete\", \"remove\" or \"get rid of\" a subscription means mark it Cancelled with Mark Subscription Cancelled (his request counts as the confirmation); if he has not said he already cancelled it with the provider, add one line that the real subscription may still be charging and offer the cancel steps. A duplicate row: name both rows with their dates and tell him which one to delete by hand in Notion; write nothing.\n- Search How To Cancel: web search for cancellation steps. Calculator: arithmetic.\nHARD RULE: Notion MCP Tools only updates properties of a page that already exists. Never use it to read, search, list or create (use Get Subscriptions and Add Subscription for that). In an AUTOMATIC RENEWAL CHECK make no change in Notion: write the alert only.\n</tools>\n\n<modes>\n<mode id=\"add_subscription\">\nWhen I send details of a new subscription (text or voice transcript).\nMandatory fields: service name, start_date (when I began paying or the account was opened), account (login email), payment_method (card or method), billing_cycle (Monthly/Quarterly/Every 6 months/Yearly/One-time/Usage-based), and amount (skip only if it is included in another plan). Notes are optional.\n- If I give notes, read them FIRST and extract anything they state toward the mandatory fields above (or currency, a specific renewal/billing date, cancellation terms) before asking me anything. Only ask about whichever mandatory fields are STILL missing after reading the notes, in ONE short message, then add it once I answer. Never ask about optional fields (use): infer them or leave them empty. Defaults: Auto-Renew true, Use Both, Status Active, Currency EUR if not stated anywhere (say so in your confirmation line).\n- No fixed date: if I say it has no renewal date, is included in another plan (put which plan in Notes), is tied to staking, or is open-ended, start_date/payment_method/account are still mandatory where they apply, but no renewal date is needed -- set Renewal Type to Included in a plan, Staking-based or Indefinite, pass an empty renewal_date, and tell me no reminders will be sent for it.\n- Otherwise, infer the rest yourself from the mandatory fields -- never ask for something you can derive: Renewal Anchor = the renewal/billing date I gave, or the start_date if I gave no separate renewal date; Renewal Type = Date-based whenever there is a real Renewal Anchor.\n- Trial: if I mention a free or cheap trial, Status = Trial, Amount = the price AFTER the trial, Renewal Anchor = the date the trial ends (first full charge), and put the trial terms in Notes.\n- First check your memory: the ACTION LOG lines in this conversation are written by the workflow from Notion's real answers, so a subscription listed there is already saved: do not search, do not add it again: stop and tell him it is already saved (name it and say when). If he answers that he removed that row himself and wants it added, make ONE search for it in Notion: still there, tell him; gone, add it. Only if it is NOT in the action log, check the snapshot (it holds the whole table); if still unsure, ONE Search Subscriptions call for that name only, Cancelled ones included. If it is, tell me instead of adding a duplicate.\n- Reply with one line saying what you saved (naming any assumption you made, like a defaulted currency), and that you will alert me 7 days before each renewal.\n</mode>\n<mode id=\"renewal_alert\">\nWhen the message starts with AUTOMATIC RENEWAL CHECK: write the alert exactly as instructed there. No tools needed. Keep it short.\n</mode>\n<mode id=\"keep\">\nWhen I say I still need it, will renew, want to keep it, or anything affirmative about a subscription you alerted me about: call Confirm Keep Subscription with that subscription's page id and its renewal date (both are in the alert in this conversation; if not, take them from the snapshot). Reply in one line that the reminders for this renewal are stopped.\n</mode>\n<mode id=\"cancel\">\nWhen I say cancel, how do I cancel, or I do not need it: call Search How To Cancel with a query like \"how to cancel <service> subscription step by step\" and answer with a numbered step-by-step guide (menu path, direct link if found, refund or notice caveats, and what to do before the renewal date, quoting that date). If the search finds a direct cancellation/account-management URL for the service and the subscription's Cancel Link in the snapshot is empty or a different URL, save it: call the Notion MCP tool's update-page, command \"update_properties\", that subscription's page id, and properties: { \"Cancel Link\": \"<url>\" } -- do this in the same turn as the guide, silently, don't mention the save itself. If no reliable direct link is found, leave Cancel Link untouched. End by asking me to tell you when it is done. When I confirm I cancelled it, call Mark Subscription Cancelled.\n</mode>\n<mode id=\"update\">\nIf I tell you ANY billing or detail field changed (price, currency, cycle, renewal date, renewal type, payment method, auto-renew, use, account, value rating, cancel link), call the Notion MCP tool's update-page ONCE: command \"update_properties\", page_id the subscription's page id, and a properties object with ONLY the fields that changed — any property left out of the object is left untouched, so never restate fields that aren't changing. Exact property names and value formats: Amount (number). Currency (string: EUR, USD, GBP, CHF or Crypto). Billing Cycle (string: Monthly, Quarterly, Every 6 months, Yearly, One-time or Usage-based). \"date:Renewal Anchor:start\" (ISO date yyyy-LL-dd; omit it entirely if the date isn't changing). Renewal Type (string: Date-based, Indefinite, Included in a plan or Staking-based). Payment Method (string: card or method name — a new name is added as a new option — or Unknown). Auto-Renew (\"__YES__\" or \"__NO__\"). Use (string: Personal, Business or Both). Account (string: login email). Value (1-5) (number). Cancel Link (string: a URL). To explicitly clear a field, set it to null — never an empty string.\n</mode>\n<mode id=\"notes\">\nWhen I ask to add, change or remove a note on a subscription: read its current Notes in the snapshot, then call update-page with command \"update_properties\", the page id, and properties: { \"Notes\": \"<full new notes text>\" } — keep the existing text, append the new information as a new sentence, remove only what I ask to remove. Reply in one line with the resulting note.\n</mode>\n<mode id=\"list\">\nIf I ask what I subscribe to, answer from the snapshot with a compact list (show the Renewal value as it is: a date, or Indefinite, Included in a plan, Staking-based, Usage-based or Undefined). For any cost or total, follow the spending mode.\n</mode>\n<mode id=\"spending\">\nWhen I ask what I spend or what something costs (per month, per year, in total, per subscription, or similar). Use ONLY the SPENDING FIGURES and LIVE RATES in the snapshot: they were calculated exactly in code from my table and from today's ECB rates. Never calculate the totals yourself, and never invent or remember an exchange rate.\n- Currency: always EUR, unless I explicitly ask for US dollars or another currency (USD, GBP or CHF). If I do, use the matching block under OTHER CURRENCIES instead (same layout, same order, exact figures, its own RATE LINE); do not convert anything yourself.\n- Answer format: (1) first the exact total for the period I asked (monthly total for \"per month\", yearly total for \"per year\"; for any other period compute it from the monthly total with the Calculator tool); (2) then the breakdown, one line per subscription with its own fee for that same period, sorted from most to least expensive unless I ask for another order, with the total repeated at the end; (3) then the NOT INCLUDED list with the reasons, mentioning any crypto-priced subscription and offering to count it if I give you a token price; (4) last, exactly one line: the RATE LINE of the block you used, copied VERBATIM (skip it only when that block has none). Example line: \"Grammarly · €6.22/mo ($85.17 billed yearly)\". A line whose subscription was billed in another currency shows the EUR figure first and its original price in brackets. Show an original price ONLY on lines that have an 'original' value in the figures; never add billing details to EUR lines.\n- Flag every Trial row: it is counted at the amount in the table; say when the trial ends or the price changes and quote its notes.\n- If the snapshot says the exchange rates are unavailable, say the rate lookup failed and show the amounts in their original currencies exactly as the snapshot gives them. Do not guess a rate.\n- For subsets, other periods and what-ifs (\"without X\", \"only the business ones\", \"next year\"), use the Calculator tool on the exact figures from the snapshot. Never do arithmetic in your head.\n</mode>\n<out_of_scope when=\"the request belongs to another agent, or to none\">\nDecide this before using any tool, and write nothing in Notion for such a request. Agents of this assistant: budget = family money (expenses, budgets, spending summaries); subscriptions = subscriptions and recurring payments (adding, renewals, prices, cancelling). Tasks, the calendar, projects and goals are not part of this assistant (they live in the separate Productivity Coach demo): for those, say so in one line and add no tag.\nSay in one short line that this is outside what you manage and which agent owns it, restate the request so the user can resend it, and end the reply with a new last line containing exactly \"➡️ #<agent>\" (budget or subscriptions). If you cannot tell which agent owns it, add no tag.\n</out_of_scope>\n</modes>\n\n<rules>\n- If several subscriptions were alerted and my reply is ambiguous (for example just \"keep it\"), ask which one.\n- Never invent prices, dates or cancellation steps. Use the search tool for steps and ask me for missing details.\n- Only use a page id copied from a tool result, from the snapshot or from an alert.\n- Dates are ISO yyyy-LL-dd. Be concise.\nNames: Alex's partner is Sam; write both names exactly like that in Notion and in every reply.\nMemory: the live snapshot starts with the shared memory (WHAT YOU KNOW ABOUT ALEX): apply every line to every reply. You cannot save memory yourself: when he says \"remember\", \"from now on\" or \"always\", say so in one line and end the reply with the line \"➡️ #budget Remember on the shared page: <the fact in his words>\", so a \"yes\" saves it.\nNot enough context in memory for his request: check Notion (snapshot or search); if it is still unclear, ask him one short question.\n- Notion MCP Tools is for updating existing pages only (see <tools>): never to read, search or create, and never in an automatic renewal check.\n</rules>\n\n<subscriptions_snapshot>\n{{ $json.snapshot ?? '(not loaded in an automatic renewal check)' }}\n</subscriptions_snapshot>\n",
+          "maxIterations": 12,
+          "returnIntermediateSteps": true
+        }
+      }
+    },
+    {
+      "id": "model-flash",
+      "name": "Luna Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        208,
+        2560
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "openai-gpt-6-luna"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "temperature": 0.2,
+          "timeout": 120000,
+          "maxRetries": 2
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "venice api"
+        }
+      }
+    },
+    {
+      "id": "memory-postgres",
+      "name": "Agent Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        624,
+        2560
+      ],
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=demo-{{ $json.chat_id }}-{{ $json.agent_name }}",
+        "contextWindowLength": 20
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "tool-add-sub",
+      "name": "Add Subscription",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        64,
+        2350
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Add ONE new subscription to the Subscriptions table. Only call it once you have all mandatory fields: name, start_date, account, payment_method, billing_cycle, amount (0 if included in another plan). status: Active or Trial. amount: price per billing cycle (number; 0 if it is included in another plan). currency: EUR, USD, GBP, CHF or Crypto (default EUR if not stated). billing_cycle: Monthly, Quarterly, Every 6 months, Yearly, One-time or Usage-based. start_date: ISO date yyyy-LL-dd of when the subscription began or the account was opened. renewal_date: ISO date yyyy-LL-dd of a known renewal/billing date (for a trial: the day the trial ends), or the start_date if no separate renewal date was given; EMPTY STRING only when there is no fixed date at all (Indefinite/Included in a plan/Staking-based). renewal_type: Date-based (has a date), Indefinite, Included in a plan, or Staking-based. payment_method: card or method name. account: login email. use: Personal, Business or Both. auto_renew: true or false. notes: short extra info or empty.",
+        "resource": "databasePage",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_SUBSCRIPTIONS_DATA_SOURCE_ID"
+        },
+        "title": "={{ $fromAI('name','The service name, e.g. Netflix','string') }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Status|select",
+              "selectValue": "={{ $fromAI('status','Active or Trial','string') }}"
+            },
+            {
+              "key": "Amount|number",
+              "numberValue": "={{ $fromAI('amount','Price per billing cycle as a number, 0 if included in another plan','number') }}"
+            },
+            {
+              "key": "Currency|select",
+              "selectValue": "={{ $fromAI('currency','EUR, USD, GBP, CHF or Crypto','string') }}"
+            },
+            {
+              "key": "Billing Cycle|select",
+              "selectValue": "={{ $fromAI('billing_cycle','Monthly, Quarterly, Every 6 months, Yearly, One-time or Usage-based','string') }}"
+            },
+            {
+              "key": "Start Date|date",
+              "includeTime": false,
+              "date": "={{ $fromAI('start_date','ISO date yyyy-LL-dd when the subscription began or the account was opened','string') }}"
+            },
+            {
+              "key": "Renewal Anchor|date",
+              "includeTime": false,
+              "date": "={{ $fromAI('renewal_date','ISO date yyyy-LL-dd, or an empty string when there is no fixed date','string') }}"
+            },
+            {
+              "key": "Renewal Type|select",
+              "selectValue": "={{ $fromAI('renewal_type','Date-based, Indefinite, Included in a plan or Staking-based','string') }}"
+            },
+            {
+              "key": "Payment Method|select",
+              "selectValue": "={{ $fromAI('payment_method','Card or method name','string') }}"
+            },
+            {
+              "key": "Use|select",
+              "selectValue": "={{ $fromAI('use','Personal, Business or Both','string') }}"
+            },
+            {
+              "key": "Auto-Renew|checkbox",
+              "checkboxValue": "={{ $fromAI('auto_renew','true or false','boolean') }}"
+            },
+            {
+              "key": "Account|rich_text",
+              "textContent": "={{ $fromAI('account','Login email','string') }}"
+            },
+            {
+              "key": "Notes|rich_text",
+              "textContent": "={{ $fromAI('notes','Short extra info or empty','string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "tool-get-subs",
+      "name": "Get Subscriptions",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        352,
+        2350
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Re-read the subscriptions table (up to 100 rows) with page ids, amounts, cycles, Next Renewal and Status. The snapshot in your prompt already has the current rows: use this only to refresh after you have written something.",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_SUBSCRIPTIONS_DATA_SOURCE_ID"
+        },
+        "limit": 100,
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "tool-confirm-keep",
+      "name": "Confirm Keep Subscription",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        624,
+        2350
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Record that I want to keep a subscription for its coming renewal, which stops the reminders for that renewal. page_id: the exact Notion page id from the alert or Get Subscriptions. renewal_date: that subscription's upcoming renewal date, ISO yyyy-LL-dd.",
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $fromAI('page_id','Exact Notion page id of the subscription','string') }}"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Keep Confirmed For|date",
+              "includeTime": false,
+              "date": "={{ $fromAI('renewal_date','The upcoming renewal date, ISO yyyy-LL-dd','string') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "tool-mark-cancelled",
+      "name": "Mark Subscription Cancelled",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        912,
+        2350
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Mark a subscription as cancelled: after I confirm I have cancelled it, or when I ask to delete or remove it. page_id: exact Notion page id.",
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $fromAI('page_id','Exact Notion page id of the subscription','string') }}"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "=Status|select",
+              "selectValue": "Cancelled"
+            },
+            {
+              "key": "=Auto-Renew|checkbox"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "note-snapshot",
+      "name": "Subscription Snapshot Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        912
+      ],
+      "parameters": {
+        "content": "## Subscription Snapshot (pre-fetch)\n\nTriggered by: Entry, for every message that is not a renewal check.\n\n1. Fetches the live USD/EUR/GBP/CHF exchange rates from the free Frankfurter API (European Central Bank reference rates, no key). If that fails the flow carries on and the answer is given in the original currencies.\n2. Reads the whole Subscriptions table from Notion once.\n3. Fetch Shared Memory reads the shared Notion memory page on every message, and the Code node puts it first in the snapshot, then every row plus exact spending figures (monthly and yearly in EUR and in USD, GBP, CHF, rounded only at the end) and the list of what is not included.\n4. The snapshot goes into the agent's system message, so it answers lists and totals without waiting for Notion.",
+        "height": 560,
+        "width": 1300,
+        "color": 6
+      }
+    },
+    {
+      "id": "get-rates",
+      "name": "Fetch Live Exchange Rates",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "onError": "continueRegularOutput",
+      "position": [
+        352,
+        1290
+      ],
+      "parameters": {
+        "url": "https://api.frankfurter.dev/v1/latest?base=USD&symbols=EUR,GBP,CHF",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "fetch-all-subs",
+      "name": "Fetch Subscriptions For Snapshot",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "alwaysOutputData": true,
+      "position": [
+        624,
+        1290
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_SUBSCRIPTIONS_DATA_SOURCE_ID"
+        },
+        "returnAll": true,
+        "simple": false,
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "build-snapshot",
+      "name": "Build Subscription Snapshot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        1290
+      ],
+      "parameters": {
+        "jsCode": "const trig = $('Execute Workflow Trigger').first().json;\nconst rateRes = $('Fetch Live Exchange Rates').first().json;\nconst rows = $('Fetch Subscriptions For Snapshot').all()\n  .map(i => i.json)\n  .filter(p => p && p.properties);\n\nconst today = $now.toFormat('yyyy-LL-dd');\nconst txt = (a) => (a || []).map(t => t.plain_text).join('');\nconst sel = (p) => (p && p.select ? p.select.name : null);\nconst symbol = { EUR: '€', USD: '$', GBP: '£', CHF: 'CHF ' };\nconst perYear = { 'Monthly': 12, 'Quarterly': 4, 'Every 6 months': 2, 'Yearly': 1 };\nconst divisor = { 'Monthly': 1, 'Quarterly': 3, 'Every 6 months': 6, 'Yearly': 12 };\nconst cycleWord = { 'Monthly': 'monthly', 'Quarterly': 'quarterly', 'Every 6 months': 'every 6 months', 'Yearly': 'yearly' };\nconst money = (cur, n) => (symbol[cur] ?? (cur + ' ')) + n.toFixed(2);\nconst cut = (t, n) => (t.length > n ? t.slice(0, n) + '…' : t);\nconst trialFlag = (s) => (s.status === 'Trial'\n  ? ' | TRIAL: counted at the amount in the table; the price changes when the trial ends on ' + (s.anchor ?? '?') + '; notes: ' + cut(s.notes || '-', 200)\n  : '');\n\n// Exchange rates: 1 USD = r.EUR EUR, r.GBP GBP, r.CHF CHF (ECB via Frankfurter)\nconst r = rateRes && rateRes.rates ? rateRes.rates : null;\nconst okRates = r && [r.EUR, r.GBP, r.CHF].every(v => typeof v === 'number' && v > 0);\nconst rateDate = okRates ? rateRes.date : null;\nconst eurPer = okRates ? { EUR: 1, USD: r.EUR, GBP: r.EUR / r.GBP, CHF: r.EUR / r.CHF } : { EUR: 1 };\n\n// Parse rows\nconst subs = rows.map(pg => {\n  const p = pg.properties;\n  const f = p['Renewal'] && p['Renewal'].formula ? p['Renewal'].formula : null;\n  return {\n    id: pg.id,\n    name: txt(p['Name'] && p['Name'].title),\n    status: sel(p['Status']),\n    amount: p['Amount'] ? p['Amount'].number : null,\n    currency: sel(p['Currency']),\n    cycle: sel(p['Billing Cycle']),\n    renewalType: sel(p['Renewal Type']),\n    renewal: f ? (f.string ?? (f.date ? f.date.start : null)) : null,\n    nextRenewal: p['Next Renewal'] && p['Next Renewal'].formula && p['Next Renewal'].formula.date ? p['Next Renewal'].formula.date.start : null,\n    days: p['Days Until Renewal'] && p['Days Until Renewal'].formula ? p['Days Until Renewal'].formula.number : null,\n    payment: sel(p['Payment Method']),\n    use: sel(p['Use']),\n    account: txt(p['Account'] && p['Account'].rich_text),\n    autoRenew: p['Auto-Renew'] ? p['Auto-Renew'].checkbox : null,\n    notes: txt(p['Notes'] && p['Notes'].rich_text),\n    anchor: p['Renewal Anchor'] && p['Renewal Anchor'].date ? p['Renewal Anchor'].date.start : null,\n  };\n});\n\n// 1) Table snapshot\nconst tableLines = subs.map(s =>\n  '- id ' + s.id + ' | ' + s.name + ' | ' + (s.status ?? '?') + ' | ' +\n  (s.amount ?? '?') + ' ' + (s.currency ?? '') + ' ' + (s.cycle ?? '?') + ' | renewal: ' + (s.renewal ?? '?') +\n  (s.days != null ? ' (in ' + s.days + ' days)' : '') + ' | type ' + (s.renewalType ?? '?') +\n  ' | paid with ' + (s.payment ?? '?') + ' | use ' + (s.use ?? '?') +\n  ' | account ' + (s.account || '-') + ' | auto-renew ' + s.autoRenew +\n  ' | notes: ' + (s.notes || '-')\n);\n\n// 2) Spending figures\nconst included = [];\nconst excluded = [];\nfor (const s of subs) {\n  if (s.status !== 'Active' && s.status !== 'Trial') continue;\n  let why = null;\n  if (s.currency === 'Crypto') why = 'paid in crypto, no reliable EUR rate';\n  else if (s.renewalType === 'Included in a plan') why = 'included in another plan';\n  else if (s.cycle === 'Usage-based') why = 'usage-based, no fixed amount';\n  else if (s.cycle === 'One-time') why = 'one-time payment';\n  else if (s.amount == null || s.amount === 0) why = 'no amount';\n  else if (!perYear[s.cycle]) why = 'no billing cycle';\n  else if (!s.currency || !symbol[s.currency]) why = 'no supported currency';\n  if (why) { excluded.push({ s, why }); continue; }\n  included.push({\n    s,\n    monthly: s.amount / divisor[s.cycle],\n    yearly: s.amount * perYear[s.cycle],\n  });\n}\n\nconst foreign = [...new Set(included.map(x => x.s.currency).filter(c => c !== 'EUR'))];\nconst convertible = foreign.every(c => eurPer[c] !== undefined);\n\nlet spending = [];\nif (convertible) {\n  for (const x of included) {\n    x.mEur = x.monthly * eurPer[x.s.currency];\n    x.yEur = x.yearly * eurPer[x.s.currency];\n  }\n  included.sort((a, b) => b.mEur - a.mEur);\n  const totM = included.reduce((t, x) => t + x.mEur, 0);\n  const totY = included.reduce((t, x) => t + x.yEur, 0);\n  spending.push('Currency: EUR (converted with the live rates below). Included subscriptions (Active and Trial with an amount and a cycle), most to least expensive:');\n  for (const x of included) {\n    const conv = x.s.currency !== 'EUR';\n    spending.push('- ' + x.s.name + ' | monthly €' + x.mEur.toFixed(2) + ' | yearly €' + x.yEur.toFixed(2) +\n      (conv ? ' | original ' + money(x.s.currency, x.s.amount) + ' billed ' + cycleWord[x.s.cycle] : '') + trialFlag(x.s));\n  }\n  spending.push('TOTAL (exact, rounded only here): monthly €' + totM.toFixed(2) + ' | yearly €' + totY.toFixed(2) +\n    ' (computed from unrounded values, so it can differ by a cent from the sum of the lines)');\n  spending.push('Subscriptions counted: ' + included.length);\n  if (foreign.length) {\n    spending.push('RATE LINE to end the answer with: ' + foreign.map(c => c + ' converted at ' + eurPer[c].toFixed(4) + ' EUR').join(', ') + ' (ECB, ' + rateDate + ')');\n  }\n  if (okRates) {\n    spending.push('OTHER CURRENCIES (use only if I explicitly ask for one; exact, same rates, same order):');\n    for (const tgt of ['USD', 'GBP', 'CHF']) {\n      let tm = 0;\n      let ty = 0;\n      spending.push(tgt + ':');\n      for (const x of included) {\n        const same = x.s.currency === tgt;\n        const m = same ? x.monthly : x.mEur / eurPer[tgt];\n        const y = same ? x.yearly : x.yEur / eurPer[tgt];\n        tm += m;\n        ty += y;\n        spending.push('- ' + x.s.name + ' | monthly ' + money(tgt, m) + ' | yearly ' + money(tgt, y) +\n          (same ? '' : ' | original ' + money(x.s.currency, x.s.amount) + ' billed ' + cycleWord[x.s.cycle]) +\n          (x.s.status === 'Trial' ? ' | TRIAL (see above)' : ''));\n      }\n      const src = [...new Set(included.map(x => x.s.currency))].filter(c => c !== tgt);\n      spending.push('TOTAL ' + tgt + ' (exact): monthly ' + money(tgt, tm) + ' | yearly ' + money(tgt, ty));\n      if (src.length) {\n        spending.push('RATE LINE for ' + tgt + ': ' + src.map(c => c + ' converted at ' + (eurPer[c] / eurPer[tgt]).toFixed(4) + ' ' + tgt).join(', ') + ' (ECB, ' + rateDate + ')');\n      }\n    }\n  }\n} else {\n  const byCur = {};\n  for (const x of included) {\n    byCur[x.s.currency] = byCur[x.s.currency] || { m: 0, y: 0 };\n    byCur[x.s.currency].m += x.monthly;\n    byCur[x.s.currency].y += x.yearly;\n  }\n  spending.push('EXCHANGE RATES UNAVAILABLE right now (the lookup failed). Do NOT convert or guess any rate. Tell me the rate lookup failed and show every amount in its ORIGINAL currency, with one total per currency:');\n  for (const x of included) {\n    spending.push('- ' + x.s.name + ' | monthly ' + money(x.s.currency, x.monthly) + ' | yearly ' + money(x.s.currency, x.yearly) + trialFlag(x.s));\n  }\n  for (const c of Object.keys(byCur)) {\n    spending.push('TOTAL ' + c + ': monthly ' + money(c, byCur[c].m) + ' | yearly ' + money(c, byCur[c].y));\n  }\n}\nspending.push('NOT INCLUDED in totals (' + excluded.length + '):');\nfor (const e of excluded) {\n  spending.push('- ' + e.s.name + ' | ' + e.why + ' | ' + (e.s.amount ?? '?') + ' ' + (e.s.currency ?? '') + ' ' + (e.s.cycle ?? '') + ' | notes: ' + cut(e.s.notes || '-', 120));\n}\n\n// 3) Live rates for conversions requested by the user (e.g. \"in dollars\")\nlet rates;\nif (okRates) {\n  rates = 'LIVE RATES (ECB via Frankfurter, ' + rateDate + '): 1 USD = ' + r.EUR + ' EUR; 1 GBP = ' + eurPer.GBP.toFixed(6) + ' EUR; 1 CHF = ' + eurPer.CHF.toFixed(6) + ' EUR. ' +\n    'To convert an EUR amount: x' + (1 / eurPer.USD).toFixed(6) + ' = USD, x' + (1 / eurPer.GBP).toFixed(6) + ' = GBP, x' + (1 / eurPer.CHF).toFixed(6) + ' = CHF.';\n} else {\n  rates = 'LIVE RATES: unavailable (lookup failed).';\n}\n\n// The shared long-term memory from Notion, read on every message: how he wants to be treated and facts about him\nconst sharedMem = (() => { try { const j = $('Fetch Shared Memory').first().json; return typeof j.markdown === 'string' ? j.markdown.split('\\n').filter((l) => !l.startsWith('>')).join('\\n').trim() : null; } catch (e) { return null; } })();\nconst memory = 'WHAT YOU KNOW ABOUT ALEX (the shared Notion memory, read just now: apply every line)\\n' + (sharedMem === null ? '(could not be read right now)' : sharedMem);\nconst snapshot = memory + '\\n\\n' + 'Read from Notion just now (' + today + '), ' + subs.length + ' rows.\\n\\n' +\n  'TABLE:\\n' + (tableLines.join('\\n') || '(the table is empty)') + '\\n\\n' +\n  'SPENDING FIGURES (exact, already calculated):\\n' + spending.join('\\n') + '\\n\\n' + rates;\n\nreturn [{ json: { chat_id: trig.chat_id, agent_name: trig.agent_name, chatInput: trig.chatInput, snapshot } }];\n"
+      }
+    },
+    {
+      "id": "tool-calculator",
+      "name": "Calculator",
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        1184,
+        2560
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "tool-web-search",
+      "name": "Search How To Cancel",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        1456,
+        2350
+      ],
+      "parameters": {
+        "toolDescription": "Search the live web and get an answer with sources. Use it to find the current step-by-step way to cancel a specific service's subscription (menu path, direct link, refund and notice rules). query: a precise question, e.g. 'how to cancel Spotify subscription step by step'.",
+        "method": "POST",
+        "url": "https://api.venice.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({model: 'z-ai-glm-5-3-flash', messages: [{role: 'user', content: $fromAI('query', 'The web search question', 'string')}], venice_parameters: {enable_web_search: 'on', enable_web_citations: true}, temperature: 0.2}) }}",
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "venice api"
+        }
+      }
+    },
+    {
+      "id": "tool-mcp-update",
+      "name": "Notion MCP Tools",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.4,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "position": [
+        1184,
+        2350
+      ],
+      "parameters": {
+        "endpointUrl": "https://mcp.notion.com/mcp",
+        "authentication": "mcpOAuth2Api",
+        "include": "selected",
+        "includeTools": [
+          "notion-update-page"
+        ],
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion MCP"
+        }
+      }
+    },
+    {
+      "id": "tool-search-subs",
+      "name": "Search Subscriptions",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        1456,
+        2560
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Search the Subscriptions table on any column: cancelled or paused ones, by payment method, currency, billing cycle, use, a price range, renewals in a date range, a word in the name or notes. Give a filter. filter = a Notion filter as JSON text, on ANY column. Syntax by column type: select {\"property\":\"Status\",\"select\":{\"equals\":\"Cancelled\"}} (also does_not_equal, is_empty); date {\"property\":\"Start Date\",\"date\":{\"on_or_after\":\"2026-01-01\"}} (also on_or_before, before, after, equals, is_empty, past_month:{}); title {\"property\":\"Name\",\"title\":{\"contains\":\"Netflix\"}}; text {\"property\":\"Notes\",\"rich_text\":{\"contains\":\"x\"}}; number {\"property\":\"Amount\",\"number\":{\"greater_than\":20}}; checkbox {\"property\":\"Auto-Renew\",\"checkbox\":{\"equals\":true}}; url {\"property\":\"Cancel Link\",\"url\":{\"is_empty\":true}}; formula {\"property\":\"Next Renewal\",\"formula\":{\"date\":{\"on_or_before\":\"2026-11-30\"}}} (or \"number\":{...}, \"string\":{...}, \"checkbox\":{\"equals\":true}); created or edited time {\"timestamp\":\"last_edited_time\",\"last_edited_time\":{\"on_or_after\":\"2026-10-01\"}}; combine {\"and\":[...]} or {\"or\":[...]}; every row: {\"timestamp\":\"created_time\",\"created_time\":{\"is_not_empty\":true}}. Use exact column names and option values below. Returns at most 100 rows with their page ids (change one with Notion MCP Tools). Read-only. COLUMNS: Name (title); Status (select: Active, Trial, Paused, Cancelled); Amount (number, per billing cycle); Currency (select: EUR, USD, GBP, CHF, Crypto); Billing Cycle (select: Monthly, Quarterly, Every 6 months, Yearly, One-time, Usage-based); Payment Method (select: Revolut, Amex, ING, Virtual card, Unknown); Use (select: Personal, Business, Both); Renewal Type (select: Date-based, Indefinite, Included in a plan, Staking-based); Start Date, Renewal Anchor, Keep Confirmed For (date); Auto-Renew (checkbox); Value (1-5) (number); Account, Notes (text); Cancel Link (url); Next Renewal (formula date); Days Until Renewal (formula number); Renewal (formula string); Needs Alert (formula checkbox)",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_SUBSCRIPTIONS_DATA_SOURCE_ID",
+          "cachedResultName": "Subscriptions"
+        },
+        "returnAll": false,
+        "limit": 100,
+        "filterType": "json",
+        "filterJson": "={{ $fromAI('filter', 'Notion filter as JSON text on any column of the Subscriptions table, see the tool description', 'string') }}",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "code-action-log-subs",
+      "name": "Build Action Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        2130
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Notion writes this turn REALLY made, read from the agent's own tool calls and Notion's answers (never from the reply text).\n// A write whose answer carries no saved id is left out: nothing was saved.\n// Each line names the row (title from this run's reads or from the write itself) and the fields written, so memory alone shows what changed.\nconst SOURCES = [\"Fetch Subscriptions For Snapshot\"];\nconst out = $input.first().json;\nconst trig = $('Execute Workflow Trigger').first().json;\nconst WRITE = /create|update|add|confirm|mark|delete|trash|archive|log weekly/i;\nconst ID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g;\nconst TITLE_KEYS = ['Task Name', 'Subtask Name', 'Description', 'Name', 'Review', 'Title'];\nconst names = {};\nconst titleOf = (o) => {\n  if (typeof o.name === 'string' && o.name) return o.name;\n  if (typeof o.summary === 'string' && o.summary) return o.summary;\n  for (const [k, v] of Object.entries(o.properties || {})) {\n    if (v && v.type === 'title') return (v.title || []).map(t => t.plain_text).join('');\n    if (TITLE_KEYS.includes(k) && typeof v === 'string') return v;\n  }\n  return null;\n};\nconst collect = (x, depth = 0) => {\n  if (depth > 8) return;\n  if (typeof x === 'string') { if (!/^\\s*[\\[{]/.test(x)) return; try { x = JSON.parse(x); } catch (e) { return; } }\n  if (Array.isArray(x)) { x.forEach(v => collect(v, depth + 1)); return; }\n  if (!x || typeof x !== 'object') return;\n  if (typeof x.id === 'string' && !names[x.id]) { const t = titleOf(x); if (t) names[x.id] = t; }\n  for (const v of Object.values(x)) if (v && (typeof v === 'object' || typeof v === 'string')) collect(v, depth + 1);\n};\nfor (const n of SOURCES) { try { collect($(n).all().map(i => i.json)); } catch (e) { /* that read did not run */ } }\nconst steps = out.intermediateSteps || [];\nfor (const s of steps) collect(s.observation);\nconst short = (v) => (typeof v === 'string' ? v : JSON.stringify(v)).replace(/\\s+/g, ' ').slice(0, 150);\nconst lines = [];\nfor (const step of steps) {\n  const tool = String((step.action && step.action.tool) || '');\n  if (!WRITE.test(tool)) continue;\n  const obs = typeof step.observation === 'string' ? step.observation : JSON.stringify(step.observation ?? '');\n  // An error answer saved nothing, even though it carries ids (request_id, integration_id, the data_source id)\n  if (/APIResponseError|\"error\"\\s*:|object_not_found|validation_error|Could not find|MCP error|timed out/i.test(obs)) continue;\n  const ids = [...new Set(obs.match(ID) || [])];\n  if (!ids.length || /\"properties\":\\{\\}/.test(obs)) continue;\n  const inp = (step.action && step.action.toolInput) ?? {};\n  const label = (id) => (names[id] ? '\"' + names[id] + '\" (' + id + ')' : id);\n  // ids already in the input are the row being updated or rows the new one links to; the others are the rows just created\n  const inInput = JSON.stringify(inp);\n  const isCreate = /create|add/i.test(tool);\n  const saved = isCreate ? ids.filter(id => !inInput.includes(id)) : ids;\n  const linked = isCreate ? ids.filter(id => inInput.includes(id)) : [];\n  const fields = (p) => Object.entries(p).map(([k, v]) => k + ' = ' + short(v)).join('; ');\n  const props = inp && typeof inp === 'object' && inp.properties && typeof inp.properties === 'object' && !Array.isArray(inp.properties) ? inp.properties : null;\n  const pages = inp && typeof inp === 'object' && Array.isArray(inp.pages) ? inp.pages : null;\n  const written = props ? fields(props) : pages ? pages.map(p => fields(p.properties || {})).join(' || ') : JSON.stringify(inp).replace(/\\s+/g, ' ').slice(0, 700);\n  lines.push('- ' + tool + ' -> saved in Notion: ' + (saved.length ? saved : ids).map(label).join(', ') + (linked.length ? ' | linked to: ' + linked.map(label).join(', ') : '') + ' | written: ' + written);\n}\nconst action_log = lines.length\n  ? '[ACTION LOG, ' + $now.toFormat('yyyy-LL-dd HH:mm') + ', written by the workflow from the tool results of my previous reply: these Notion writes are DONE. Never make them again.]\\n' + lines.join('\\n')\n  : '';\nconst { intermediateSteps, ...reply } = out;\n// The agent sometimes copies an earlier action log from its chat memory into its reply: never send it\nif (typeof reply.output === 'string') reply.output = reply.output.replace(/\\s*\\[ACTION LOG[^\\]\\n]*\\][^\\n]*(\\n- [^\\n]*)*/g, '').trim();\nreturn [{ json: { ...reply, chat_id: String(trig.chat_id ?? ''), agent_name: trig.agent_name || 'subscriptions', action_log } }];\n"
+      }
+    },
+    {
+      "id": "22d3159f-4601-49bc-b884-16a05394718f",
+      "name": "Package Subscription Reply",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1360,
+        2130
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Execute Workflow Trigger').first().json.chat_id }}"
+            },
+            {
+              "id": "p2",
+              "name": "agent_name",
+              "type": "string",
+              "value": "={{ $('Execute Workflow Trigger').first().json.agent_name }}"
+            },
+            {
+              "id": "p3",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ $('Execute Workflow Trigger').first().json.mode === 'renewal_check' ? '(automatic renewal check)' : $('Execute Workflow Trigger').first().json.chatInput }}"
+            },
+            {
+              "id": "p4",
+              "name": "output",
+              "type": "string",
+              "value": "={{ $('Build Action Log').first().json.output }}"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch-shared-memory",
+      "name": "Fetch Shared Memory",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        896,
+        1290
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.notion.com/v1/pages/YOUR_NOTION_SHARED_MEMORY_PAGE_ID/markdown",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2026-03-11"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "prep-mem-writes",
+      "name": "Prepare Memory Writes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        2130
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// What this turn adds to the agent's chat memory (Postgres), saved by Save To Memory:\n// the ACTION LOG, i.e. the Notion writes this turn really made (from Build Action Log), as a hidden message,\n// stored exactly as the Chat Memory Manager stored it. Nothing to save gives an empty list.\nconst log = $('Build Action Log').first().json;\nconst session_id = 'demo-' + log.chat_id + '-' + log.agent_name;\nconst ai = (content, hidden) => ({ type: 'ai', content, tool_calls: [], additional_kwargs: hidden ? { hideFromUI: true } : {}, response_metadata: {}, invalid_tool_calls: [] });\nconst writes = log.action_log ? [{ op: 'add', session_id, message: ai(String(log.action_log), true) }] : [];\nreturn [{ json: { writes } }];\n"
+      }
+    },
+    {
+      "id": "save-to-memory",
+      "name": "Save To Memory",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1120,
+        2130
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Writes the list from Prepare Memory Writes into the chat memory table in one statement, in order.\n-- op 'add' appends a message (an empty list writes nothing).\nWITH w AS (SELECT e->>'op' AS op, e->>'session_id' AS session_id, e->'message' AS message, n FROM jsonb_array_elements($1::jsonb) WITH ORDINALITY AS t(e, n)),\nd AS (DELETE FROM n8n_chat_histories WHERE session_id IN (SELECT session_id FROM w WHERE op = 'clear') RETURNING id),\nins AS (INSERT INTO n8n_chat_histories (session_id, message) SELECT session_id, message FROM w WHERE op = 'add' ORDER BY n RETURNING id)\nSELECT (SELECT count(*) FROM d) AS cleared, (SELECT count(*) FROM ins) AS saved",
+        "options": {
+          "queryReplacement": "={{ [ JSON.stringify($json.writes) ] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Is Renewal Check?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Renewal Check?": {
+      "main": [
+        [
+          {
+            "node": "Get Subscriptions Needing Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Live Exchange Rates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Subscriptions Needing Alert": {
+      "main": [
+        [
+          {
+            "node": "Combine Alerts Into One List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine Alerts Into One List": {
+      "main": [
+        [
+          {
+            "node": "Build Alert Instruction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Alert Instruction": {
+      "main": [
+        [
+          {
+            "node": "Subscription Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Live Exchange Rates": {
+      "main": [
+        [
+          {
+            "node": "Fetch Subscriptions For Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Subscription Snapshot": {
+      "main": [
+        [
+          {
+            "node": "Subscription Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Luna Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Subscription Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Subscription Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Subscription": {
+      "ai_tool": [
+        [
+          {
+            "node": "Subscription Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Subscriptions": {
+      "ai_tool": [
+        [
+          {
+            "node": "Subscription Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm Keep Subscription": {
+      "ai_tool": [
+        [
+          {
+            "node": "Subscription Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Subscription Cancelled": {
+      "ai_tool": [
+        [
+          {
+            "node": "Subscription Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "Subscription Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search How To Cancel": {
+      "ai_tool": [
+        [
+          {
+            "node": "Subscription Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion MCP Tools": {
+      "ai_tool": [
+        [
+          {
+            "node": "Subscription Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Subscriptions": {
+      "ai_tool": [
+        [
+          {
+            "node": "Subscription Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subscription Agent": {
+      "main": [
+        [
+          {
+            "node": "Build Action Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Subscriptions For Snapshot": {
+      "main": [
+        [
+          {
+            "node": "Fetch Shared Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Shared Memory": {
+      "main": [
+        [
+          {
+            "node": "Build Subscription Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Action Log": {
+      "main": [
+        [
+          {
+            "node": "Prepare Memory Writes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Memory Writes": {
+      "main": [
+        [
+          {
+            "node": "Save To Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save To Memory": {
+      "main": [
+        [
+          {
+            "node": "Package Subscription Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "bdRouter00000001,bdCheckins000001",
+    "timezone": "Europe/Rome",
+    "binaryMode": "separate"
+  },
+  "active": false
+}

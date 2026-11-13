@@ -1,0 +1,224 @@
+{
+  "id": "pdPlanTree000001",
+  "name": "Productivity Coach Demo | Read Plan Tree",
+  "nodes": [
+    {
+      "id": "title-note",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "## Productivity Coach Demo | Read Plan Tree\n\nOne read of the plan, shared by two agents so both see the same picture: projects → their weekly goals → daily tasks, with the links between them. A project holds the outcome; its weekly goals hold how it is done.\nCalled by \"Productivity Agent\" and \"Projects Coach\" (locked to them) before each agent answers. No AI, no writes.\nErrors go to \"Error Handling | Main — Error Handler\".",
+        "width": 1440,
+        "height": 260,
+        "color": 5
+      }
+    },
+    {
+      "id": "section-note",
+      "name": "Read Plan Tree Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        320
+      ],
+      "parameters": {
+        "content": "## Read Plan Tree\n\nTriggered by: Receive Tree Call (from \"Productivity Agent\" or \"Projects Coach\").\n\n1. Fetch Projects: every project not Done or Killed.\n2. Fetch Weekly Plan: open weekly items, everything due from last Monday on (last week's unscored goals feed a late review), and goals of the last 12 weeks that have a Result (for the Coach's calibration only).\n3. Fetch Tasks: open daily tasks and every task due this week or next.\n4. Build Plan Tree (also compares names and project statuses with what each agent saw last time, by Notion page id, kept in this workflow's static data; a change becomes memory_note, which the agent writes into its chat memory): puts goals under their project and counts their tasks; one text block both agents print as is, plus the rows as data.",
+        "width": 1440,
+        "height": 600,
+        "color": 4
+      }
+    },
+    {
+      "id": "receive-call",
+      "name": "Receive Tree Call",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        740
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "fetch-projects",
+      "name": "Fetch Projects",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        340,
+        740
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_PROJECTS_DATA_SOURCE_ID",
+          "cachedResultName": "Projects"
+        },
+        "returnAll": true,
+        "simple": false,
+        "filterType": "json",
+        "filterJson": "{\"and\":[{\"property\":\"Status\",\"select\":{\"does_not_equal\":\"Done\"}},{\"property\":\"Status\",\"select\":{\"does_not_equal\":\"Killed\"}}]}",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "fetch-weekly-plan",
+      "name": "Fetch Weekly Plan",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        600,
+        740
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_WEEKLY_PLAN_DATA_SOURCE_ID",
+          "cachedResultName": "Weekly Plan"
+        },
+        "returnAll": true,
+        "simple": false,
+        "filterType": "json",
+        "filterJson": "={ \"or\": [ { \"and\": [ { \"property\": \"Status\", \"select\": { \"does_not_equal\": \"Done\" } }, { \"property\": \"Status\", \"select\": { \"does_not_equal\": \"Cancelled\" } } ] }, { \"property\": \"Due Date\", \"date\": { \"on_or_after\": \"{{ $now.startOf('week').minus({ weeks: 1 }).toISODate() }}\" } }, { \"and\": [ { \"property\": \"Result\", \"select\": { \"is_not_empty\": true } }, { \"property\": \"Due Date\", \"date\": { \"on_or_after\": \"{{ $now.minus({ weeks: 12 }).toISODate() }}\" } } ] } ] }",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "fetch-tasks",
+      "name": "Fetch Tasks",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        860,
+        740
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_TASKS_DATA_SOURCE_ID",
+          "cachedResultName": "Tasks"
+        },
+        "returnAll": true,
+        "simple": false,
+        "filterType": "json",
+        "filterJson": "={ \"or\": [ { \"and\": [ { \"property\": \"Status\", \"select\": { \"does_not_equal\": \"Done\" } }, { \"property\": \"Status\", \"select\": { \"does_not_equal\": \"Cancelled\" } } ] }, { \"and\": [ { \"property\": \"Due Date\", \"date\": { \"on_or_after\": \"{{ $now.startOf('week').toISODate() }}\" } }, { \"property\": \"Due Date\", \"date\": { \"on_or_before\": \"{{ $now.endOf('week').plus({ weeks: 1 }).toISODate() }}\" } } ] } ] }",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "build-tree",
+      "name": "Build Plan Tree",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        740
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// One picture of the plan for both agents: projects -> their weekly items -> daily tasks, read from Notion just now\nconst txt = (a) => (a || []).map((t) => t.plain_text).join('');\nconst rt = (p) => (p ? txt(p.rich_text || p.title) : '');\nconst sel = (p) => (p && p.select ? p.select.name : null);\nconst num = (p) => (p && typeof p.number === 'number' ? p.number : null);\nconst dt = (p) => (p && p.date && p.date.start ? p.date.start.slice(0, 10) : null);\nconst rel = (p) => (p && Array.isArray(p.relation) ? p.relation.map((r) => r.id) : []);\nconst fml = (p) => (p && p.formula ? (p.formula.string ?? p.formula.boolean ?? p.formula.number ?? null) : null);\nconst day = (s) => String(s || '').slice(0, 10);\nconst read = (n) => {\n  try {\n    const all = $(n).all().map((i) => i.json);\n    return { failed: all.some((j) => j && j.error), pages: all.filter((p) => p && p.properties) };\n  } catch (e) { return { failed: true, pages: [] }; }\n};\nconst P = read('Fetch Projects'), G = read('Fetch Weekly Plan'), T = read('Fetch Tasks');\nconst read_failed = [['Fetch Projects', P], ['Fetch Weekly Plan', G], ['Fetch Tasks', T]].filter((x) => x[1].failed).map((x) => x[0]);\n\nconst projects = P.pages.map((pg) => {\n  const p = pg.properties;\n  return {\n    id: pg.id, name: rt(p['Project Name']), status: sel(p['Status']), rank: num(p['Rank']), edited: day(pg.last_edited_time),\n    why: rt(p['Why']), goal: rt(p['Goal']), oos: rt(p['Out of Scope']), metric: rt(p['Metric']),\n    baseline: num(p['Baseline']), target: num(p['Target']), who: rt(p['Who']), chance: num(p['Chance %']),\n    prediction: num(p['Prediction']), low: num(p['Range Low']), high: num(p['Range High']),\n    deadline: dt(p['Deadline']), checkpoints: rt(p['Checkpoints']), blockers: rt(p['Blockers']),\n    assumptions: rt(p['Assumptions']), iteration: num(p['Iteration']), parked: rt(p['Parked Reason']),\n    notes: rt(p['Notes']), idea: rel(p['Source Idea']), smartBox: fml(p['SMART Complete'])\n  };\n});\nconst statusOrder = { Active: 0, 'On Hold': 1, Shaping: 2, Parked: 3 };\nprojects.sort((a, b) => (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9) || (a.rank ?? 99) - (b.rank ?? 99));\nconst projById = Object.fromEntries(projects.map((p) => [p.id, p]));\n\nconst allGoals = G.pages.map((pg) => {\n  const p = pg.properties;\n  return {\n    id: pg.id, name: rt(p['Task Name']), type: sel(p['Type']), status: sel(p['Status']), priority: sel(p['Priority']),\n    complexity: sel(p['Complexity']), estimate: sel(p['Time Estimate']), due: dt(p['Due Date']), timing: fml(p['Timing']),\n    moved: num(p['Times Moved']) || 0, project: rel(p['Project'])[0] || null, link_status: sel(p['Link Status']),\n    done_when: rt(p['Done When']), confidence: num(p['Confidence %']), result: sel(p['Result']),\n    daily_tasks: rel(p['Daily Tasks']), edited: day(pg.last_edited_time)\n  };\n}).sort((a, b) => String(a.due || '9999').localeCompare(String(b.due || '9999')));\n// Goals of past weeks that already have a Result: only for the Coach's calibration, never shown in the tree\nconst weekMon = $now.startOf('week').toISODate();\nconst scored_goals = allGoals.filter((g) => g.result && g.due && g.due < weekMon);\n// Last week's goals not scored yet: for a review held late (Monday to Friday); closed ones are not shown in the tree\nconst lastMon = $now.startOf('week').minus({ weeks: 1 }).toISODate();\nconst last_week_goals = allGoals.filter((g) => !g.result && g.due && g.due >= lastMon && g.due < weekMon);\nconst isClosed = (g) => g.status === 'Done' || g.status === 'Cancelled';\nconst goals = allGoals.filter((g) => !scored_goals.includes(g) && !(last_week_goals.includes(g) && isClosed(g)));\n\nconst tasks = T.pages.map((pg) => {\n  const p = pg.properties;\n  return {\n    id: pg.id, name: rt(p['Task Name']), status: sel(p['Status']), priority: sel(p['Priority']), complexity: sel(p['Complexity']),\n    due: dt(p['Due Date']), timing: fml(p['Timing']), moved: num(p['Times Moved']) || 0,\n    weekly_item: rel(p['Weekly Item'])[0] || null, subtasks: rel(p['Subtasks']).length, edited: day(pg.last_edited_time)\n  };\n});\n\n// Text block, identical for both agents\nconst wd = (d) => (d ? DateTime.fromISO(d).setLocale('en').toFormat('ccc yyyy-LL-dd') : 'no date');\nconst counts = (g) => {\n  const ts = tasks.filter((t) => t.weekly_item === g.id);\n  if (!ts.length) return '';\n  const d = ts.filter((t) => t.status === 'Done').length, c = ts.filter((t) => t.status === 'Cancelled').length;\n  return ' · daily tasks: ' + d + ' done, ' + (ts.length - d - c) + ' open, ' + c + ' cancelled';\n};\nconst goalLine = (g) => '  - ' + (g.type || 'Item') + ' \"' + g.name + '\" [id ' + g.id + '] · due ' + wd(g.due) + ' · ' + (g.status || '-') +\n  (g.priority ? ' · ' + g.priority : '') + (g.complexity ? ' · ' + g.complexity : '') + (g.timing ? ' · ' + g.timing : '') + (g.done_when ? ' · done when: ' + g.done_when.replace(/\\s+/g, ' ') : '') + (g.confidence !== null ? ' · confidence ' + g.confidence + '%' : '') + (g.result ? ' · result: ' + g.result : '') + (g.moved ? ' · due date moved ' + g.moved + ' times' : '') + counts(g) + ' · last edited ' + g.edited;\nconst out = ['PLAN TREE (read from Notion at ' + $now.toFormat('yyyy-LL-dd HH:mm') + '; a project holds the outcome, its weekly items hold how it is done; statuses and counts are only these)'];\nif (read_failed.length) out.push('NOTION READ FAILED: ' + read_failed.join(', ') + '. The tree may be incomplete.');\nfor (const p of projects) {\n  out.push('- Project \"' + p.name + '\" [id ' + p.id + '] · ' + (p.status || '-') + (p.rank !== null ? ' · Rank ' + p.rank : '') + (p.deadline ? ' · deadline ' + wd(p.deadline) : '') + ' · page last edited ' + p.edited);\n  const gs = goals.filter((g) => g.project === p.id);\n  if (!gs.length) out.push('  (no weekly items from this week on)');\n  for (const g of gs) out.push(goalLine(g));\n}\nconst closed = goals.filter((g) => g.project && !projById[g.project]);\nif (closed.length) { out.push('- Linked to a project that is Done or Killed:'); for (const g of closed) out.push(goalLine(g)); }\nconst noProj = goals.filter((g) => !g.project);\nfor (const [label, test] of [['Personal (no project)', (g) => g.link_status === 'Personal'], ['Waiting for a project', (g) => g.link_status === 'Waiting for project'], ['NOT LINKED (needs a project or Personal)', (g) => !g.link_status]]) {\n  const gs = noProj.filter(test);\n  if (gs.length) { out.push('- ' + label + ':'); for (const g of gs) out.push(goalLine(g)); }\n}\nif (!goals.length) out.push('- No weekly items from this week on.');\n\n// Renames and status changes since this agent last read the tree, found by Notion page id (an id never changes, a name can).\n// The agent writes the note into its chat memory, so old messages that use an old name are understood.\nconst caller = (() => { try { return $('Receive Tree Call').first().json || {}; } catch (e) { return {}; } })();\nconst chatId = String(caller.chat_id || '');\nconst who = String(caller.agent_name || 'unknown') + ':' + chatId;\nconst isTest = /^ZZTEST/.test(chatId); // test chats are compared but never stored\nconst store = $getWorkflowStaticData('global');\nstore.seen = store.seen || {};\n// No seed in the demo: names are tracked from the first call\nconst SEED = {};\nconst known = store.seen[who];\nconst before = known || SEED;\nconst nowSeen = {};\nfor (const p of projects) nowSeen[p.id] = { kind: 'project', name: p.name, status: p.status };\nfor (const g of goals) nowSeen[g.id] = { kind: g.type === 'Task' ? 'weekly task' : 'weekly goal', name: g.name, status: g.status };\nconst changes = [];\nfor (const [id, cur] of Object.entries(nowSeen)) {\n  const old = before[id];\n  if (!old) continue;\n  if (old.name && old.name !== cur.name) changes.push('the ' + cur.kind + ' \"' + old.name + '\" [id ' + id + '] is now called \"' + cur.name + '\". It is the same ' + cur.kind + ': earlier messages that use the old name mean this one');\n  if (cur.kind === 'project' && old.status && old.status !== cur.status) changes.push('the project \"' + cur.name + '\" [id ' + id + '] changed status from ' + old.status + ' to ' + cur.status);\n}\nif (known && !read_failed.length) for (const [id, old] of Object.entries(known)) if (old.kind === 'project' && !nowSeen[id]) changes.push('the project \"' + old.name + '\" [id ' + id + '] is no longer open (Done or Killed in Notion): do not treat it as active');\nif (!isTest && !read_failed.length) store.seen[who] = nowSeen;\nconst memory_note = changes.length ? 'MEMORY UPDATE (' + $now.toFormat('yyyy-LL-dd HH:mm') + ', written by the workflow from Notion page ids, not by you): ' + changes.join('; ') + '. Use only the new names from now on.' : '';\n\nreturn [{ json: { projects, goals, scored_goals, last_week_goals, tasks, read_failed, text: out.join('\\n'), memory_note } }];\n"
+      }
+    }
+  ],
+  "connections": {
+    "Receive Tree Call": {
+      "main": [
+        [
+          {
+            "node": "Fetch Projects",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Projects": {
+      "main": [
+        [
+          {
+            "node": "Fetch Weekly Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Weekly Plan": {
+      "main": [
+        [
+          {
+            "node": "Fetch Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Tasks": {
+      "main": [
+        [
+          {
+            "node": "Build Plan Tree",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "timezone": "Europe/Rome",
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromAList",
+    "binaryMode": "separate",
+    "callerIds": "pdProductivity01,pdProjectsCoach1"
+  },
+  "active": false
+}

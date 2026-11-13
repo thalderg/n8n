@@ -1,0 +1,133 @@
+{
+  "id": "bdPinTags0000001",
+  "name": "Budget Coach Demo | Pin Tags Message (run once)",
+  "nodes": [
+    {
+      "id": "pin-manual",
+      "name": "Run Once",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        80,
+        880
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "pin-send",
+      "name": "Send Tags Message",
+      "webhookId": "1c78fe4c-3076-499e-9fde-2407b4642312",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        360,
+        880
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "📌 Agent tags (100% reliable routing)\n\nAdd one tag to a message and it goes to that agent, whatever the wording:\n#budget — family money: expenses, budgets, spending summaries\n#subscriptions — subscriptions and recurring payments, renewals, cancelling\n\nExamples: \"#budget coffee 18 zl\"  ·  \"how much do I spend on subscriptions? #subscriptions\"\n\n↩️ Reply to a message (swipe left on it) to continue that conversation, any time:\n• reply to an agent's message → it goes to that agent\n• reply \"yes\" or \"try again\" to a message ending with ➡️ #agent → it goes there\n\nWithout replying:\n• \"yes\" or \"try again\" right after a ➡️ #agent line → it goes there\n• only the tag, or \"#budget try again\" → your last request goes to that agent",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Telegram Budget Coach Demo"
+        }
+      }
+    },
+    {
+      "id": "pin-pin",
+      "name": "Pin Tags Message",
+      "webhookId": "44ea7b64-a528-405b-a456-7465cac01393",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        640,
+        880
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "pinChatMessage",
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "messageId": "={{ $json.result.message_id }}",
+        "additionalFields": {
+          "disable_notification": true
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Telegram Budget Coach Demo"
+        }
+      }
+    },
+    {
+      "id": "pin-title",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Budget Coach Demo | Pin Tags Message (run once)\n\nOne-time utility, not part of the running system. Run it manually once, AFTER \"WF1\" with the tag routing is live on the same n8n, to put the list of agent tags and how replies work in your chat with the bot and pin it. Running it again sends and pins a new copy (unpin the old one by hand).\nNo AI. Standalone. Errors: linked to \"Error Handling | Main — Error Handler\".",
+        "height": 340,
+        "width": 1000,
+        "color": 5
+      }
+    },
+    {
+      "id": "pin-sec",
+      "name": "Pin Tags Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        400
+      ],
+      "parameters": {
+        "content": "## Send and pin\n\nTriggered by: Run Once (manual).\n\n1. Send Tags Message sends the tag list, examples and how replies and \"yes\" work to chat YOUR_TELEGRAM_CHAT_ID.\n2. Pin Tags Message pins that message (without a notification).",
+        "height": 640,
+        "width": 1000,
+        "color": 3
+      }
+    }
+  ],
+  "connections": {
+    "Run Once": {
+      "main": [
+        [
+          {
+            "node": "Send Tags Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Tags Message": {
+      "main": [
+        [
+          {
+            "node": "Pin Tags Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Rome",
+    "saveManualExecutions": true,
+    "binaryMode": "separate",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID"
+  },
+  "active": false
+}
