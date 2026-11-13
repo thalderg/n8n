@@ -1,0 +1,551 @@
+{
+  "id": "pdStatusSync0001",
+  "name": "Productivity Coach Demo | Task Status Sync",
+  "nodes": [
+    {
+      "id": "note-title",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "## Productivity Coach Demo | Task Status Sync\n\nKeeps parent and child statuses consistent across Weekly Plan → Tasks → Subtasks. No AI: fixed rules only.\nRuns every 12 hours (catches ticks made by hand in Notion), and is also called by \"Productivity Coach Demo | Productivity Agent\" right after each reply (so Telegram changes cascade at once).\nStandalone-capable: yes (own schedule). All runs (success and failure) are saved to the execution list, so a sync can be verified without inspecting Notion or workflow static data.",
+        "height": 312,
+        "width": 1448,
+        "color": 5
+      }
+    },
+    {
+      "id": "note-section",
+      "name": "Status Sync Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        376
+      ],
+      "parameters": {
+        "content": "## Status Sync\n\nTriggered by: Every 12 hours or Receive Sync Call (from the \"Productivity Agent\").\n\n1. Reads all rows of Weekly Plan, Tasks and Subtasks.\n2. Down: a Done/Cancelled parent closes its open children the same way.\n3. Up: when all children are closed (at least one Done), the parent becomes Done.\n4. The most recent edit wins, so reopening one item by hand is not undone.\n5. Writes only the statuses that changed.\n\n## Due Date Sync (Compute Due Date Changes)\n\n6. Compares every item's Due Date to what was seen on the previous sweep (kept in this workflow's own static data, not a Notion column) -- catches a date changed by the agent, by hand in Notion, or by any other route. A brand-new item's date is only recorded as a baseline, never counted as a move.\n7. If a Task's date changed, its open Subtasks are forced onto the same new date and counted as moved too -- Subtasks never had their own date-tracking before this.\n8. Any item whose date changed gets Times Moved bumped by 1 (Weekly Plan, Tasks and Subtasks all have this column). The \"Productivity Agent\" no longer bumps this itself during the Sunday close-out -- this sweep is now the single source of truth, so it can't be double-counted.",
+        "height": 1236,
+        "width": 1960,
+        "color": 4
+      }
+    },
+    {
+      "id": "exec-trigger",
+      "name": "Receive Sync Call",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        48,
+        1156
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "get-weekly",
+      "name": "Get Weekly Items",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "position": [
+        304,
+        1028
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_WEEKLY_PLAN_DATA_SOURCE_ID"
+        },
+        "returnAll": true,
+        "simple": false,
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "get-tasks",
+      "name": "Get Tasks",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "position": [
+        608,
+        1028
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_TASKS_DATA_SOURCE_ID"
+        },
+        "returnAll": true,
+        "simple": false,
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "get-subtasks",
+      "name": "Get Subtasks",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "position": [
+        864,
+        1028
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_SUBTASKS_DATA_SOURCE_ID"
+        },
+        "returnAll": true,
+        "simple": false,
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "code-compute",
+      "name": "Compute Status Changes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        964
+      ],
+      "parameters": {
+        "jsCode": "const rows = (name) => $(name).all().map(i => i.json).filter(p => p && p.id && p.properties);\nconst weekly = rows('Get Weekly Items');\nconst tasks = rows('Get Tasks');\nconst subs = rows('Get Subtasks');\nconst key = (id) => id.replace(/-/g, '');\n\nconst status = new Map();\nconst edited = new Map();\nconst title = new Map();\nfor (const [list, table] of [[weekly, 'Weekly Plan'], [tasks, 'Tasks'], [subs, 'Subtasks']]) {\n  for (const p of list) {\n    const id = key(p.id);\n    status.set(id, p.properties.Status?.select?.name ?? null);\n    edited.set(id, p.last_edited_time);\n    const t = Object.values(p.properties).find((v) => v.type === 'title');\n    title.set(id, `${table}: ${(t?.title ?? []).map((x) => x.plain_text).join('')}`);\n  }\n}\n\nconst kids = new Map();\nconst link = (children, relProp) => {\n  for (const c of children) {\n    for (const r of c.properties[relProp]?.relation ?? []) {\n      const parent = key(r.id);\n      if (!kids.has(parent)) kids.set(parent, []);\n      kids.get(parent).push(key(c.id));\n    }\n  }\n};\nlink(tasks, 'Weekly Item');\nlink(subs, 'Task');\n\nconst closed = (s) => s === 'Done' || s === 'Cancelled';\nconst changes = new Map();\nconst set = (id, s, reason) => {\n  if (status.get(id) === s) return;\n  status.set(id, s);\n  edited.set(id, new Date().toISOString());\n  changes.set(id, { page_id: id, status: s, name: title.get(id), reason });\n};\n\n// Down: a closed parent closes its open children, unless a child was edited after the parent.\nconst down = (parents) => {\n  for (const p of parents) {\n    const id = key(p.id);\n    const s = status.get(id);\n    if (!closed(s)) continue;\n    for (const c of kids.get(id) ?? []) {\n      if (!closed(status.get(c)) && edited.get(id) >= edited.get(c)) set(c, s, `parent ${title.get(id)} is ${s}`);\n    }\n  }\n};\n\n// Up: all children closed (at least one Done) completes the parent, unless the parent was edited after its newest child.\nconst up = (parents) => {\n  for (const p of parents) {\n    const id = key(p.id);\n    const k = kids.get(id) ?? [];\n    if (!k.length || closed(status.get(id))) continue;\n    const allClosed = k.every((c) => closed(status.get(c)));\n    const anyDone = k.some((c) => status.get(c) === 'Done');\n    const newest = k.map((c) => edited.get(c)).sort().pop();\n    if (allClosed && anyDone && newest >= edited.get(id)) set(id, 'Done', 'all children closed');\n  }\n};\n\ndown(weekly);\ndown(tasks);\nup(tasks);\nup(weekly);\n\nreturn [...changes.values()].map((json) => ({ json }));"
+      }
+    },
+    {
+      "id": "apply-status",
+      "name": "Apply Status Change",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        1408,
+        964
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.page_id }}"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Status|select",
+              "selectValue": "={{ $json.status }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "sched",
+      "name": "Every 12 Hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        48,
+        932
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 12
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "code-compute-dates",
+      "name": "Compute Due Date Changes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        1236
+      ],
+      "parameters": {
+        "jsCode": "const rows = (name) => $(name).all().map(i => i.json).filter(p => p && p.id && p.properties);\nconst weekly = rows('Get Weekly Items');\nconst tasks = rows('Get Tasks');\nconst subs = rows('Get Subtasks');\nconst key = (id) => id.replace(/-/g, '');\n\nconst staticData = $getWorkflowStaticData('global');\nif (!staticData.dueDates) staticData.dueDates = {};\nconst seen = staticData.dueDates;\n\nconst dueDate = (p) => p.properties['Due Date']?.date?.start ?? null;\nconst timesMoved = (p) => p.properties['Times Moved']?.number ?? 0;\nconst status = (p) => p.properties.Status?.select?.name ?? null;\nconst closed = (s) => s === 'Done' || s === 'Cancelled';\n\nconst subsByTask = new Map();\nfor (const s of subs) {\n  for (const r of s.properties['Task']?.relation ?? []) {\n    const taskId = key(r.id);\n    if (!subsByTask.has(taskId)) subsByTask.set(taskId, []);\n    subsByTask.get(taskId).push(s);\n  }\n}\n\nconst dayName = (iso) => iso ? DateTime.fromISO(iso).setLocale('en').toFormat('cccc') : null;\nconst changes = [];\n\n// Compares each item's Due Date to what we saw last sweep (kept in workflow static data, not a Notion column).\n// First time an item is seen, its date is only recorded as a baseline -- never counted as a move.\nconst processItem = (p, table, forcedDueDate) => {\n  const id = key(p.id);\n  const currentDue = forcedDueDate !== undefined ? forcedDueDate : dueDate(p);\n  const prevSeen = seen[id];\n  seen[id] = currentDue;\n  if (prevSeen === undefined) return false;\n  if (prevSeen === currentDue) return false;\n  const change = { page_id: p.id, table, due_date: currentDue, times_moved: timesMoved(p) + 1 };\n  if (table === 'Weekly Plan') change.day = dayName(currentDue);\n  changes.push(change);\n  return true;\n};\n\n// A Task's date change forces the same new date onto its open Subtasks (and counts as a move for them too).\nconst processedSubtasks = new Set();\nfor (const p of weekly) processItem(p, 'Weekly Plan');\nfor (const p of tasks) {\n  const changed = processItem(p, 'Tasks');\n  if (changed) {\n    const newDue = dueDate(p);\n    for (const s of subsByTask.get(key(p.id)) ?? []) {\n      if (closed(status(s))) continue;\n      processItem(s, 'Subtasks', newDue);\n      processedSubtasks.add(key(s.id));\n    }\n  }\n}\nfor (const p of subs) {\n  if (processedSubtasks.has(key(p.id))) continue;\n  processItem(p, 'Subtasks');\n}\n\nreturn changes.map((json) => ({ json }));"
+      }
+    },
+    {
+      "id": "route-by-table",
+      "name": "Route By Table",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1408,
+        1220
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.table }}",
+                    "rightValue": "Weekly Plan",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-1790672693006-0zzjprlry"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Weekly Plan"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.table }}",
+                    "rightValue": "Tasks",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-1790672693006-sa1wu731n"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Tasks"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.table }}",
+                    "rightValue": "Subtasks",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-1790672693006-bhrsqwjfh"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Subtasks"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "apply-weekly-date",
+      "name": "Apply Weekly Plan Due Date Move",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        1728,
+        1028
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.page_id }}"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Due Date|date",
+              "includeTime": false,
+              "date": "={{ $json.due_date }}"
+            },
+            {
+              "key": "Times Moved|number",
+              "numberValue": "={{ $json.times_moved }}"
+            },
+            {
+              "key": "Day|select",
+              "selectValue": "={{ $json.day }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "apply-task-date",
+      "name": "Apply Task Due Date Move",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        1712,
+        1236
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.page_id }}"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Due Date|date",
+              "includeTime": false,
+              "date": "={{ $json.due_date }}"
+            },
+            {
+              "key": "Times Moved|number",
+              "numberValue": "={{ $json.times_moved }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "apply-subtask-date",
+      "name": "Apply Subtask Due Date Move",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        1712,
+        1444
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.page_id }}"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Due Date|date",
+              "includeTime": false,
+              "date": "={{ $json.due_date }}"
+            },
+            {
+              "key": "Times Moved|number",
+              "numberValue": "={{ $json.times_moved }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Receive Sync Call": {
+      "main": [
+        [
+          {
+            "node": "Get Weekly Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weekly Items": {
+      "main": [
+        [
+          {
+            "node": "Get Tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Tasks": {
+      "main": [
+        [
+          {
+            "node": "Get Subtasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Subtasks": {
+      "main": [
+        [
+          {
+            "node": "Compute Status Changes",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Compute Due Date Changes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Status Changes": {
+      "main": [
+        [
+          {
+            "node": "Apply Status Change",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 12 Hours": {
+      "main": [
+        [
+          {
+            "node": "Get Weekly Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Due Date Changes": {
+      "main": [
+        [
+          {
+            "node": "Route By Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route By Table": {
+      "main": [
+        [
+          {
+            "node": "Apply Weekly Plan Due Date Move",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Apply Task Due Date Move",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Apply Subtask Due Date Move",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "timezone": "Europe/Rome",
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "pdProductivity01",
+    "binaryMode": "separate"
+  },
+  "active": false
+}

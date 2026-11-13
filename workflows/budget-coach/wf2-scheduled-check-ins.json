@@ -1,0 +1,944 @@
+{
+  "id": "bdCheckins000001",
+  "name": "Budget Coach Demo | WF2 — Scheduled Check-ins",
+  "nodes": [
+    {
+      "id": "sched-renewal",
+      "name": "Schedule: Renewal Check (every 2 days 09:00)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        80,
+        864
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "daysInterval": 2,
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "set-tag-renewal",
+      "name": "Tag Renewal Check",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        352,
+        864
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "YOUR_TELEGRAM_CHAT_ID"
+            },
+            {
+              "id": "r2",
+              "name": "agent_name",
+              "type": "string",
+              "value": "subscriptions"
+            },
+            {
+              "id": "r3",
+              "name": "mode",
+              "type": "string",
+              "value": "renewal_check"
+            },
+            {
+              "id": "r4",
+              "name": "chatInput",
+              "type": "string",
+              "value": "(automatic renewal check)"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "call-subscriptions",
+      "name": "Call Subscription Agent",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueErrorOutput",
+      "position": [
+        608,
+        864
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "bdSubscription01"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "call-general",
+      "name": "Call Family Budget Coach",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueErrorOutput",
+      "position": [
+        1184,
+        1696
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "bdBudgetCoach001"
+        },
+        "options": {},
+        "mode": "each"
+      }
+    },
+    {
+      "id": "bud-sched-daily",
+      "name": "Schedule: Daily Expense Check-in (19:15)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        80,
+        1504
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "15 19 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "bud-slot-daily",
+      "name": "Tag Slot: Daily Expense Check-in (19:15)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        352,
+        1504
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "chat_ids",
+              "type": "array",
+              "value": "={{ ['YOUR_TELEGRAM_CHAT_ID'] }}"
+            },
+            {
+              "id": "s2",
+              "name": "agent",
+              "type": "string",
+              "value": "budget"
+            },
+            {
+              "id": "s3",
+              "name": "log_date",
+              "type": "string",
+              "value": "={{ $now.toFormat('yyyy-LL-dd') }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "bud-gate-daily",
+      "name": "Not Already Logged Today: Daily Expense Check-in (19:15)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        864,
+        1504
+      ],
+      "parameters": {
+        "operation": "rowNotExists",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_LOG_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "keyValue": "={{ $json.chat_id }}"
+            },
+            {
+              "keyName": "agent",
+              "keyValue": "budget"
+            },
+            {
+              "keyName": "log_date",
+              "keyValue": "={{ $json.log_date }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "bud-msg-daily",
+      "name": "Build Message: Daily Expense Check-in (19:15)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1120,
+        1504
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "m1",
+              "name": "chatInput",
+              "type": "string",
+              "value": "AUTOMATIC DAILY CHECK-IN: it is 19:15. Ask what the family spent today. Change nothing until I reply."
+            },
+            {
+              "id": "m2",
+              "name": "agent_name",
+              "type": "string",
+              "value": "budget"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "bud-sched-weekly",
+      "name": "Schedule: Weekly Budget Summary (Sun 19:30)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        80,
+        1696
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "30 19 * * 0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "bud-msg-weekly",
+      "name": "Build Message: Weekly Budget Summary (Sun 19:30)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        352,
+        1696
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "w1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "YOUR_TELEGRAM_CHAT_ID"
+            },
+            {
+              "id": "w2",
+              "name": "agent_name",
+              "type": "string",
+              "value": "budget"
+            },
+            {
+              "id": "w3",
+              "name": "chatInput",
+              "type": "string",
+              "value": "AUTOMATIC WEEKLY SUMMARY: give the weekly budget summary now (this month so far, categories above 80% or projected to go over, two observations). Change nothing in Notion."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "bud-sched-review",
+      "name": "Schedule: Month-End Review (1st 08:00)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        80,
+        1888
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 1 * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "bud-msg-review",
+      "name": "Build Message: Month-End Review (1st 08:00)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        352,
+        1888
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "YOUR_TELEGRAM_CHAT_ID"
+            },
+            {
+              "id": "r2",
+              "name": "agent_name",
+              "type": "string",
+              "value": "budget"
+            },
+            {
+              "id": "r3",
+              "name": "chatInput",
+              "type": "string",
+              "value": "=AUTOMATIC MONTH-END REVIEW for {{ $now.minus({ months: 1 }).toFormat('yyyy-LL') }}: review the month that just closed against the previous months and give 2 to 4 tips, then save the lessons. Change nothing else."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "bud-sched-setup",
+      "name": "Schedule: Month Setup (1st 06:00)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        80,
+        2528
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 6 1 * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "bud-msg-setup",
+      "name": "Build Message: Month Setup (1st 06:00)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        352,
+        2528
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "u1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "YOUR_TELEGRAM_CHAT_ID"
+            },
+            {
+              "id": "u2",
+              "name": "agent_name",
+              "type": "string",
+              "value": "month_setup"
+            },
+            {
+              "id": "u4",
+              "name": "chatInput",
+              "type": "string",
+              "value": "AUTOMATIC MONTH SETUP"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch-cats-setup",
+      "name": "Fetch Categories For Month Setup",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "alwaysOutputData": true,
+      "position": [
+        608,
+        2528
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_BUDGET_CATEGORIES_DATA_SOURCE_ID",
+          "cachedResultName": "Budget Categories"
+        },
+        "returnAll": true,
+        "simple": false,
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "fetch-lines-setup",
+      "name": "Fetch Lines For Month Setup",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "alwaysOutputData": true,
+      "position": [
+        864,
+        2528
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_BUDGET_LINES_DATA_SOURCE_ID",
+          "cachedResultName": "Budget Lines"
+        },
+        "returnAll": true,
+        "simple": false,
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "build-lines",
+      "name": "Build Month Lines",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        2528
+      ],
+      "parameters": {
+        "jsCode": "const txt = (a) => (a || []).map(t => t.plain_text).join('');\nconst monthKey = $now.toFormat('yyyy-LL');\nconst monthStart = $now.startOf('month').toISODate();\nconst pagesOf = (n) => $(n).all().map(i => i.json).filter(p => p && p.properties);\nconst cats = pagesOf('Fetch Categories For Month Setup').map(pg => ({\n  id: pg.id, name: txt(pg.properties['Name'] && pg.properties['Name'].title),\n  def: pg.properties['Default Monthly Budget (PLN)'] ? pg.properties['Default Monthly Budget (PLN)'].number : null\n}));\nconst lines = pagesOf('Fetch Lines For Month Setup').map(pg => {\n  const p = pg.properties;\n  return { month: p['Month'] && p['Month'].date ? p['Month'].date.start.slice(0, 7) : null,\n           catId: p['Category'] && p['Category'].relation && p['Category'].relation[0] ? p['Category'].relation[0].id : null,\n           budget: p['Budget (PLN)'] ? p['Budget (PLN)'].number : null,\n           budgetEur: p['Budget (EUR)'] && p['Budget (EUR)'].number > 0 ? p['Budget (EUR)'].number : null };\n});\nconst existing = new Set(lines.filter(l => l.month === monthKey && l.catId).map(l => l.catId));\nconst overallExists = lines.some(l => l.month === monthKey && !l.catId);\nconst out = [];\nfor (const c of cats) {\n  if (c.def != null && c.def > 0 && !existing.has(c.id)) out.push({ json: { name: c.name + ' – ' + monthKey, month: monthStart, catId: c.id, budget: c.def, budgetEur: null } });\n}\nif (!overallExists) {\n  const prev = lines.filter(l => !l.catId && l.month && l.month < monthKey && l.budget != null).sort((a, b) => (a.month < b.month ? 1 : -1))[0];\n  // A cap set in euros is carried over in euros; the Coach recalculates its PLN value at the current rate\n  if (prev) out.push({ json: { name: 'Overall – ' + monthKey, month: monthStart, catId: '', budget: prev.budget, budgetEur: prev.budgetEur } });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "create-line",
+      "name": "Create Budget Line",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        1392,
+        2528
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_BUDGET_LINES_DATA_SOURCE_ID",
+          "cachedResultName": "Budget Lines"
+        },
+        "title": "={{ $json.name }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Month|date",
+              "includeTime": false,
+              "date": "={{ $json.month }}"
+            },
+            {
+              "key": "Budget (PLN)|number",
+              "numberValue": "={{ $json.budget }}"
+            },
+            {
+              "key": "Budget (EUR)|number",
+              "numberValue": "={{ $json.budgetEur }}"
+            },
+            {
+              "key": "Category|relation",
+              "relationValue": [
+                "={{ $json.catId }}"
+              ]
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "build-setup-reply",
+      "name": "Build Setup Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1648,
+        2528
+      ],
+      "parameters": {
+        "jsCode": "const trig = $('Build Message: Month Setup (1st 06:00)').first().json;\nconst monthKey = $now.toFormat('yyyy-LL');\nconst n = $('Build Month Lines').all().length;\nreturn [{ json: { chat_id: trig.chat_id, agent_name: 'month_setup', chatInput: trig.chatInput ?? 'AUTOMATIC MONTH SETUP', output: 'Budget ' + monthKey + ' is ready: ' + n + ' budget lines created from the default budgets.' } }];"
+      }
+    },
+    {
+      "id": "call-send-log",
+      "name": "Call Send And Log Reply",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1984,
+        976
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "bdSendLogReply01",
+          "cachedResultName": "Budget Coach Demo | Send And Log Reply"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {},
+        "mode": "each"
+      }
+    },
+    {
+      "id": "w2-title",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Budget Coach Demo | WF2 — Scheduled Check-ins\n\nEntry workflow for everything the Budget Coach demo starts on its own. No Telegram trigger here: 5 schedule triggers (Europe/Rome) each build a synthetic message and call an agent (agents/ subfolder, locked to \"WF1\" and to this workflow). The answer goes to the service \"Budget Coach Demo | Send And Log Reply\".\nSections: Renewal Check (\"Subscription Agent\"), Budget Check-ins (\"Family Budget Coach\"), Month Setup (inline, creates the month's Budget Lines), Shared: All Sections (the send-and-log call).\nAll schedules switch on and off together (disable one schedule node to pause just one). Errors: \"Error Handling | Main — Error Handler\".",
+        "height": 460,
+        "width": 1800,
+        "color": 5
+      }
+    },
+    {
+      "id": "w2-b",
+      "name": "Renewal Check Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        528
+      ],
+      "parameters": {
+        "content": "## Renewal Check (\"Subscription Agent\")\n\nTriggered by: a schedule, every 2 days at 09:00.\n\nWhat it does: Tag Renewal Check sets mode = renewal_check and Call Subscription Agent runs the agent, which asks Notion for subscriptions whose \"Needs Alert\" is true. None: the run ends empty and nothing is sent. Some: one alert is written and sent.",
+        "height": 580,
+        "width": 1800,
+        "color": 6
+      }
+    },
+    {
+      "id": "w2-c",
+      "name": "Budget Check-ins Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        1168
+      ],
+      "parameters": {
+        "content": "## Budget Check-ins (\"Family Budget Coach\")\n\nTriggered by: 3 schedules (Europe/Rome): daily 19:15 to Alex and to Sam, one message each (One Per Chat splits the two chats; skipped for a chat that already has a Budget Coach exchange logged today), Sunday 19:30 weekly summary, and the 1st at 08:00 month-end review of the month just closed.\n\nAll three build a synthetic message and call Call Family Budget Coach. Automatic messages are propose-only: nothing is written until you reply.",
+        "height": 960,
+        "width": 1800
+      }
+    },
+    {
+      "id": "w2-d",
+      "name": "Month Setup Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        2192
+      ],
+      "parameters": {
+        "content": "## Month Setup (1st 06:00)\n\nTriggered by: a schedule on the 1st of the month at 06:00 (no AI).\n\nWhat it does: reads the Budget Categories and the Budget Lines, creates this month's missing Budget Line for every category with a default budget, and creates the month's Overall line from the previous month's cap (a cap set in euros is copied in euros too, and the Budget Coach converts it at the current rate). If it created anything it sends one confirmation line. It is logged as agent \"month_setup\" so it does not suppress the 19:15 check-in.",
+        "height": 580,
+        "width": 1800,
+        "color": 4
+      }
+    },
+    {
+      "id": "w2-shared",
+      "name": "Shared: All Sections",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1872,
+        528
+      ],
+      "parameters": {
+        "content": "## Shared: All Sections\n\nReached after any agent call above returns, and after Month Setup.\n\nIf an agent call fails or times out, its error output goes to Build Check-in Error Reply: a chat message saying which agent could not send the scheduled message, why, and \"try again\" with the tag line (the alert comes from the agent's own workflow).\n\nCall Send And Log Reply runs the service that formats the reply for Telegram, logs it in the Agent Log and sends it (the same service \"WF1\" uses).",
+        "height": 2240,
+        "width": 520,
+        "color": 2
+      }
+    },
+    {
+      "id": "set-checkin-error-reply",
+      "name": "Build Check-in Error Reply",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1984,
+        1216
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "error_reason",
+              "type": "string",
+              "value": "={{ /time(d)? ?out/i.test(JSON.stringify($json.error || '')) ? 'it timed out' : ('it failed: ' + String(typeof $json.error === 'object' ? ($json.error.message || JSON.stringify($json.error)) : ($json.error || 'unknown error')).slice(0, 200)) }}"
+            },
+            {
+              "id": "e2",
+              "name": "output",
+              "type": "string",
+              "value": "=⚠️ The {{ $json.agent_name }} agent could not send this scheduled message: {{ /time(d)? ?out/i.test(JSON.stringify($json.error || '')) ? 'it timed out' : ('it failed: ' + String(typeof $json.error === 'object' ? ($json.error.message || JSON.stringify($json.error)) : ($json.error || 'unknown error')).slice(0, 200)) }}.\n\nReply \"try again\" and I run it now.\n\n➡️ #{{ $json.agent_name }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "split-checkin-chats",
+      "name": "One Per Chat: Daily Expense Check-in (19:15)",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        608,
+        1504
+      ],
+      "parameters": {
+        "fieldToSplitOut": "chat_ids",
+        "include": "allOtherFields",
+        "options": {
+          "destinationFieldName": "chat_id"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule: Renewal Check (every 2 days 09:00)": {
+      "main": [
+        [
+          {
+            "node": "Tag Renewal Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag Renewal Check": {
+      "main": [
+        [
+          {
+            "node": "Call Subscription Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule: Daily Expense Check-in (19:15)": {
+      "main": [
+        [
+          {
+            "node": "Tag Slot: Daily Expense Check-in (19:15)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not Already Logged Today: Daily Expense Check-in (19:15)": {
+      "main": [
+        [
+          {
+            "node": "Build Message: Daily Expense Check-in (19:15)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Message: Daily Expense Check-in (19:15)": {
+      "main": [
+        [
+          {
+            "node": "Call Family Budget Coach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule: Weekly Budget Summary (Sun 19:30)": {
+      "main": [
+        [
+          {
+            "node": "Build Message: Weekly Budget Summary (Sun 19:30)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Message: Weekly Budget Summary (Sun 19:30)": {
+      "main": [
+        [
+          {
+            "node": "Call Family Budget Coach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule: Month-End Review (1st 08:00)": {
+      "main": [
+        [
+          {
+            "node": "Build Message: Month-End Review (1st 08:00)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Message: Month-End Review (1st 08:00)": {
+      "main": [
+        [
+          {
+            "node": "Call Family Budget Coach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule: Month Setup (1st 06:00)": {
+      "main": [
+        [
+          {
+            "node": "Build Message: Month Setup (1st 06:00)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Message: Month Setup (1st 06:00)": {
+      "main": [
+        [
+          {
+            "node": "Fetch Categories For Month Setup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Categories For Month Setup": {
+      "main": [
+        [
+          {
+            "node": "Fetch Lines For Month Setup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Lines For Month Setup": {
+      "main": [
+        [
+          {
+            "node": "Build Month Lines",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Month Lines": {
+      "main": [
+        [
+          {
+            "node": "Create Budget Line",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Budget Line": {
+      "main": [
+        [
+          {
+            "node": "Build Setup Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Subscription Agent": {
+      "main": [
+        [
+          {
+            "node": "Call Send And Log Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Check-in Error Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Family Budget Coach": {
+      "main": [
+        [
+          {
+            "node": "Call Send And Log Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Check-in Error Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Setup Reply": {
+      "main": [
+        [
+          {
+            "node": "Call Send And Log Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Check-in Error Reply": {
+      "main": [
+        [
+          {
+            "node": "Call Send And Log Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag Slot: Daily Expense Check-in (19:15)": {
+      "main": [
+        [
+          {
+            "node": "One Per Chat: Daily Expense Check-in (19:15)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One Per Chat: Daily Expense Check-in (19:15)": {
+      "main": [
+        [
+          {
+            "node": "Not Already Logged Today: Daily Expense Check-in (19:15)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Rome",
+    "saveManualExecutions": true,
+    "binaryMode": "separate",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID"
+  },
+  "active": false
+}

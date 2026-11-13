@@ -1,0 +1,729 @@
+{
+  "id": "pdCheckins000001",
+  "name": "Productivity Coach Demo | WF2 — Scheduled Check-ins",
+  "nodes": [
+    {
+      "id": "call-productivity",
+      "name": "Call Productivity Agent",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueErrorOutput",
+      "position": [
+        1184,
+        1056
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "pdProductivity01"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "sched-morning",
+      "name": "Schedule: Morning Plan (07:00 Mon-Fri)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        80,
+        864
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * 1-5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "set-slot-morning",
+      "name": "Tag Slot: Morning Plan (07:00 Mon-Fri)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        352,
+        864
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "YOUR_TELEGRAM_CHAT_ID"
+            },
+            {
+              "id": "s2",
+              "name": "agent",
+              "type": "string",
+              "value": "productivity"
+            },
+            {
+              "id": "s3",
+              "name": "slot",
+              "type": "string",
+              "value": "morning"
+            },
+            {
+              "id": "s4",
+              "name": "log_date",
+              "type": "string",
+              "value": "={{ $now.toFormat('yyyy-LL-dd') }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "gate-morning",
+      "name": "Not Already Checked In: Morning Plan (07:00 Mon-Fri)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        864
+      ],
+      "parameters": {
+        "operation": "rowNotExists",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_LOG_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "keyValue": "={{ $json.chat_id }}"
+            },
+            {
+              "keyName": "agent",
+              "keyValue": "productivity"
+            },
+            {
+              "keyName": "slot",
+              "keyValue": "morning"
+            },
+            {
+              "keyName": "log_date",
+              "keyValue": "={{ $json.log_date }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "set-msg-morning",
+      "name": "Build Message: Morning Plan (07:00 Mon-Fri)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        864,
+        864
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "m1",
+              "name": "chatInput",
+              "type": "string",
+              "value": "It's 7am — give me today's plan."
+            },
+            {
+              "id": "m2",
+              "name": "agent_name",
+              "type": "string",
+              "value": "productivity"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "sched-evening",
+      "name": "Schedule: End of Day (19:00 Mon-Fri)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        80,
+        1056
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 19 * * 1-5"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "set-slot-evening",
+      "name": "Tag Slot: End of Day (19:00 Mon-Fri)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        352,
+        1056
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "YOUR_TELEGRAM_CHAT_ID"
+            },
+            {
+              "id": "s2",
+              "name": "agent",
+              "type": "string",
+              "value": "productivity"
+            },
+            {
+              "id": "s3",
+              "name": "slot",
+              "type": "string",
+              "value": "evening"
+            },
+            {
+              "id": "s4",
+              "name": "log_date",
+              "type": "string",
+              "value": "={{ $now.toFormat('yyyy-LL-dd') }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "gate-evening",
+      "name": "Not Already Checked In: End of Day (19:00 Mon-Fri)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        1056
+      ],
+      "parameters": {
+        "operation": "rowNotExists",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_LOG_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "keyValue": "={{ $json.chat_id }}"
+            },
+            {
+              "keyName": "agent",
+              "keyValue": "productivity"
+            },
+            {
+              "keyName": "slot",
+              "keyValue": "evening"
+            },
+            {
+              "keyName": "log_date",
+              "keyValue": "={{ $json.log_date }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "set-msg-evening",
+      "name": "Build Message: End of Day (19:00 Mon-Fri)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        864,
+        1056
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "m1",
+              "name": "chatInput",
+              "type": "string",
+              "value": "It's 7pm — what did I accomplish today?"
+            },
+            {
+              "id": "m2",
+              "name": "agent_name",
+              "type": "string",
+              "value": "productivity"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "sched-weekly",
+      "name": "Schedule: Weekly Review (Sat 18:00)",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        80,
+        1248
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 18 * * 6"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "set-slot-weekly",
+      "name": "Tag Slot: Weekly Review (Sat 18:00)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        352,
+        1248
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "YOUR_TELEGRAM_CHAT_ID"
+            },
+            {
+              "id": "s2",
+              "name": "agent",
+              "type": "string",
+              "value": "project"
+            },
+            {
+              "id": "s3",
+              "name": "slot",
+              "type": "string",
+              "value": "weekly_review"
+            },
+            {
+              "id": "s4",
+              "name": "log_date",
+              "type": "string",
+              "value": "={{ $now.toFormat('yyyy-LL-dd') }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "gate-weekly",
+      "name": "Not Already Reviewed: Weekly Review (Sat 18:00)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        1248
+      ],
+      "parameters": {
+        "operation": "rowNotExists",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_LOG_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "keyValue": "={{ $json.chat_id }}"
+            },
+            {
+              "keyName": "agent",
+              "keyValue": "project"
+            },
+            {
+              "keyName": "slot",
+              "keyValue": "weekly_review"
+            },
+            {
+              "keyName": "log_date",
+              "keyValue": "={{ $json.log_date }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "set-msg-weekly",
+      "name": "Build Message: Weekly Review (Sat 18:00)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        864,
+        1248
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "m1",
+              "name": "chatInput",
+              "type": "string",
+              "value": "AUTOMATIC WEEKLY REVIEW (Saturday): review my active projects and propose next week's goals, then close this week and plan next week. Propose only: change nothing in Notion until I answer."
+            },
+            {
+              "id": "m2",
+              "name": "agent_name",
+              "type": "string",
+              "value": "project"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "call-send-log",
+      "name": "Call Send And Log Reply",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1984,
+        912
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "pdSendLogReply01",
+          "cachedResultName": "Productivity Coach Demo | Send And Log Reply"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {},
+        "mode": "each"
+      }
+    },
+    {
+      "id": "w2-title",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Productivity Coach Demo | WF2 — Scheduled Check-ins\n\nEntry workflow for everything the Productivity Coach demo starts on its own. No Telegram trigger here: 3 schedule triggers (Europe/Rome) each build a synthetic message and call an agent (agents/ subfolder, locked to \"WF1\" and to this workflow). The answer goes to the service \"Productivity Coach Demo | Send And Log Reply\".\nSections: Task Check-ins and Weekly Review (\"Productivity Agent\", \"Projects Coach\"), Shared: All Sections (the send-and-log call).\nAll schedules switch on and off together. Errors: \"Error Handling | Main — Error Handler\".",
+        "height": 460,
+        "width": 1800,
+        "color": 5
+      }
+    },
+    {
+      "id": "w2-a",
+      "name": "Task Check-ins and Weekly Review Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        528
+      ],
+      "parameters": {
+        "content": "## Task Check-ins (\"Productivity Agent\") and Weekly Review (\"Projects Coach\")\n\nTriggered by: 3 schedules (Europe/Rome): 07:00 and 19:00 Mon-Fri call the Productivity Agent; Saturday 18:00 calls the Projects Coach (weekly project review and next week's goals; its reply hands off to \"Productivity Agent\" with #productivity to close the week).\n\nWhat it does, step by step:\n1. Tag Slot names the slot.\n2. The gate looks in the Agent Log for today's row of that slot. Found: stop (you covered it yourself).\n3. Build Message writes the synthetic message.\n4. Call Productivity Agent or Call Projects Coach runs the agent.",
+        "height": 960,
+        "width": 1800,
+        "color": 3
+      }
+    },
+    {
+      "id": "w2-shared",
+      "name": "Shared: All Sections",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1872,
+        528
+      ],
+      "parameters": {
+        "content": "## Shared: All Sections\n\nReached after any agent call above returns, and after Month Setup.\n\nIf an agent call fails or times out, its error output goes to Build Check-in Error Reply: a chat message saying which agent could not send the scheduled message, why, and \"try again\" with the tag line (the alert comes from the agent's own workflow).\n\nCall Send And Log Reply runs the service that formats the reply for Telegram, logs it in the Agent Log and sends it (the same service \"WF1\" uses).",
+        "height": 960,
+        "width": 520,
+        "color": 2
+      }
+    },
+    {
+      "id": "call-projects",
+      "name": "Call Projects Coach",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueErrorOutput",
+      "position": [
+        1184,
+        1248
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "pdProjectsCoach1"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "set-checkin-error-reply",
+      "name": "Build Check-in Error Reply",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1984,
+        1152
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "error_reason",
+              "type": "string",
+              "value": "={{ /time(d)? ?out/i.test(JSON.stringify($json.error || '')) ? 'it timed out' : ('it failed: ' + String(typeof $json.error === 'object' ? ($json.error.message || JSON.stringify($json.error)) : ($json.error || 'unknown error')).slice(0, 200)) }}"
+            },
+            {
+              "id": "e2",
+              "name": "output",
+              "type": "string",
+              "value": "=⚠️ The {{ $json.agent_name }} agent could not send this scheduled message: {{ /time(d)? ?out/i.test(JSON.stringify($json.error || '')) ? 'it timed out' : ('it failed: ' + String(typeof $json.error === 'object' ? ($json.error.message || JSON.stringify($json.error)) : ($json.error || 'unknown error')).slice(0, 200)) }}.\n\nReply \"try again\" and I run it now.\n\n➡️ #{{ $json.agent_name }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Schedule: Morning Plan (07:00 Mon-Fri)": {
+      "main": [
+        [
+          {
+            "node": "Tag Slot: Morning Plan (07:00 Mon-Fri)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag Slot: Morning Plan (07:00 Mon-Fri)": {
+      "main": [
+        [
+          {
+            "node": "Not Already Checked In: Morning Plan (07:00 Mon-Fri)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not Already Checked In: Morning Plan (07:00 Mon-Fri)": {
+      "main": [
+        [
+          {
+            "node": "Build Message: Morning Plan (07:00 Mon-Fri)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Message: Morning Plan (07:00 Mon-Fri)": {
+      "main": [
+        [
+          {
+            "node": "Call Productivity Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule: End of Day (19:00 Mon-Fri)": {
+      "main": [
+        [
+          {
+            "node": "Tag Slot: End of Day (19:00 Mon-Fri)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag Slot: End of Day (19:00 Mon-Fri)": {
+      "main": [
+        [
+          {
+            "node": "Not Already Checked In: End of Day (19:00 Mon-Fri)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not Already Checked In: End of Day (19:00 Mon-Fri)": {
+      "main": [
+        [
+          {
+            "node": "Build Message: End of Day (19:00 Mon-Fri)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Message: End of Day (19:00 Mon-Fri)": {
+      "main": [
+        [
+          {
+            "node": "Call Productivity Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule: Weekly Review (Sat 18:00)": {
+      "main": [
+        [
+          {
+            "node": "Tag Slot: Weekly Review (Sat 18:00)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag Slot: Weekly Review (Sat 18:00)": {
+      "main": [
+        [
+          {
+            "node": "Not Already Reviewed: Weekly Review (Sat 18:00)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not Already Reviewed: Weekly Review (Sat 18:00)": {
+      "main": [
+        [
+          {
+            "node": "Build Message: Weekly Review (Sat 18:00)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Productivity Agent": {
+      "main": [
+        [
+          {
+            "node": "Call Send And Log Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Check-in Error Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Message: Weekly Review (Sat 18:00)": {
+      "main": [
+        [
+          {
+            "node": "Call Projects Coach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Projects Coach": {
+      "main": [
+        [
+          {
+            "node": "Call Send And Log Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Check-in Error Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Check-in Error Reply": {
+      "main": [
+        [
+          {
+            "node": "Call Send And Log Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Rome",
+    "saveManualExecutions": true,
+    "binaryMode": "separate",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID"
+  },
+  "active": false
+}

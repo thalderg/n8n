@@ -1,0 +1,1182 @@
+{
+  "id": "bdBudgetCoach001",
+  "name": "Budget Coach Demo | Family Budget Coach",
+  "nodes": [
+    {
+      "id": "note-title",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Budget Coach Demo | Family Budget Coach\n\nAn AI agent: one function, one trigger, no routing. Called by \"WF1\" (the Router's budget category) and by \"WF2 — Scheduled Check-ins\" (the 19:15 check-in, the Sunday summary and the month-end review). Locked to those two. The month's Budget Lines are created by the Month Setup section of \"WF2 — Scheduled Check-ins\".\nThree sections, left to right: Read Notion And Memory → Family Budget Coach → Remember And Reply.\nData: Budget Categories, Budget Lines, Family Expenses (Demo Assistant / Budget Coach); Subscriptions is read only. Long-term memory: the page Family Budget Memory. Errors go to \"Error Handling | Main — Error Handler\".",
+        "width": 5130,
+        "height": 320,
+        "color": 7
+      }
+    },
+    {
+      "id": "note-chat",
+      "name": "Family Budget Coach Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2300,
+        380
+      ],
+      "parameters": {
+        "content": "## Family Budget Coach\n\nTriggered by: runs inline after Read Notion And Memory.\n\n1. Answers from the snapshot; logs all the expenses of a message in one Notion MCP Create Pages call (the day's rate from the snapshot; Paid By = the sender unless the message names the other person; never a row the snapshot already holds).\n2. Checks the budget after every write and asks whether to raise or keep a budget that went over (Notion MCP Update Page).\n3. Only \"including subscriptions\" reads Get Subscriptions (read only) and totals it with the Calculator at the NBP rates.\n4. Chat memory: Agent Conversation Memory (Postgres, per chat). Model: Luna Chat Model. Move Row To Trash: one row, on request or a confirmed duplicate.",
+        "width": 1010,
+        "height": 1300,
+        "color": 4
+      }
+    },
+    {
+      "id": "exec-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        840
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "store-settings",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        320,
+        840
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "paid_by",
+              "type": "string",
+              "value": "={{ String($json.chat_id) === 'YOUR_TELEGRAM_CHAT_ID' ? 'Alex' : 'Sam' }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch-nbp",
+      "name": "Fetch NBP Rates",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "onError": "continueRegularOutput",
+      "position": [
+        560,
+        840
+      ],
+      "parameters": {
+        "url": "https://api.nbp.pl/api/exchangerates/tables/a/?format=json",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "fetch-cats",
+      "name": "Fetch Budget Categories",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "position": [
+        800,
+        840
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_BUDGET_CATEGORIES_DATA_SOURCE_ID",
+          "cachedResultName": "Budget Categories"
+        },
+        "returnAll": true,
+        "simple": false,
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "fetch-lines",
+      "name": "Fetch Budget Lines",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "position": [
+        1040,
+        840
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_BUDGET_LINES_DATA_SOURCE_ID",
+          "cachedResultName": "Budget Lines"
+        },
+        "returnAll": true,
+        "simple": false,
+        "options": {},
+        "filterType": "json",
+        "filterJson": "={\"property\":\"Month\",\"date\":{\"on_or_after\":\"{{ $now.minus({months: 3}).startOf('month').toISODate() }}\"}}"
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "fetch-exp",
+      "name": "Fetch Recent Expenses",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "position": [
+        1280,
+        840
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_FAMILY_EXPENSES_DATA_SOURCE_ID",
+          "cachedResultName": "Family Expenses"
+        },
+        "returnAll": true,
+        "simple": false,
+        "options": {},
+        "filterType": "json",
+        "filterJson": "={\"property\":\"Date\",\"date\":{\"on_or_after\":\"{{ $now.minus({months: 3}).startOf('month').toISODate() }}\"}}"
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "build-snapshot",
+      "name": "Build Budget Snapshot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        840
+      ],
+      "parameters": {
+        "jsCode": "const trig = $('Store Settings').first().json;\nconst raw = $('Fetch NBP Rates').first().json;\nconst tbl = Array.isArray(raw) ? raw[0] : raw;\nconst eurRow = tbl && Array.isArray(tbl.rates) ? tbl.rates.find(r => r.code === 'EUR') : null;\nconst eur = eurRow && typeof eurRow.mid === 'number' && eurRow.mid > 0 ? eurRow.mid : null;\nconst rateDate = eur ? tbl.effectiveDate : null;\n\nconst txt = (a) => (a || []).map(t => t.plain_text).join('');\nconst sel = (p) => (p && p.select ? p.select.name : null);\nconst num = (p) => (p && typeof p.number === 'number' ? p.number : null);\nconst fnum = (p) => (p && p.formula && typeof p.formula.number === 'number' ? p.formula.number : null);\nconst pagesOf = (n) => $(n).all().map(i => i.json).filter(p => p && p.properties);\nconst r2 = (n) => Math.round(n * 100) / 100;\nconst pln = (n) => (n == null ? 'N/A' : r2(n) + ' PLN');\nconst both = (n) => (n == null ? 'N/A' : pln(n) + (eur ? ' (' + r2(n / eur) + ' EUR)' : ''));\n// EUR next to PLN: spent in EUR is the sum of each expense's own EUR amount (Spent (EUR) rollup) when the column exists, else today's rate\nconst pair = (p, e) => (p == null ? 'N/A' : pln(p) + (e != null ? ' (' + r2(e) + ' EUR)' : (eur ? ' (' + r2(p / eur) + ' EUR)' : '')));\nconst eurOf = (l) => {\n  const b = l.budgetEur != null ? l.budgetEur : (eur && l.budget != null ? l.budget / eur : null);\n  const s = l.spentEur != null ? l.spentEur : (eur ? l.spent / eur : null);\n  return { budget: b, spent: s, left: b != null && s != null ? b - s : null, proj: s != null && day > 0 ? s / day * dim : null };\n};\nconst setIn = (l) => (l.budgetEur != null ? ' [set in EUR: ' + l.budgetEur + ' EUR; its PLN is at the current rate]' : '');\n\nconst monthKey = $now.toFormat('yyyy-LL');\nconst today = $now.toFormat('yyyy-LL-dd');\nconst day = $now.day, dim = $now.daysInMonth;\n\nconst cats = {};\nfor (const pg of pagesOf('Fetch Budget Categories')) {\n  const p = pg.properties;\n  cats[pg.id] = { id: pg.id, name: txt(p['Name'] && p['Name'].title), group: sel(p['Group']), type: sel(p['Budget Type']), def: num(p['Default Monthly Budget (PLN)']) };\n}\nconst lines = pagesOf('Fetch Budget Lines').map(pg => {\n  const p = pg.properties;\n  const rel = p['Category'] && p['Category'].relation && p['Category'].relation[0] ? p['Category'].relation[0].id : null;\n  const spent = p['Spent (PLN)'] && p['Spent (PLN)'].rollup && typeof p['Spent (PLN)'].rollup.number === 'number' ? p['Spent (PLN)'].rollup.number : 0;\n  const spentEur = p['Spent (EUR)'] && p['Spent (EUR)'].rollup && typeof p['Spent (EUR)'].rollup.number === 'number' ? p['Spent (EUR)'].rollup.number : null;\n  // A budget given in euros stays in euros: its PLN value is recalculated at the current rate on every run\n  const budgetEur = num(p['Budget (EUR)']) > 0 ? num(p['Budget (EUR)']) : null;\n  const budget = budgetEur != null && eur ? r2(budgetEur * eur) : num(p['Budget (PLN)']);\n  return {\n    id: pg.id, name: txt(p['Name'] && p['Name'].title),\n    month: p['Month'] && p['Month'].date ? p['Month'].date.start.slice(0, 7) : null,\n    catId: rel, cat: rel && cats[rel] ? cats[rel].name : 'Overall',\n    budget, budgetEur, spent, spentEur, left: budget == null ? null : budget - spent, pct: budget > 0 ? Math.round(spent / budget * 100) : null\n  };\n});\nconst lineById = Object.fromEntries(lines.map(l => [l.id, l]));\nconst cur = lines.filter(l => l.month === monthKey);\n// Two lines for the same category (or two Overall lines) split the month's spending: keep the fuller one and flag the rest\nconst overall = cur.filter(l => !l.catId).sort((a, b) => b.spent - a.spent)[0];\nconst catLines = cur.filter(l => l.catId);\nconst dupes = Object.values(cur.reduce((g, l) => { const k = l.catId || 'overall'; (g[k] = g[k] || []).push(l); return g; }, {})).filter(g => g.length > 1).map(g => g.sort((a, b) => b.spent - a.spent));\n\nconst exps = pagesOf('Fetch Recent Expenses').map(pg => {\n  const p = pg.properties;\n  const rel = (p['Budget Line'] && p['Budget Line'].relation) || [];\n  const cl = rel.map(r => lineById[r.id]).find(l => l && l.catId);\n  return {\n    id: pg.id, desc: txt(p['Description'] && p['Description'].title),\n    date: p['Date'] && p['Date'].date ? p['Date'].date.start.slice(0, 10) : null,\n    pln: fnum(p['Amount PLN']), amount: num(p['Amount']), cur: sel(p['Currency']),\n    sub: txt(p['Subcategory'] && p['Subcategory'].rich_text) || '-',\n    cat: cl ? cl.cat : 'Uncategorised', paidBy: sel(p['Paid By']), card: sel(p['Card Used'])\n  };\n}).filter(e => e.date).sort((a, b) => (a.date < b.date ? 1 : -1));\n\n// Long-term memory from Notion, read on every message (the agent's own page and the shared page): what they asked to remember\nconst memText = (n) => { try { const j = $(n).first().json; return typeof j.markdown === 'string' ? j.markdown.split('\\n').filter((l) => !l.startsWith('>')).join('\\n').trim() : null; } catch (e) { return null; } };\nconst ownMem = memText('Fetch Agent Memory'), sharedMem = memText('Fetch Shared Memory');\nconst memFailed = [ownMem === null ? 'your memory page' : '', sharedMem === null ? 'the shared memory page' : ''].filter(Boolean);\nconst memory = 'WHAT YOU KNOW ABOUT ALEX AND SAM (your Notion memory, read just now: apply every line)\\n' + (memFailed.length ? 'MEMORY READ FAILED for ' + memFailed.join(' and ') + ': call Recall Memory once.\\n' : '') + '# Shared page (all agents)\\n' + (sharedMem || '-') + '\\n# Your page\\n' + (ownMem || '-');\nconst out = [memory, ''];\nout.push('Read from Notion just now (' + $now.toFormat('yyyy-LL-dd HH:mm') + ' Europe/Rome). Month ' + monthKey + ', day ' + day + ' of ' + dim + ' (' + (dim - day) + ' days left). Talking to: ' + trig.paid_by + '.');\nout.push(eur ? 'EXCHANGE RATE: 1 EUR = ' + eur + ' PLN (NBP table A, ' + rateDate + '). Copy it into every expense row as \"EUR/PLN Rate\" (PLN rows too).' : 'EXCHANGE RATE: LOOKUP FAILED. Do not log any expense in EUR now (tell the user); PLN expenses can still be logged.');\n\nout.push('NBP RATES (PLN per 1 unit' + (tbl && tbl.effectiveDate ? ', ' + tbl.effectiveDate : '') + '): ' + ['EUR', 'USD', 'GBP', 'CHF'].map(c => { const r = tbl && Array.isArray(tbl.rates) ? tbl.rates.find(x => x.code === c) : null; return c + ' ' + (r && typeof r.mid === 'number' ? r.mid : 'N/A'); }).join(', ') + '. Used for subscriptions only.');\n\nconst hasBudgets = catLines.some(l => l.budget != null) || (overall && overall.budget != null);\nif (!hasBudgets) out.push('SETUP NEEDED: no budget is set for this month yet. Run the setup mode.');\n\nout.push('\\nTHIS MONTH, BUDGET LINES (use these ids):');\nconst room = (l) => {\n  if (!(l.budget > 0)) return '';\n  const e = eurOf(l);\n  const f = (v, ev) => (v <= 0 ? 'already past' : pair(v, ev));\n  return ' | room to 80%: ' + f(l.budget * 0.8 - l.spent, e.budget != null && e.spent != null ? e.budget * 0.8 - e.spent : null) + ' | room to 100%: ' + f(l.budget - l.spent, e.left);\n};\nfor (const l of catLines.sort((a, b) => a.cat.localeCompare(b.cat))) {\n  const proj = l.budget != null && day > 0 ? r2(l.spent / day * dim) : null;\n  const e = eurOf(l);\n  out.push('- line ' + l.id + ' | ' + l.cat + ' | budget ' + pair(l.budget, e.budget) + setIn(l) + ' | spent ' + pair(l.spent, e.spent) + ' | left ' + pair(l.left, e.left) + ' | used ' + (l.pct == null ? 'N/A' : l.pct + '%') + room(l) + (proj != null ? ' | projected month-end ' + pair(proj, e.proj) : ''));\n}\nif (overall) {\n  const proj = overall.budget != null ? r2(overall.spent / day * dim) : null;\n  const e = eurOf(overall);\n  out.push('OVERALL (monthly cap): line ' + overall.id + ' | cap ' + pair(overall.budget, e.budget) + setIn(overall) + ' | spent ' + pair(overall.spent, e.spent) + ' | left ' + pair(overall.left, e.left) + ' | used ' + (overall.pct == null ? 'N/A' : overall.pct + '%') + room(overall) + (proj != null ? ' | projected month-end ' + pair(proj, e.proj) : ''));\n} else {\n  out.push('OVERALL (monthly cap): NO Overall line exists for this month. Create it with Notion MCP Create Pages (name \"Overall – ' + monthKey + '\", no category).');\n}\nif (dupes.length) out.push('DUPLICATE BUDGET LINES THIS MONTH (spending is split between them, so these totals are wrong): ' + dupes.map(g => g[0].cat + ': ' + g.map(l => 'line ' + l.id + ' budget ' + pln(l.budget) + ' spent ' + pln(l.spent)).join(' / ')).join(' ; ') + '. Start your reply with one line telling the user, link new expenses to the first line of each group, never create another line for it.');\nconst missing = Object.values(cats).filter(c => c.def != null && !catLines.some(l => l.catId === c.id));\nif (missing.length) out.push('CATEGORIES WITH A DEFAULT BUDGET BUT NO LINE THIS MONTH (create with Notion MCP Create Pages when needed): ' + missing.map(c => c.name + ' (category id ' + c.id + ', default ' + pln(c.def) + ')').join('; '));\n\nout.push('\\nCATEGORIES (ids for new Budget Lines / Related Category): ' + Object.values(cats).sort((a, b) => a.name.localeCompare(b.name)).map(c => c.name + ' [' + c.id + '] ' + (c.group || '?') + '/' + (c.type || '?') + ' default ' + pln(c.def)).join(' ; '));\n\nconst todays = exps.filter(e => e.date === today);\nout.push('\\nLOGGED TODAY (' + today + '): ' + (todays.length ? todays.map(e => e.desc + ' ' + e.amount + ' ' + e.cur + ' (' + e.cat + ', by ' + e.paidBy + ')').join(' ; ') : 'nothing yet'));\nout.push('LAST 8 EXPENSES (page ids, for corrections): ' + (exps.slice(0, 8).map(e => 'id ' + e.id + ' | ' + e.date + ' | ' + e.desc + ' | ' + e.amount + ' ' + e.cur + ' | ' + e.cat + '/' + e.sub + ' | ' + e.paidBy + ' | ' + e.card).join(' ;; ') || 'none'));\n\nconst prevMonths = [...new Set(lines.filter(l => l.month && l.month < monthKey).map(l => l.month))].sort().reverse().slice(0, 3);\nout.push('\\nPREVIOUS MONTHS, budget vs spent per category (PLN, then EUR):');\nif (!prevMonths.length) out.push('- none yet');\nfor (const m of prevMonths) {\n  const ls = lines.filter(l => l.month === m);\n  out.push('- ' + m + ': ' + ls.map(l => l.cat + ' ' + (l.budget == null ? 'N/A' : r2(l.budget)) + '/' + r2(l.spent) + (eur ? ' (' + (l.budget == null ? 'N/A' : r2(eurOf(l).budget)) + '/' + r2(eurOf(l).spent) + ' EUR)' : '')).join(', '));\n}\n\nconst subTotals = {};\nfor (const e of exps) {\n  const m = e.date.slice(0, 7);\n  const k = e.cat + ' > ' + e.sub;\n  subTotals[m] = subTotals[m] || {};\n  subTotals[m][k] = (subTotals[m][k] || 0) + (e.pln || 0);\n}\nout.push('\\nSPENDING BY SUBCATEGORY, last months (PLN, top 12 each):');\nfor (const m of Object.keys(subTotals).sort().reverse()) {\n  const top = Object.entries(subTotals[m]).sort((a, b) => b[1] - a[1]).slice(0, 12);\n  out.push('- ' + m + ': ' + top.map(([k, v]) => k + ' ' + r2(v)).join(', '));\n}\n\nreturn [{ json: { chat_id: trig.chat_id, agent_name: trig.agent_name ?? 'budget', chatInput: trig.chatInput, paid_by: trig.paid_by, eurPlnRate: eur, snapshot: out.join('\\n') } }];"
+      }
+    },
+    {
+      "id": "agent",
+      "name": "Family Budget Coach",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2380,
+        840
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "=<role>\nYou are the family budget coach for Alex and Sam's family of three (their daughter Mia, 2, still in diapers), reached through Telegram. You track what the family spends in Notion, watch every category against its budget, and help the family spend better over time. Infer what is needed from context; never make anyone name a mode. You are talking to {{ $json.paid_by }}. Reply in the language of the message. Main currency PLN, second currency EUR (PLN first, EUR in brackets when it helps).\n</role>\n\n<context>\nNow: {{ $now.toFormat('HH:mm') }} (Europe/Rome). Today: {{ $now.toFormat('cccc yyyy-LL-dd') }}. This month: {{ $now.toFormat('yyyy-LL') }}, day {{ $now.day }} of {{ $now.daysInMonth }} ({{ $now.daysInMonth - $now.day }} days left). Previous month: {{ $now.minus({ months: 1 }).toFormat('yyyy-LL') }}.\nUse these dates exactly; never guess a date or the year.\n</context>\n\n<tools>\nUse only the tool that matches the job. Your tables, on the Notion page Demo Assistant > Budget Coach: Budget Categories, Budget Lines, Family Expenses; your memory page Family Budget Memory (plus Shared Memory). The Subscriptions table you only read. Never create a table, a database or a page outside these.\n- Read: Get Budget Lines (this month's lines, fresh: spent, left, % used), Get Expenses (expenses in a date range). The live snapshot already covers reading, every line id included: never call them before a write or to check a write. Get Budget Lines only when <budget_check> says so; Get Expenses only for a range the snapshot does not cover.\n- Search (any of your tables, any column): Search Budget Tables, for everything the live snapshot does not hold: expenses of any period, by who paid, card, currency, amount, subcategory or a word in the description or notes; budget lines of any month; categories. Use it before saying something is not there, and to find the page id of an old expense before changing it. Never answer a question about past spending from memory. When you say how many, count the rows the search returned; totals with the Calculator.\n- Create (one row or many): Notion MCP Create Pages (the notion-create-pages tool), see <create_rows>: expenses, and Budget Lines (a month's line for a category that has none yet, or the Overall line). ONE call creates up to 100 rows of ONE table: put all the expenses of a message in one call; never one call per row.\n- Update (a budget amount, or an expense's amount, card, category, date or Paid By): Notion MCP Update Page (the notion-update-page tool): one existing page per call, any number of its fields at once.\n- Subscriptions: Get Subscriptions (read-only: the Subscriptions table, one row per subscription). Call it ONLY when the user asks for a total, a budget or spending \"including subscriptions\"; then compute the monthly PLN total as described in <including_subscriptions>. Never otherwise, and never write to the Subscriptions table.\n- Delete: Move Row To Trash moves ONE row of your own tables to the Notion trash (restorable for 30 days). Use it only for (a) a row he asks you to delete or remove (\"delete\", \"remove\", \"trash\", \"get rid of\": he wants the row gone), or (b) a duplicate you found (two rows for the same item): name both rows with their dates, say which one you would trash and why, and trash it only after he says yes. Never trash a row you are not sure about, never a page that is not a row of your tables, never more rows than he confirmed. Take the page id from the snapshot, a search result or the ACTION LOG.\n- Memory: your memory pages are in the live snapshot on every message; Save Memory writes; Recall Memory only when the snapshot says MEMORY READ FAILED.\n- Calculator: arithmetic you cannot take from the snapshot.\nHARD RULE: the two Notion MCP nodes have one job each: Notion MCP Update Page changes properties of a page that already exists, Notion MCP Create Pages creates rows in the two tables of <create_rows>. Never use either to read, search or list, and never in place of a Get tool. In an automatic daily check-in or weekly summary change nothing in Notion before the user replies; the automatic month-end review may only save memory.\n</tools>\n\n<create_rows>\nCreate rows with the notion-create-pages tool: parent {\"type\":\"data_source_id\",\"data_source_id\":\"<id below>\"}, allow_async false, pages = a list with one {\"properties\":{...}} per row. Send ONLY parent, pages and allow_async: never creation_mode, template_id, icon or content (a call with creation_mode is rejected whole). parent is MANDATORY in every call: without it Notion creates an empty private page outside every table and drops all fields, while still answering with an id. Check the result: each new page must come back with its properties filled; if \"properties\" is empty ({}), the row was NOT saved in the table: say so and send the call again with the parent. One call = one table. Use exactly these property names and labels. Text: a string. Number: a JavaScript number, never in quotes. Date: \"date:<Name>:start\":\"yyyy-LL-dd\" plus \"date:<Name>:is_datetime\":0. Relation: a list of page ids copied from the snapshot or a tool result.\n- Family Expenses, data_source_id YOUR_NOTION_FAMILY_EXPENSES_DATA_SOURCE_ID, one row per purchase: {\"Description\":\"short, e.g. Coffee at Costa\",\"date:Date:start\":\"<date>\",\"date:Date:is_datetime\":0,\"Amount\":<number as entered>,\"Currency\":\"PLN\" or \"EUR\",\"EUR/PLN Rate\":<the snapshot's EXCHANGE RATE number, also for PLN rows>,\"Budget Line\":[\"<that category's line id this month>\",\"<the Overall line id this month>\"],\"Subcategory\":\"...\",\"Paid By\":\"Alex\" or \"Sam\",\"Card Used\":\"Revolut|ING|Amex|Cash\",\"Source\":\"Text|Voice|Receipt photo|Daily check-in\",\"Notes\":\"...\"}. Add \"Related Category\":[\"<category id>\"] only for an Extraordinary expense that also belongs to a regular category; otherwise leave it out.\n- Budget Lines, data_source_id YOUR_NOTION_BUDGET_LINES_DATA_SOURCE_ID: {\"Name\":\"<Category> – YYYY-MM\",\"date:Month:start\":\"yyyy-LL-01\",\"date:Month:is_datetime\":0,\"Budget (PLN)\":<number>,\"Category\":[\"<category id>\"]}; the Overall line is {\"Name\":\"Overall – YYYY-MM\",\"date:Month:start\":\"yyyy-LL-01\",\"date:Month:is_datetime\":0,\"Budget (PLN)\":<cap>} with no Category. A budget or cap the user gives in euros also gets \"Budget (EUR)\":<the euro amount> (rule 8); one given in PLN never has \"Budget (EUR)\". Missing lines go in ONE call, BEFORE the expenses that need them.\nThe result lists every new page with its id: copy the new line ids from it for the expenses. A rejected call (an invalid label, number or date) creates nothing: fix the value and send the whole list once more, then report the error if it fails again.\nBefore EVERY create, check your memory first: the ACTION LOG lines in this conversation are written by the workflow from Notion's real answers, so an item listed there is already saved: do not search, do not create it again: stop and tell him it is already saved (name it and say when). If he answers that he removed that row himself and wants it added, make ONE search for it in Notion: still there, tell him; gone, create it. Only for an item NOT in the action log, make ONE search before creating it, limited to that item's own date: Search Budget Tables for expenses on exactly that date (today when he says today or gives no date; the date he gives otherwise) with the same amount; for a Budget Line, the same category and month (THIS MONTH, BUDGET LINES already shows it); the Overall line already exists whenever the OVERALL row shows a line id: never create a second one. Never search the whole table. Create only what neither check found. Log only the expenses of his current message, or the ones your last question asked about: an expense mentioned earlier in the conversation is already handled unless he says otherwise. If the user says \"try again\" after a failure, redo only what is missing.\n</create_rows>\n\n<live_snapshot>\nFetched from Notion just before this message, so it is current:\n{{ $json.snapshot }}\nAnswer every number from it. Never calculate totals, percentages or conversions yourself and never remember or invent an exchange rate; if the snapshot says the rate lookup failed, say so. Reuse the page ids it lists (budget lines, categories, expenses); never guess an id.\n</live_snapshot>\n\n<data_model>\nThree linked Notion tables.\n- Budget Categories: the permanent list. Group (Needs, Wants, Savings), Budget Type (Monthly, or Sinking = a lumpy cost whose budget is the expected annual cost / 12) and the default monthly budget in PLN. An empty budget means not applicable (Housing for now).\n- Budget Lines: one row per category per month (\"Groceries – 2026-10\") holding that month's Budget; Notion calculates Spent, Remaining and % Used. One extra row per month, \"Overall – YYYY-MM\", has no category and holds the total monthly cap.\n- Family Expenses: one row per purchase: Description, Date, Amount (as entered), Currency (PLN or EUR), the EUR/PLN rate of the day, Subcategory, Related Category, Paid By (Alex or Sam), Card Used (Revolut, ING, Amex, or Cash when paid in cash), Source and the Budget Lines it counts toward.\nNotion calculates Amount PLN and Amount EUR: never write or compute them. Categories: Housing, Utilities, Heating, Groceries, Health, Car, Babysitter, Diapers & Baby Care, Clothes & Kids' Gear, Household & Repairs, Lifestyle & Leisure (coffee, eating out, takeaway, outings, hobbies, gifts), Travel & Holidays, Extraordinary (unplanned one-offs), Savings Buffer.\nSubscriptions are NOT part of this budget: they live in their own table and appear only when the user asks for a total \"including subscriptions\".\n</data_model>\n\n<modes>\n<setup when=\"the user asks to build or rebuild the budget, or the snapshot says SETUP NEEDED and the message is not an expense\">\n1. Ask for data samples (a bank export, statement screenshots or rough numbers) or offer to brainstorm the numbers together.\n2. Propose a PLN budget for every category and an overall monthly cap; for a Sinking category use the expected annual cost / 12. Show it as one table. Adjust until the user confirms. Write nothing before.\n3. On confirmation: create this month's missing Budget Lines, the Overall line with the cap included, in ONE Notion MCP Create Pages call (an existing line is updated with Notion MCP Update Page instead), then update each category's default in Budget Categories with Notion MCP Update Page. Housing stays empty.\n</setup>\n<add_expense when=\"the user says what was spent (text, voice or receipt text); one message can hold several expenses; also the answer to the daily check-in\">\n1. Mandatory per expense: amount, what it was, card used. Paid By: the person talking (the snapshot's \"Talking to\") unless the message says the other one paid (\"Sam paid ...\", \"Alex spent ...\", \"my partner paid\", \"she/he paid\"); then that person. Never ask who paid. Currency is PLN unless the user says EUR or €. Date is today unless the user says otherwise. Infer the category and a short Subcategory yourself; reuse a subcategory name already in the snapshot instead of inventing a variant (Coffee, not coffee). Ask only when the category is truly ambiguous. Ask for everything that is missing, for all expenses, in ONE short message.\n2. If the currency is EUR and the snapshot says the rate lookup failed, do not log it and say so.\n3. Save all the expenses of the message in ONE Notion MCP Create Pages call (see <create_rows>): each row's Budget Line = that category's line for this month plus the Overall line (both from the snapshot; create missing lines first, in their own call). Source = Text, Voice, Receipt photo or Daily check-in as it arrived. Extraordinary is for unplanned one-offs: if it also belongs to a regular category (a vet bill, a broken oven) set related_category_id to that category's id.\n4. Then run budget_check. Reply with one line per expense saved (amount, what, category, card); the card under your reply shows each category it went to and the overall cap with fresh figures from Notion (rule 11): never write spent, left or % yourself.\n</add_expense>\n<new_budget_items when=\"an expense arrives (add_expense) and the snapshot shows NO Overall line this month, or the expense's category has no Budget Line this month or its Budget is N/A; this includes the snapshot's SETUP NEEDED when the message is an expense\">\n1. Do not run the full setup mode for an expense. Deal only with what is missing for this message, and ask for all of it in ONE short message together with any other missing expense detail (card or account).\n2. No Overall line: ask for the total monthly cap and its currency (see rule 8). This is asked at the very first interaction, before anything is written.\n3. A category without a budget: ask for its monthly budget in PLN (for a Sinking category the expected annual cost, which you divide by 12 with the Calculator). If the user does not know, propose a figure from earlier months or a simple estimate and ask to confirm it.\n4. The user's answer is the confirmation. Write in this order: the missing lines, the Overall line and the category's Budget Line together in ONE Notion MCP Create Pages call, then the category's default in Budget Categories (Notion MCP Update Page), then the expenses (add_expense step 3). Do not ask again.\n5. Keep going until the Overall line and the budget of every category used so far exist. Never ask the same question twice.\n</new_budget_items>\n<budget_check when=\"after every expense you wrote, and whenever the user asks about a category or the cap\">\nAfter expenses you wrote: for each line they went to (the category line and the Overall line), compare this message's expenses for that line with the snapshot's \"room to 80%\" (in EUR for EUR expenses). If they are clearly below it on every line (less than half of the room), do NOT call Get Budget Lines: no warning, no remaining amount. Only when an expense comes near or past the room to 80% or 100%, or a line shows \"already past\", call Get Budget Lines once and compare the fresh % Used with the snapshot's (the value before). When the user asks about a category or the cap, end your reply with the line \"[card: budget]\": the card shows every line; your text adds only what the card cannot (a comparison, a tip, your question). First crossing of 80%: one warning line naming the category, without figures (the card shows them). First crossing of 100%: say the category is over budget and ask: increase it or keep it? The Overall line is checked the same way. If the user says increase without saying how, ask: this month only, or from now on? This month only: update that Budget Line's Budget (PLN) only. From now on: update the Budget Line and the default in Budget Categories. Keep: change nothing, do not ask again for that category this month, and mention it in one line. If a category is already over budget, do not repeat the question: one short line.\n</budget_check>\n<daily_checkin when=\"the automatic daily check-in (a message starting AUTOMATIC DAILY CHECK-IN)\">\nAsk in one friendly line what was spent today. Change nothing now. If the user answers nothing, log nothing and say goodbye; otherwise continue as add_expense with Source = Daily check-in.\n</daily_checkin>\n<summary when=\"'where are we', 'summary', 'how are we doing', or the automatic weekly summary (AUTOMATIC WEEKLY SUMMARY)\">\nEnd your reply with the line \"[card: budget]\": the card shows the overall cap and every category (spent, budget, %, left, PLN and EUR), built from Notion. Your text: the days left and the overall projection from the snapshot, the categories above 80% or projected to go over (by name), at most two concrete observations. No table and no figure the card already shows. Subscriptions only if the user asked for them. Change nothing.\n</summary>\n<including_subscriptions when=\"the user asks for a total, a budget or spending 'including subscriptions'\">\nCall Get Subscriptions once, then compute the monthly PLN total with the Calculator (never in your head). Use only rows with Status Active or Trial. Leave a row out, and say why in one line, when: Currency is Crypto; Renewal Type is \"Included in a plan\"; Billing Cycle is Usage-based or One-time; the Amount is empty or 0; the Billing Cycle is missing; or the snapshot's NBP RATES line has no rate for its currency. For every other row: monthly amount = Amount divided by the cycle (Monthly 1, Quarterly 3, Every 6 months 6, Yearly 12); PLN = monthly amount times the NBP rate of its currency from the snapshot (PLN = 1). A Trial counts at its post-trial price and is marked [TRIAL]. Show: the total in PLN (and in EUR using the snapshot EUR rate), one line per subscription sorted from the largest (with the original amount and cycle when not PLN), the left-out list with reasons, and the rate line (currencies used, NBP date). Keep these as separate lines from the budget figures, for example: spent 4,200 PLN + subscriptions 380 PLN = 4,580 PLN, or: cap 12,000 PLN + subscriptions 380 PLN. Never fold subscriptions into a category figure.\n</including_subscriptions>\n<month_review when=\"the automatic month-end review (AUTOMATIC MONTH-END REVIEW), or 'monthly review'\">\nEnd your reply with the line \"[card: budget yyyy-LL]\" for the month named in the message: the card shows each category's spent, budget and left and the overall cap, so never list them. Review that month using only the snapshot's figures (previous months and subcategory spending): where the family stayed under, where it overspent, which subcategories grew against the months before (coffee, eating out, takeaway, diapers), what the sinking funds are building. Give 2 to 4 specific tips, each with the amount it could save. Every amount in both currencies, PLN first and EUR in brackets, copied from the snapshot. Then save the durable lessons (memory). Change nothing else.\n</month_review>\n<adjust_budget when=\"the user asks to change a budget or the monthly cap\">\nAsk \"this month only, or from now on?\" unless the user already said, then apply it as in budget_check.\n</adjust_budget>\n<correction when=\"an expense was wrong: amount, card, category, date or a duplicate\">\nFind it in the snapshot's last expenses (or Get Expenses) and update it with Notion MCP Update Page (amount, card, subcategory, date or Paid By). If the category is wrong, ask before moving it. If it is a duplicate, offer to move it to the trash with Move Row To Trash and do it after his yes.\n</correction>\n<out_of_scope when=\"the request belongs to another agent, or to none\">\nDecide this before using any tool, and write nothing in Notion for such a request. Agents of this assistant: budget = family money (expenses, budgets, spending summaries); subscriptions = subscriptions and recurring payments (adding, renewals, prices, cancelling). Tasks, the calendar, projects and goals are not part of this assistant (they live in the separate Productivity Coach demo): for those, say so in one line and add no tag.\nSay in one short line that this is outside what you manage and which agent owns it, restate the request so the user can resend it, and end the reply with a new last line containing exactly \"➡️ #<agent>\" (budget or subscriptions). If you cannot tell which agent owns it, add no tag.\n</out_of_scope>\n</modes>\n\n<memory>\nTwo Notion pages: your page \"budget\" and the page \"shared\". Both are read on every message and shown at the top of the live snapshot (WHAT YOU KNOW ABOUT ALEX AND SAM): apply every line to every reply; it is how they want the budget handled and how they want to be treated. Use Recall Memory only if the snapshot says MEMORY READ FAILED. When he or Sam says \"remember\", \"from now on\" or \"always\", save it at once: how they want to be treated or a fact about the family -> the shared page; a budget rule -> your page.\nWrite only what will still matter next month, at the end of the exchange:\n- The user states a preference (\"coffee is a treat, don't nag me about it\") -> Budget Rules, src:user, immediately. A correction beats any stored rule.\n- You notice a pattern (eating out always over budget, a sinking fund always short) -> Observations with seen:1. Same pattern already there -> raise seen. At seen:2 add it to Budget Rules (src:observed) AND delete the observation line in the same exchange: two Save Memory calls, never leave both.\n- After a month review -> one Recent Months line: spent vs cap, categories over budget, the main lesson; keep the last 6.\nNever store individual expenses or amounts Notion already holds. Nothing new -> write nothing.\nLine format: \"- **ID** · YYYY-MM-DD · text · src:user|observed\", with the next unused ID (B-01 rules, O-01 observations, M-yyyy-mm months, T-01 threads).\nADD: old_text = the section heading (e.g. \"## Budget Rules\"), new_text = the heading + a newline + the new line. UPDATE: old_text = the whole existing line copied exactly from the memory in the snapshot, new_text = the new line. DELETE: old_text = a newline + the whole existing line, new_text = \"\".\n</memory>\n\n<rules>\n1. Page ids: pass only ids copied from the snapshot or a tool result.\n2. A proposal (budgets, a budget change) is written only after the user confirms. A plain expense needs no confirmation. A budget figure the user gives in answer to your question counts as confirmed.\n3. Never invent amounts, dates or rates; ask for what is missing.\n4. One tool call at a time. Never do arithmetic in your head: use snapshot figures or the Calculator.\n5. Be concise: what changed and what matters. Name every expense you saved. PLN first, EUR in brackets for every budget, cap, spent and left figure (the snapshot gives both).\n6. If a tool fails, never repeat the identical call: try once differently, then report the tool and the error in one line.\n7. Never write to the Subscriptions table and never log a subscription charge as an expense.\n8. A monthly cap without a currency (\"4k\", \"4000\") is never assumed to be PLN or EUR: ask \"PLN or euros?\" and write nothing until he answers. A cap or budget given in euros stays in euros: write \"Budget (EUR)\" = the euro amount and \"Budget (PLN)\" = its PLN value (Calculator with the snapshot rate); one given in PLN: write \"Budget (PLN)\" and set \"Budget (EUR)\" to null if the line had one. The snapshot recalculates a euro budget in PLN at the current rate every time (marked \"set in EUR\"). The reply always shows both currencies.\n9. Names: Alex's partner is Sam; write both names exactly like that in Notion and in every reply.\n10. Not enough context in memory for his request: check Notion (snapshot or search); if it is still unclear, ask him one short question.\n11. Budget figures are shown only by the card: the workflow computes it from Notion AFTER your writes (spent, budget, %, left, in PLN and EUR, per line and for the overall cap) and adds it under your reply. Never write those figures yourself and never compute them: after a write the snapshot is already old. The card appears by itself after an expense you saved (the lines it went to); to show the whole month end your reply with the line \"[card: budget]\", for another month \"[card: budget yyyy-LL]\". Any other number (a sum, a difference, a share, a conversion, a saving) comes from the Calculator, never from your head, using only figures from the snapshot or a tool result. A ➡️ hand-off line comes after the card line and stays the very last line.\n12. The two Notion MCP nodes do one job each (see <tools>): Notion MCP Update Page changes an existing page, Notion MCP Create Pages creates rows. Never use them to read, search or list, and never in an automatic check-in before the user has replied.\n</rules>\n\n<example>\n<input>Coffee 18 zl, diapers 60 zl and petrol 200 on Revolut</input>\n<output>Saved: Coffee 18 PLN → Lifestyle & Leisure · Diapers 60 PLN → Diapers & Baby Care · Petrol 200 PLN → Car (all Revolut).\n⚠️ Lifestyle & Leisure passed 80% of its budget.</output>\n</example>\n\n<example>\n<input>What did we spend this month including subscriptions?</input>\n<output>Including subscriptions: 4,580 PLN this month (the budget's spending on the card plus 380 PLN of subscriptions, added with the Calculator); 62% of the month is gone.\nSubscriptions: EUR converted at 4.27 PLN (NBP, 2026-10-05).\n[card: budget]</output>\n</example>",
+          "maxIterations": 60,
+          "returnIntermediateSteps": true
+        }
+      }
+    },
+    {
+      "id": "package-reply",
+      "name": "Package Budget Reply",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        4890,
+        840
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Store Settings').first().json.chat_id }}"
+            },
+            {
+              "id": "p2",
+              "name": "agent_name",
+              "type": "string",
+              "value": "budget"
+            },
+            {
+              "id": "p3",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ $('Store Settings').first().json.chatInput }}"
+            },
+            {
+              "id": "p4",
+              "name": "output",
+              "type": "string",
+              "value": "={{ String($('Build Action Log').first().json.output || '').replace(/^\\s*\\[card:[^\\]\\n]*\\]\\s*$/gim, '').trim() }}"
+            },
+            {
+              "id": "p5",
+              "name": "budget",
+              "type": "object",
+              "value": "={{ $('Build Budget Card').isExecuted ? ($('Build Budget Card').first().json.budget || {}) : {} }}"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "model",
+      "name": "Luna Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2380,
+        1080
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "openai-gpt-6-luna"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "temperature": 0.2,
+          "timeout": 120000,
+          "maxRetries": 2
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "venice api"
+        }
+      }
+    },
+    {
+      "id": "memory",
+      "name": "Agent Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        2610,
+        1080
+      ],
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=demo-{{ $json.chat_id }}-{{ $json.agent_name }}",
+        "contextWindowLength": 20
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "tool-get-lines",
+      "name": "Get Budget Lines",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        2610,
+        1280
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Read this month's Budget Lines fresh (budget, Spent (PLN), Remaining (PLN), % Used) with page ids. Use it only when <budget_check> says so (an expense that comes near or past 80% or 100% of a line); never before a write.",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_BUDGET_LINES_DATA_SOURCE_ID",
+          "cachedResultName": "Budget Lines"
+        },
+        "returnAll": false,
+        "limit": 50,
+        "filterType": "json",
+        "filterJson": "={\"property\":\"Month\",\"date\":{\"equals\":\"{{ $now.startOf('month').toISODate() }}\"}}",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "tool-get-exp",
+      "name": "Get Expenses",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        2840,
+        1280
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Read expenses in a date range (up to 50, with page ids, amounts, categories, card). start_date and end_date: yyyy-LL-dd, both inclusive. Use it only for a range the snapshot does not cover; never to check a write.",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_FAMILY_EXPENSES_DATA_SOURCE_ID",
+          "cachedResultName": "Family Expenses"
+        },
+        "returnAll": false,
+        "limit": 50,
+        "filterType": "json",
+        "filterJson": "={\"and\":[{\"property\":\"Date\",\"date\":{\"on_or_after\":\"{{ $fromAI('start_date','First day yyyy-LL-dd','string') }}\"}},{\"property\":\"Date\",\"date\":{\"on_or_before\":\"{{ $fromAI('end_date','Last day yyyy-LL-dd','string') }}\"}}]}",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "tool-mcp",
+      "name": "Notion MCP Update Page",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.4,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "position": [
+        3070,
+        1080
+      ],
+      "parameters": {
+        "endpointUrl": "https://mcp.notion.com/mcp",
+        "authentication": "mcpOAuth2Api",
+        "include": "selected",
+        "includeTools": [
+          "notion-update-page"
+        ],
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion MCP"
+        }
+      }
+    },
+    {
+      "id": "tool-recall",
+      "name": "Recall Memory",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        2380,
+        1480
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Read one memory page as Markdown. page: \"budget\" (Budget Rules, Observations, Recent Months, Open Threads) or \"shared\" (facts about the family shared by all agents). Use only when memory can change your answer.",
+        "operation": "getMarkdown",
+        "pageId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ ({budget: 'YOUR_NOTION_FAMILY_BUDGET_MEMORY_PAGE_ID', shared: 'YOUR_NOTION_SHARED_MEMORY_PAGE_ID'})[$fromAI('page','budget or shared','string')] }}"
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "tool-save",
+      "name": "Save Memory",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        2610,
+        1480
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Edit one memory page by exact find-and-replace. page: \"budget\" or \"shared\". old_text: text that exists on the page exactly once (a section heading such as \"## Budget Rules\" to ADD under it, or a full existing line copied from Recall Memory to UPDATE or DELETE it). new_text: the replacement (heading + newline + new line to ADD; the new line to UPDATE; empty string to DELETE).",
+        "operation": "updateMarkdown",
+        "pageId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ ({budget: 'YOUR_NOTION_FAMILY_BUDGET_MEMORY_PAGE_ID', shared: 'YOUR_NOTION_SHARED_MEMORY_PAGE_ID'})[$fromAI('page','budget or shared','string')] }}"
+        },
+        "markdownUpdateType": "update_content",
+        "contentUpdates": {
+          "updates": [
+            {
+              "oldString": "={{ $fromAI('old_text','Exact existing text to replace','string') }}",
+              "newString": "={{ $fromAI('new_text','Replacement text, empty string to delete','string') }}"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "tool-calc",
+      "name": "Calculator",
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        2840,
+        1480
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "tool-get-subs",
+      "name": "Get Subscriptions",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        3070,
+        1280
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Read-only. Returns every row of the Subscriptions table (Name, Status, Amount, Currency, Billing Cycle, Renewal Type). Call it ONLY when the user asks for a total, a budget or spending including subscriptions. No input needed.",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_SUBSCRIPTIONS_DATA_SOURCE_ID",
+          "cachedResultName": "Subscriptions"
+        },
+        "returnAll": true,
+        "simple": true,
+        "filterType": "none",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "tool-mcp-create",
+      "name": "Notion MCP Create Pages",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.4,
+      "position": [
+        2840,
+        1080
+      ],
+      "parameters": {
+        "endpointUrl": "https://mcp.notion.com/mcp",
+        "authentication": "mcpOAuth2Api",
+        "include": "selected",
+        "includeTools": [
+          "notion-create-pages"
+        ],
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion MCP"
+        }
+      }
+    },
+    {
+      "id": "tool-search-budget",
+      "name": "Search Budget Tables",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        2380,
+        1280
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Search your tables on any column: expenses of any period, by who paid, card, currency, amount, subcategory or a word in the description or notes; budget lines of any month; categories. Give table and filter. filter = a Notion filter as JSON text, on ANY column of the chosen table. Syntax by column type: select {\"property\":\"Status\",\"select\":{\"equals\":\"Done\"}} (also does_not_equal, is_empty); date {\"property\":\"Due Date\",\"date\":{\"on_or_after\":\"2026-10-01\"}} (also on_or_before, before, after, equals, is_empty, this_week:{}, past_week:{}, past_month:{}); title {\"property\":\"<title column>\",\"title\":{\"contains\":\"invoice\"}}; text {\"property\":\"Notes\",\"rich_text\":{\"contains\":\"x\"}} (also equals, is_empty); number {\"property\":\"Rank\",\"number\":{\"equals\":2}} (also greater_than, less_than, is_empty); formula {\"property\":\"<column>\",\"formula\":{\"number\":{\"greater_than\":50}}} (or \"string\":{\"equals\":\"Today\"}, \"checkbox\":{\"equals\":true}); rollup {\"property\":\"<column>\",\"rollup\":{\"number\":{\"greater_than\":0}}}; relation {\"property\":\"<column>\",\"relation\":{\"contains\":\"<page id>\"}}; created or edited time {\"timestamp\":\"last_edited_time\",\"last_edited_time\":{\"on_or_after\":\"2026-10-01\"}}; combine {\"and\":[...]} or {\"or\":[...]}; every row of the table: {\"timestamp\":\"created_time\",\"created_time\":{\"is_not_empty\":true}}. Use exact column names and option values below. Returns at most 100 rows, each with its page id (change one with Notion MCP Update Page). Read-only. TABLES: expenses: Description (title); Date (date); Amount (number, as entered); Currency (select: PLN, EUR); Amount PLN, Amount EUR (formula number); EUR/PLN Rate (number); Paid By (select: Alex, Sam); Card Used (select: Revolut, ING, Amex, Cash); Subcategory (text); Source (select: Text, Voice, Receipt photo, Daily check-in); Notes (text); Budget Line (relation to budget_lines); Related Category (relation to budget_categories) | budget_lines: Name (title: \"Category – YYYY-MM\" or \"Overall – YYYY-MM\"); Month (date: first day of the month); Budget (PLN) (number); Spent (PLN) (rollup number); Remaining (PLN), % Used (formula number); Category (relation to budget_categories); Expenses (relation to expenses) | budget_categories: Name (title); Group (select: Needs, Wants, Savings); Budget Type (select: Monthly, Sinking); Default Monthly Budget (PLN) (number); Budget Lines (relation to budget_lines)",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ ({expenses: 'YOUR_NOTION_FAMILY_EXPENSES_DATA_SOURCE_ID', budget_lines: 'YOUR_NOTION_BUDGET_LINES_DATA_SOURCE_ID', budget_categories: 'YOUR_NOTION_BUDGET_CATEGORIES_DATA_SOURCE_ID'})[$fromAI('table', 'One of: expenses, budget_lines, budget_categories', 'string')] }}"
+        },
+        "returnAll": false,
+        "limit": 100,
+        "filterType": "json",
+        "filterJson": "={{ $fromAI('filter', 'Notion filter as JSON text on any column of the chosen table, see the tool description', 'string') }}",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "code-action-log-budg",
+      "name": "Build Action Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3450,
+        840
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Notion writes this turn REALLY made, read from the agent's own tool calls and Notion's answers (never from the reply text).\n// A write whose answer carries no saved id is left out: nothing was saved.\n// Each line names the row (title from this run's reads or from the write itself) and the fields written, so memory alone shows what changed.\nconst SOURCES = [\"Fetch Budget Lines\", \"Fetch Recent Expenses\", \"Fetch Budget Categories\"];\nconst out = $input.first().json;\nconst trig = $('Execute Workflow Trigger').first().json;\nconst WRITE = /create|update|add|confirm|mark|delete|trash|archive|log weekly/i;\nconst ID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g;\nconst TITLE_KEYS = ['Task Name', 'Subtask Name', 'Description', 'Name', 'Review', 'Title'];\nconst names = {};\nconst titleOf = (o) => {\n  if (typeof o.name === 'string' && o.name) return o.name;\n  if (typeof o.summary === 'string' && o.summary) return o.summary;\n  for (const [k, v] of Object.entries(o.properties || {})) {\n    if (v && v.type === 'title') return (v.title || []).map(t => t.plain_text).join('');\n    if (TITLE_KEYS.includes(k) && typeof v === 'string') return v;\n  }\n  return null;\n};\nconst collect = (x, depth = 0) => {\n  if (depth > 8) return;\n  if (typeof x === 'string') { if (!/^\\s*[\\[{]/.test(x)) return; try { x = JSON.parse(x); } catch (e) { return; } }\n  if (Array.isArray(x)) { x.forEach(v => collect(v, depth + 1)); return; }\n  if (!x || typeof x !== 'object') return;\n  if (typeof x.id === 'string' && !names[x.id]) { const t = titleOf(x); if (t) names[x.id] = t; }\n  for (const v of Object.values(x)) if (v && (typeof v === 'object' || typeof v === 'string')) collect(v, depth + 1);\n};\nfor (const n of SOURCES) { try { collect($(n).all().map(i => i.json)); } catch (e) { /* that read did not run */ } }\nconst steps = out.intermediateSteps || [];\nfor (const s of steps) collect(s.observation);\nconst short = (v) => (typeof v === 'string' ? v : JSON.stringify(v)).replace(/\\s+/g, ' ').slice(0, 150);\nconst lines = [];\nfor (const step of steps) {\n  const tool = String((step.action && step.action.tool) || '');\n  if (!WRITE.test(tool)) continue;\n  const obs = typeof step.observation === 'string' ? step.observation : JSON.stringify(step.observation ?? '');\n  // An error answer saved nothing, even though it carries ids (request_id, integration_id, the data_source id)\n  if (/APIResponseError|\"error\"\\s*:|object_not_found|validation_error|Could not find|MCP error|timed out/i.test(obs)) continue;\n  const ids = [...new Set(obs.match(ID) || [])];\n  if (!ids.length || /\"properties\":\\{\\}/.test(obs)) continue;\n  const inp = (step.action && step.action.toolInput) ?? {};\n  const label = (id) => (names[id] ? '\"' + names[id] + '\" (' + id + ')' : id);\n  // ids already in the input are the row being updated or rows the new one links to; the others are the rows just created\n  const inInput = JSON.stringify(inp);\n  const isCreate = /create|add/i.test(tool);\n  const saved = isCreate ? ids.filter(id => !inInput.includes(id)) : ids;\n  const linked = isCreate ? ids.filter(id => inInput.includes(id)) : [];\n  const fields = (p) => Object.entries(p).map(([k, v]) => k + ' = ' + short(v)).join('; ');\n  const props = inp && typeof inp === 'object' && inp.properties && typeof inp.properties === 'object' && !Array.isArray(inp.properties) ? inp.properties : null;\n  const pages = inp && typeof inp === 'object' && Array.isArray(inp.pages) ? inp.pages : null;\n  const written = props ? fields(props) : pages ? pages.map(p => fields(p.properties || {})).join(' || ') : JSON.stringify(inp).replace(/\\s+/g, ' ').slice(0, 700);\n  lines.push('- ' + tool + ' -> saved in Notion: ' + (saved.length ? saved : ids).map(label).join(', ') + (linked.length ? ' | linked to: ' + linked.map(label).join(', ') : '') + ' | written: ' + written);\n}\nconst action_log = lines.length\n  ? '[ACTION LOG, ' + $now.toFormat('yyyy-LL-dd HH:mm') + ', written by the workflow from the tool results of my previous reply: these Notion writes are DONE. Never make them again.]\\n' + lines.join('\\n')\n  : '';\nconst { intermediateSteps, ...reply } = out;\n// The agent sometimes copies an earlier action log from its chat memory into its reply: never send it\nif (typeof reply.output === 'string') reply.output = reply.output.replace(/\\s*\\[ACTION LOG[^\\]\\n]*\\][^\\n]*(\\n- [^\\n]*)*/g, '').trim();\nreturn [{ json: { ...reply, chat_id: String(trig.chat_id ?? ''), agent_name: trig.agent_name || 'budget', action_log } }];\n"
+      }
+    },
+    {
+      "id": "tool-trash-budg",
+      "name": "Move Row To Trash",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        3070,
+        1480
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Move ONE row of your own tables to the Notion trash (restorable for 30 days). Only for a row he asked to delete or remove, or a duplicate he confirmed. Input: the row's page id.",
+        "resource": "page",
+        "operation": "archive",
+        "pageId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $fromAI('page_id', 'Exact Notion page id of the row to move to the trash', 'string') }}"
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "fetch-agent-memory",
+      "name": "Fetch Agent Memory",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        1520,
+        840
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.notion.com/v1/pages/YOUR_NOTION_FAMILY_BUDGET_MEMORY_PAGE_ID/markdown",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2026-03-11"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "fetch-shared-memory",
+      "name": "Fetch Shared Memory",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        1760,
+        840
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.notion.com/v1/pages/YOUR_NOTION_SHARED_MEMORY_PAGE_ID/markdown",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2026-03-11"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "prep-mem-writes",
+      "name": "Prepare Memory Writes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3690,
+        840
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// What this turn adds to the agent's chat memory (Postgres), saved by Save To Memory:\n// the ACTION LOG, i.e. the Notion writes this turn really made (from Build Action Log), as a hidden message,\n// stored exactly as the Chat Memory Manager stored it. Nothing to save gives an empty list.\nconst log = $('Build Action Log').first().json;\nconst session_id = 'demo-' + log.chat_id + '-' + log.agent_name;\nconst ai = (content, hidden) => ({ type: 'ai', content, tool_calls: [], additional_kwargs: hidden ? { hideFromUI: true } : {}, response_metadata: {}, invalid_tool_calls: [] });\nconst writes = log.action_log ? [{ op: 'add', session_id, message: ai(String(log.action_log), true) }] : [];\nreturn [{ json: { writes } }];\n"
+      }
+    },
+    {
+      "id": "save-to-memory",
+      "name": "Save To Memory",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3930,
+        840
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Writes the list from Prepare Memory Writes into the chat memory table in one statement, in order.\n-- op 'add' appends a message (an empty list writes nothing).\nWITH w AS (SELECT e->>'op' AS op, e->>'session_id' AS session_id, e->'message' AS message, n FROM jsonb_array_elements($1::jsonb) WITH ORDINALITY AS t(e, n)),\nd AS (DELETE FROM n8n_chat_histories WHERE session_id IN (SELECT session_id FROM w WHERE op = 'clear') RETURNING id),\nins AS (INSERT INTO n8n_chat_histories (session_id, message) SELECT session_id, message FROM w WHERE op = 'add' ORDER BY n RETURNING id)\nSELECT (SELECT count(*) FROM d) AS cleared, (SELECT count(*) FROM ins) AS saved",
+        "options": {
+          "queryReplacement": "={{ [ JSON.stringify($json.writes) ] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "read-notion-and-memory-section-note",
+      "name": "Read Notion And Memory Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        380
+      ],
+      "parameters": {
+        "content": "## Read Notion And Memory\n\nTriggered by: \"WF1\" (a Telegram message routed to budget) or \"WF2\" (the automatic daily check-in, weekly summary or month-end review: their message starts with AUTOMATIC).\n\n1. Store Settings works out who is talking (Paid By, from the chat id).\n2. Fetch NBP Rates reads today's EUR/PLN rate from the Polish central bank.\n3. Fetch Budget Categories, Fetch Budget Lines and Fetch Recent Expenses read the categories, this month's lines and the last 3 months of expenses.\n4. Fetch Agent Memory and Fetch Shared Memory read the Notion memory pages; Build Budget Snapshot puts them first, then calculates in code this month's budget, spent, left, % used and projection per category, the previous months and the spending by subcategory.",
+        "width": 2240,
+        "height": 1300,
+        "color": 3
+      }
+    },
+    {
+      "id": "remember-and-reply-section-note",
+      "name": "Remember And Reply Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3370,
+        380
+      ],
+      "parameters": {
+        "content": "## Remember And Reply\n\nTriggered by: runs inline after the Family Budget Coach.\n\n1. Build Action Log lists the Notion writes this turn really made (from the tool results; an error answer counts as nothing saved).\n2. Prepare Memory Writes turns it into one hidden \"ACTION LOG\" message (none when nothing was written).\n3. Save To Memory writes it into the Postgres chat memory.\n4. Needs Budget Card? (something was saved, or the reply asks \"[card: budget]\") → Fetch Budget Lines After Reply reads the lines again from Notion → Build Budget Card computes, in code, budget, spent, %, left (PLN and EUR) for the lines touched or the whole month, then the overall cap. The agent never writes these figures.\n5. Package Budget Reply returns chat_id, chatInput, the reply (card line removed) and the card to \"WF1\" or \"WF2\", which send it.",
+        "width": 1760,
+        "height": 1300,
+        "color": 6
+      }
+    },
+    {
+      "id": "57357dab-4769-4f1d-be9b-b38d49f7b150",
+      "name": "Needs Budget Card?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4170,
+        840
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "needs-budget-card",
+              "leftValue": "={{ /Notion_MCP|Move_Row_To_Trash/.test(String($('Build Action Log').first().json.action_log || '')) || /\\[card:\\s*budget/i.test(String($('Build Action Log').first().json.output || '')) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "9463a869-2ee7-4886-9e7d-273dc4d21055",
+      "name": "Fetch Budget Lines After Reply",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        4410,
+        840
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_BUDGET_LINES_DATA_SOURCE_ID",
+          "cachedResultName": "Budget Lines"
+        },
+        "returnAll": true,
+        "simple": false,
+        "options": {},
+        "filterType": "json",
+        "filterJson": "={\"property\":\"Month\",\"date\":{\"on_or_after\":\"{{ $now.minus({months: 3}).startOf('month').toISODate() }}\"}}"
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "4607c653-7722-48e0-92db-2d7450ed1d62",
+      "name": "Build Budget Card",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4650,
+        840
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// The budget card for Telegram, computed from Notion AFTER this turn's writes (the snapshot was read before them).\n// Rows: after an expense write, the category lines it went to; with the reply line \"[card: budget]\" every category line\n// of this month, \"[card: budget yyyy-LL]\" every line of that month. The overall cap comes last.\n// The same rule as the snapshot: a budget set in EUR is converted at today's NBP rate; EUR spent is the sum of each expense's EUR.\nconst act = $('Build Action Log').first().json;\nconst reply = String(act.output || '');\nconst log = String(act.action_log || '');\nconst eur = $('Build Budget Snapshot').first().json.eurPlnRate;\nconst lang = 'en';\nconst txt = (a) => (a || []).map((t) => t.plain_text).join('');\nconst num = (p) => (p && typeof p.number === 'number' ? p.number : null);\nconst roll = (p) => (p && p.rollup && typeof p.rollup.number === 'number' ? p.rollup.number : null);\nconst r2 = (n) => (n == null ? null : Math.round(n * 100) / 100);\nconst cats = {};\nfor (const i of $('Fetch Budget Categories').all()) { const pg = i.json; if (pg && pg.properties) cats[pg.id] = txt(pg.properties['Name'] && pg.properties['Name'].title); }\nconst lines = $('Fetch Budget Lines After Reply').all().map((i) => i.json).filter((pg) => pg && pg.properties).map((pg) => {\n  const p = pg.properties;\n  const catId = p['Category'] && p['Category'].relation && p['Category'].relation[0] ? p['Category'].relation[0].id : null;\n  const budgetEur = num(p['Budget (EUR)']) > 0 ? num(p['Budget (EUR)']) : null;\n  const budget = budgetEur != null && eur ? r2(budgetEur * eur) : num(p['Budget (PLN)']);\n  const spent = roll(p['Spent (PLN)']) || 0;\n  const spentEur = roll(p['Spent (EUR)']);\n  const bEur = budgetEur != null ? budgetEur : eur && budget != null ? budget / eur : null;\n  const sEur = spentEur != null ? spentEur : eur ? spent / eur : null;\n  return { id: pg.id, month: p['Month'] && p['Month'].date ? p['Month'].date.start.slice(0, 7) : null, catId, name: catId ? cats[catId] || txt(p['Name'] && p['Name'].title) : 'Overall', budget, spent: r2(spent), leftEur: bEur != null && sEur != null ? r2(bEur - sEur) : null };\n});\nconst ask = ([...reply.matchAll(/\\[card:\\s*([^\\]\\n]*)\\]/gi)].pop() || [])[1] || '';\nconst ids = new Set(log.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g) || []);\nlet month = $now.toFormat('yyyy-LL');\nlet rows = [];\nif (/budget/i.test(ask)) {\n  const m = ask.match(/\\d{4}-\\d{2}/);\n  if (m) month = m[0];\n  rows = lines.filter((l) => l.month === month && l.catId);\n} else {\n  rows = lines.filter((l) => ids.has(l.id) && l.catId);\n  if (rows.length) month = rows[0].month || month;\n}\n// Two lines for one category split its spending: show the fuller one, as the snapshot does\nconst best = {};\nfor (const l of rows) if (!best[l.catId] || l.spent > best[l.catId].spent) best[l.catId] = l;\nrows = Object.values(best).sort((a, b) => a.name.localeCompare(b.name));\nconst overall = lines.filter((l) => l.month === month && !l.catId).sort((a, b) => b.spent - a.spent)[0] || null;\nconst title = DateTime.fromISO(month + '-01').setLocale(lang).toFormat('LLLL yyyy') + ' · budget';\nreturn [{ json: { budget: rows.length ? { title, lang, rows, overall } : {} } }];\n"
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Fetch NBP Rates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Budget Categories": {
+      "main": [
+        [
+          {
+            "node": "Fetch Budget Lines",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Budget Lines": {
+      "main": [
+        [
+          {
+            "node": "Fetch Recent Expenses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Budget Snapshot": {
+      "main": [
+        [
+          {
+            "node": "Family Budget Coach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Luna Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Family Budget Coach",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Family Budget Coach",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Budget Lines": {
+      "ai_tool": [
+        [
+          {
+            "node": "Family Budget Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Expenses": {
+      "ai_tool": [
+        [
+          {
+            "node": "Family Budget Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion MCP Update Page": {
+      "ai_tool": [
+        [
+          {
+            "node": "Family Budget Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recall Memory": {
+      "ai_tool": [
+        [
+          {
+            "node": "Family Budget Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Memory": {
+      "ai_tool": [
+        [
+          {
+            "node": "Family Budget Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "Family Budget Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch NBP Rates": {
+      "main": [
+        [
+          {
+            "node": "Fetch Budget Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Subscriptions": {
+      "ai_tool": [
+        [
+          {
+            "node": "Family Budget Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion MCP Create Pages": {
+      "ai_tool": [
+        [
+          {
+            "node": "Family Budget Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Budget Tables": {
+      "ai_tool": [
+        [
+          {
+            "node": "Family Budget Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Family Budget Coach": {
+      "main": [
+        [
+          {
+            "node": "Build Action Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move Row To Trash": {
+      "ai_tool": [
+        [
+          {
+            "node": "Family Budget Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Recent Expenses": {
+      "main": [
+        [
+          {
+            "node": "Fetch Agent Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Agent Memory": {
+      "main": [
+        [
+          {
+            "node": "Fetch Shared Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Shared Memory": {
+      "main": [
+        [
+          {
+            "node": "Build Budget Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Action Log": {
+      "main": [
+        [
+          {
+            "node": "Prepare Memory Writes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Memory Writes": {
+      "main": [
+        [
+          {
+            "node": "Save To Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save To Memory": {
+      "main": [
+        [
+          {
+            "node": "Needs Budget Card?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs Budget Card?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Budget Lines After Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Package Budget Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Budget Lines After Reply": {
+      "main": [
+        [
+          {
+            "node": "Build Budget Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Budget Card": {
+      "main": [
+        [
+          {
+            "node": "Package Budget Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "bdRouter00000001,bdCheckins000001",
+    "timezone": "Europe/Rome",
+    "binaryMode": "separate"
+  },
+  "active": false
+}

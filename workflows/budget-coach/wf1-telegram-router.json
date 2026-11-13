@@ -1,0 +1,1540 @@
+{
+  "id": "bdRouter00000001",
+  "name": "Budget Coach Demo | WF1 — Telegram Router",
+  "nodes": [
+    {
+      "id": "note-title",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "## Budget Coach Demo | WF1 — Telegram Router\n\nMain/entry workflow of a portfolio demo (folder demo-assistants/budget-coach). Left to right: Telegram Input (a text, voice or photo message becomes plain text), Classifier & Router (picks the agent), Hand-off to Agents and Reply (calls the agent, then sends the reply). \"The Flow\" note on the far right traces a real run.\n\nAgents (agents/ subfolder, locked to \"WF1\" and \"WF2\"): \"Family Budget Coach\" and \"Subscription Agent\". Services (services/ subfolder): \"Send And Log Reply\". \"WF2 — Scheduled Check-ins\" holds every message the assistant starts on its own.\nThe classifier still knows every topic: a request for the other demo (tasks, projects) gets one polite line from Reply Outside This Demo instead of a wrong answer.\nData: demo tables under Notion \"Demo Assistant\", invented persona (Alex, partner Sam, daughter Mia). Log: the budget_coach_demo_log Data Table; memory: Postgres sessions prefixed \"demo-\". Errors: \"Error Handling | Main — Error Handler\". The Telegram Trigger only accepts the demo chat ID.",
+        "height": 460,
+        "width": 4452,
+        "color": 5
+      }
+    },
+    {
+      "id": "note-router",
+      "name": "Router Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        528
+      ],
+      "parameters": {
+        "content": "## Classifier & Router\n\nTriggered by: the text from the Telegram Input section.\n\n1. A tag (#budget, #subscriptions) or a Telegram reply: Has Agent Tag Or Reply? skips the classifier; Resolve Follow-up decides.\n2. A reply follows the message it answers, no time limit: its ➡️ #agent line if it ends with one (the handed request plus what you wrote), else the agent that wrote it; a tag you add wins; an answer to Ask To Clarify is classified again.\n3. Otherwise Build Classifier Input puts the last agent message (under 6 h) above the text. Follows A Tag Line?: after a ➡️ #agent line (6 h; 48 h for a bare \"yes\" to a hand-off) Resolve Follow-up sends it to that agent; else Router: Classify Request picks productivity, budget, subscriptions, project, unclear or acknowledgement.\n4. Unclear or a tag: Get Last Exchange reads 30 log rows; Resolve Follow-up follows the last agent (6 h, 48 h after a hand-off); \"#agent yes\" finds the newest hand-off to that agent; otherwise Ask To Clarify.\n5. The Tag nodes set agent_name and hand off; a topic of the other demo goes to Reply Outside This Demo. Acknowledgement: Send Acknowledgement Reply answers in one line, not logged.",
+        "height": 1300,
+        "width": 1740,
+        "color": 7
+      }
+    },
+    {
+      "id": "tg-trigger",
+      "name": "Receive Telegram Message",
+      "webhookId": "efb0576e-ac60-4d2e-b2d9-b08b1890d3f6",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        64,
+        1120
+      ],
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true,
+          "chatIds": "YOUR_TELEGRAM_CHAT_ID"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Telegram Budget Coach Demo"
+        }
+      }
+    },
+    {
+      "id": "if-voice",
+      "name": "Has Voice?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        544,
+        1136
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.message.voice }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "http-transcribe",
+      "name": "Transcribe Voice (Venice)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1024,
+        1120
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.venice.ai/api/v1/audio/transcriptions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "model",
+              "value": "nvidia/parakeet-tdt-0.6b-v3"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "venice api"
+        }
+      }
+    },
+    {
+      "id": "set-input-voice",
+      "name": "Build Input From Voice",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1264,
+        1120
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Receive Telegram Message').item.json.message.chat.id }}"
+            },
+            {
+              "id": "a2",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ ($('Receive Telegram Message').item.json.message.caption ? $('Receive Telegram Message').item.json.message.caption + '\\n\\n' : '') + $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "set-input-text",
+      "name": "Build Input From Text",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        768,
+        1456
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $json.message.chat.id }}"
+            },
+            {
+              "id": "a2",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ $json.message.text }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "dt-get-last",
+      "name": "Get Last Exchange",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        2224,
+        1440
+      ],
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_LOG_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "keyValue": "={{ $json.chat_id }}"
+            }
+          ]
+        },
+        "limit": 30,
+        "orderBy": true
+      }
+    },
+    {
+      "id": "classifier-router",
+      "name": "Router: Classify Request",
+      "type": "@n8n/n8n-nodes-langchain.textClassifier",
+      "typeVersion": 1.1,
+      "onError": "continueErrorOutput",
+      "position": [
+        1952,
+        912
+      ],
+      "parameters": {
+        "inputText": "={{ $json.request_text || $json.classifier_text || $json.chatInput }}",
+        "categories": {
+          "categories": [
+            {
+              "category": "productivity",
+              "description": "A complete request about tasks, the weekly plan (including a weekly goal the user states for this or next week), subtasks, decisions, or the user's day: what they did or got done today, what to do today, planning the day or week, marking things done. An \"add\" request is productivity only when it adds a task, an event or a weekly goal; \"add\" with a money amount or the word budget is a budget request; adding a project or a long-term goal is project. Anything about the scratchpad is also productivity: adding a quick note or idea to it (\"add to scratchpad ...\", \"scratchpad: ...\"), reading it (\"what's in my scratchpad for today?\"), or marking a scratchpad note used or dropped."
+            },
+            {
+              "category": "budget",
+              "description": "A complete request about family money: logging something spent or paid (any amount, PLN or EUR, e.g. \"coffee 18 zl\", \"paid 60 eur for diapers\"), setting or adding a budget amount for a family spending category (e.g. \"Add babysitter 1k zł budget\", \"set groceries budget to 2000\"), how much is left, whether we are over budget, a spending summary or monthly review, or changing a budget. Amounts may be written 1k, 1.5k, 1000, zl, zł, PLN, EUR or €. Not about the subscriptions themselves."
+            },
+            {
+              "category": "subscriptions",
+              "description": "A complete request about a subscription or recurring payment, whether adding one, listing or totalling them, renewals, price or date changes, cancelling, or asking about any stored detail of an existing subscription (its account/login, payment method, notes, status) -- if the message names a known subscription/service (e.g. Spotify, Netflix, Claude) together with any question about it, this is subscriptions even if phrased as a fragment. A question about the cost or total of the subscriptions stays here even though it is about money."
+            },
+            {
+              "category": "unclear",
+              "description": "The message truly cannot be understood on its own and names no topic at all: a bare reply such as yes, no, ok, keep it, cancel it, the second one, Friday, this month only, or a fragment that only makes sense as an answer to an earlier question. Also unclear: a request to redo, retry or re-check the previous answer that names no new topic (try again, try again to read it and tell me what you see, check again, do it again, look again, read it again). A badly phrased or grammatically rough message that still names a clear topic or a known service/subscription name is NOT unclear -- classify it by that topic instead."
+            },
+            {
+              "category": "project",
+              "description": "A complete request about a project or a long-term goal (adding one, \"my priority is ...\", what I want to achieve, where I stand on it, my focus, my predictions), an idea (\"I have an idea\", saving an idea), or brainstorming / judging whether an idea or plan is worth pursuing. Also project: the user says they are confused, lost, stuck or overwhelmed, or unsure what to focus on or whether something should become a priority, in any language, even when tasks are mentioned. A weekly goal stated for this or next week is productivity, not project."
+            },
+            {
+              "category": "acknowledgement",
+              "description": "A message that only closes the conversation and needs no answer and no action: thanks, thank you, thanks a lot, great, perfect, nice, cool, got it, awesome, or a thumbs-up or other emoji alone. Not yes, no or ok on their own (those answer a question: unclear). A thanks that also asks for something is classified by that request."
+            }
+          ]
+        },
+        "options": {
+          "fallback": "other",
+          "systemPromptTemplate": "Classify the user's message into one of: {categories}. Classify the NEW MESSAGE. When a PREVIOUS MESSAGE from an agent is shown above it and the new message answers that message or continues that conversation (a card, an amount, a date, a name, a yes or no, a correction, \"one card for all 3\"), choose the agent named in PREVIOUS MESSAGE, the one that wrote it, even when its text mentions another agent's topic (a weekly goal proposed by the project agent stays project). A new complete request about another topic goes to its own agent even right after another agent spoke. Without a previous message, judge the message on its own. If it names a topic or a known service/subscription, classify it by that topic even if the wording is rough or fragment-like; only use unclear when it truly names no topic at all or only makes sense as a reply. Your output must always be the full JSON object with all seven boolean keys (productivity, budget, subscriptions, project, unclear, acknowledgement, fallback) exactly as the schema below requires -- never a shorthand like {\"category\":\"...\"}. Don't explain, only output the JSON object.\n\n<examples>\n<example><input>What today?</input><output>{\"productivity\":true,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Today?</input><output>{\"productivity\":true,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>What's on tomorrow?</input><output>{\"productivity\":true,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Add task call the accountant Friday</input><output>{\"productivity\":true,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Coffee 18 zl</input><output>{\"productivity\":false,\"budget\":true,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Spent 200 on petrol and 60 on diapers, Revolut</input><output>{\"productivity\":false,\"budget\":true,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>How much is left for groceries?</input><output>{\"productivity\":false,\"budget\":true,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Summary of this month</input><output>{\"productivity\":false,\"budget\":true,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Increase the groceries budget</input><output>{\"productivity\":false,\"budget\":true,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>How do I cancel Spotify?</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":true,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>What's the account used in Spotify registration</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":true,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Subscription Spotify account</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":true,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>List all my subscriptions and what I'm paying</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":true,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Create a page called Ideas</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":true}</output></example>\n<example><input>Add to scratchpad: try a darker header on the landing page</input><output>{\"productivity\":true,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>What's in my scratchpad for today?</input><output>{\"productivity\":true,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Scratchpad: ask Marta about the invoice template</input><output>{\"productivity\":true,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Thanks</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":true,\"fallback\":false}</output></example>\n<example><input>Great, thank you!</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":true,\"fallback\":false}</output></example>\n<example><input>Perfect 👍</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":true,\"fallback\":false}</output></example>\n<example><input>Thanks, and move the call to Friday</input><output>{\"productivity\":true,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Yes</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":true,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>The second one</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":true,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>This month only</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":true,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Add baby sitter 1k zł budget</input><output>{\"productivity\":false,\"budget\":true,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Add diapers 60 zl</input><output>{\"productivity\":false,\"budget\":true,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Set the groceries budget to 2000</input><output>{\"productivity\":false,\"budget\":true,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Book the babysitter for Friday</input><output>{\"productivity\":true,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>My priority is making money with freelancing</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":true,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Add this project: launch the YouTube channel</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":true,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>I have an idea: a Telegram bot that tracks diaper stock</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":true,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Brainstorm this: selling n8n templates to accountants</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":true,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Is it worth building a SaaS for tender alerts?</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":true,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Where am I on the revenue goal?</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":true,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Add a weekly goal: send 10 proposals</input><output>{\"productivity\":true,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Plan my week</input><output>{\"productivity\":true,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>I'm confused, I don't know what to focus on anymore</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":true,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Sono confuso: continuo con i clienti o inizio il canale video?</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":true,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Should I make the YouTube channel my new priority?</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":true,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Try again to read and tell me what you see</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":true,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Check again</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":true,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>Do it again please</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":false,\"unclear\":true,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>PREVIOUS MESSAGE, sent 1 minutes ago by the budget agent: \"Which card paid for the 40 PLN top-up and the 119 PLN groceries? You can say one card for both.\"\nNEW MESSAGE: ING for both</input><output>{\"productivity\":false,\"budget\":true,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>PREVIOUS MESSAGE, sent 2 minutes ago by the project agent: \"Shall I hand this weekly goal to the Productivity Agent: 10 proposals by Sunday?\"\nNEW MESSAGE: yes</input><output>{\"productivity\":false,\"budget\":false,\"subscriptions\":false,\"project\":true,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n<example><input>PREVIOUS MESSAGE, sent 3 minutes ago by the productivity agent: \"Added: dentist on Friday at 10.\"\nNEW MESSAGE: coffee 18 zl</input><output>{\"productivity\":false,\"budget\":true,\"subscriptions\":false,\"project\":false,\"unclear\":false,\"acknowledgement\":false,\"fallback\":false}</output></example>\n</examples>",
+          "enableAutoFixing": true
+        }
+      }
+    },
+    {
+      "id": "set-tag-general",
+      "name": "Tag As Budget",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3072,
+        1104
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "t1",
+              "name": "agent_name",
+              "type": "string",
+              "value": "budget"
+            },
+            {
+              "id": "t2",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Build Input From Text').isExecuted ? $('Build Input From Text').item.json.chat_id : ($('Build Input From Voice').isExecuted ? $('Build Input From Voice').item.json.chat_id : $('Build Input From Image').item.json.chat_id) }}"
+            },
+            {
+              "id": "t3",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ $json.request_text ?? ($('Build Input From Text').isExecuted ? $('Build Input From Text').item.json.chatInput : ($('Build Input From Voice').isExecuted ? $('Build Input From Voice').item.json.chatInput : $('Build Input From Image').item.json.chatInput)) }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "model-flash",
+      "name": "Router Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2064,
+        1280
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "openai-gpt-6-luna"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "responseFormat": "json_object",
+          "temperature": 0.2,
+          "timeout": 120000,
+          "maxRetries": 2
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "venice api"
+        }
+      }
+    },
+    {
+      "id": "call-general",
+      "name": "Call Family Budget Coach",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueErrorOutput",
+      "position": [
+        3520,
+        1104
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "bdBudgetCoach001"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "note-handoff",
+      "name": "Hand-off to Agents Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3392,
+        528
+      ],
+      "parameters": {
+        "content": "## Hand-off to Agents and Reply\n\nTriggered by: the Tag nodes (scheduled calls to the same agents are in \"WF2 — Scheduled Check-ins\").\n\n1. Each Call node runs one agent's workflow (agents/ subfolder: \"Family Budget Coach\" and \"Subscription Agent\") and waits for its answer.\n2. Reply Outside This Demo answers a request that belongs to the other demo bot in one line.\n3. Every path passes Add User Message Id (so a reply to your message can be traced) and ends in Call Send And Log Reply: the service \"Send And Log Reply\" formats the reply for Telegram, logs it and sends it.\n4. If an agent times out or fails, Build Agent Error Reply writes the chat message (which agent, why, your request, a tag line); \"try again\" sends the request back to that agent.",
+        "height": 1300,
+        "width": 1060,
+        "color": 4
+      }
+    },
+    {
+      "id": "note-the-flow",
+      "name": "The Flow",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4512,
+        0
+      ],
+      "parameters": {
+        "content": "## The Flow\n\nA real run, end to end.\n\n1. Alex sends \"coffee 18 zl, paid with Revolut\" (text, voice or a receipt photo) to the Budget Coach demo bot. Receive Telegram Message accepts the demo chat only; a voice note is transcribed and a photo described, so every message becomes plain text.\n2. No tag and no Telegram reply, so Build Classifier Input adds the last agent message (if under 6 h) and Router: Classify Request picks budget, subscriptions, unclear or acknowledgement. Tasks or projects get one line from Reply Outside This Demo.\n3. Tag As Budget calls \"Family Budget Coach\": it reads the NBP rate, the categories, this month's budget lines, three months of expenses and its memory pages, builds a snapshot with every figure computed in code, saves the expense with Notion MCP Create Pages and checks the category against 80% and 100%.\n4. A subscription question goes to \"Subscription Agent\" instead: it reads the whole Subscriptions table and live exchange rates and answers lists and totals from figures computed in code.\n5. Each agent then records the Notion writes it really made (Build Action Log), saves them to its Postgres memory in one step (Prepare Memory Writes, Save To Memory) and returns the reply.\n6. Call Send And Log Reply runs \"Send And Log Reply\": it formats the reply for Telegram, logs it in the demo log table and sends it.\n7. A reply to any bot message, or a tag (#budget, #subscriptions), goes straight to that agent through Resolve Follow-up.\n8. \"WF2 — Scheduled Check-ins\" starts messages on its own: the 19:15 expense check-in, the Sunday summary, the month-end review, the month setup and the renewal check every 2 days (alerts 7 days before a renewal).",
+        "height": 1100,
+        "width": 902
+      }
+    },
+    {
+      "id": "set-tag-subscriptions",
+      "name": "Tag As Subscriptions",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3072,
+        1312
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "t1",
+              "name": "agent_name",
+              "type": "string",
+              "value": "subscriptions"
+            },
+            {
+              "id": "t2",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Build Input From Text').isExecuted ? $('Build Input From Text').item.json.chat_id : ($('Build Input From Voice').isExecuted ? $('Build Input From Voice').item.json.chat_id : $('Build Input From Image').item.json.chat_id) }}"
+            },
+            {
+              "id": "t3",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ $json.request_text ?? ($('Build Input From Text').isExecuted ? $('Build Input From Text').item.json.chatInput : ($('Build Input From Voice').isExecuted ? $('Build Input From Voice').item.json.chatInput : $('Build Input From Image').item.json.chatInput)) }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "call-subscriptions",
+      "name": "Call Subscription Agent",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueErrorOutput",
+      "position": [
+        3520,
+        1312
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "bdSubscription01"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "tg-get-voice",
+      "name": "Download Voice File",
+      "webhookId": "bc6756a5-f973-4645-9f56-af6b554394ac",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        784,
+        1120
+      ],
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.voice.file_id }}",
+        "additionalFields": {}
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Telegram Budget Coach Demo"
+        }
+      }
+    },
+    {
+      "id": "switch-last-agent",
+      "name": "Use Last Agent If Recent",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        2800,
+        1408
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.follow_agent || '' }}",
+                    "rightValue": "productivity",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-1790255711296-w7bfckod6"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "last was productivity"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.follow_agent || '' }}",
+                    "rightValue": "subscriptions",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-1790255711296-0d3pyntra"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "last was subscriptions"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.follow_agent || '' }}",
+                    "rightValue": "budget",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-1790255711296-budget01"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "last was budget"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.follow_agent || '' }}",
+                    "rightValue": "project",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-1790255711296-project1"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "last was project"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.follow_agent || '' }}",
+                    "rightValue": "classify",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "condition-classify-reply"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "send to classifier"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "no recent agent"
+        }
+      }
+    },
+    {
+      "id": "set-ask-clarify",
+      "name": "Ask To Clarify",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3072,
+        1616
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "q1",
+              "name": "agent_name",
+              "type": "string",
+              "value": "router"
+            },
+            {
+              "id": "q2",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Build Input From Text').isExecuted ? $('Build Input From Text').item.json.chat_id : ($('Build Input From Voice').isExecuted ? $('Build Input From Voice').item.json.chat_id : $('Build Input From Image').item.json.chat_id) }}"
+            },
+            {
+              "id": "q3",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ $('Build Input From Text').isExecuted ? $('Build Input From Text').item.json.chatInput : ($('Build Input From Voice').isExecuted ? $('Build Input From Voice').item.json.chatInput : $('Build Input From Image').item.json.chatInput) }}"
+            },
+            {
+              "id": "q4",
+              "name": "output",
+              "type": "string",
+              "value": "=I couldn't tell what you mean by \"{{ $('Build Input From Text').isExecuted ? $('Build Input From Text').item.json.chatInput : ($('Build Input From Voice').isExecuted ? $('Build Input From Voice').item.json.chatInput : $('Build Input From Image').item.json.chatInput) }}\".\n\nI can help with:\n1) family expenses and budgets\n2) subscriptions\n\nSend it again with a few more words, for example: \"coffee 18 zl\", \"how much is left for groceries?\" or \"how do I cancel Netflix?\"."
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "if-photo",
+      "name": "Has Photo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        304,
+        1120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ Array.isArray($json.message.photo) && $json.message.photo.length > 0 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              },
+              "id": "condition-1790515182038-q19vnguah"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "tg-get-photo",
+      "name": "Download Photo",
+      "webhookId": "ce0cbdb4-0b42-4bc1-a87e-f92761040f65",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        544,
+        928
+      ],
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $json.message.photo[$json.message.photo.length - 1].file_id }}",
+        "additionalFields": {}
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Telegram Budget Coach Demo"
+        }
+      }
+    },
+    {
+      "id": "code-build-vision-body",
+      "name": "Build Vision Request Body",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        928
+      ],
+      "parameters": {
+        "jsCode": "const buf = await this.helpers.getBinaryDataBuffer(0, 'data');\nconst b64 = buf.toString('base64');\nconst mime = ($input.first().binary && $input.first().binary.data && $input.first().binary.data.mimeType) || 'image/jpeg';\nconst body = {\n  model: 'openai-gpt-6-luna',\n  messages: [{\n    role: 'user',\n    content: [\n      { type: 'text', text: 'This image was sent to me on Telegram, possibly alongside a caption. Describe what it shows and transcribe every piece of readable text exactly as shown, in plain text. Be precise, no speculation.' },\n      { type: 'image_url', image_url: { url: 'data:' + mime + ';base64,' + b64 } }\n    ]\n  }],\n  temperature: 0.1,\n  venice_parameters: { disable_thinking: true }\n};\nreturn [{ json: { body } }];\n"
+      }
+    },
+    {
+      "id": "http-describe-image",
+      "name": "Describe Image (Venice)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1024,
+        928
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.venice.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "venice api"
+        }
+      }
+    },
+    {
+      "id": "set-input-image",
+      "name": "Build Input From Image",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1264,
+        928
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Receive Telegram Message').item.json.message.chat.id }}"
+            },
+            {
+              "id": "d2",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ ($('Receive Telegram Message').item.json.message.caption ? $('Receive Telegram Message').item.json.message.caption + '\\n\\n' : '') + '[Image] ' + $json.choices[0].message.content }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "call-send-log",
+      "name": "Call Send And Log Reply",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        4112,
+        1472
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "bdSendLogReply01",
+          "cachedResultName": "Budget Coach Demo | Send And Log Reply"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "build-router-input",
+      "name": "Resolve Follow-up",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2512,
+        1440
+      ],
+      "parameters": {
+        "jsCode": "// Get Last Exchange returns this chat's last log rows, newest first (one row per bot message).\nconst rows = $input.all().map((i) => i.json || {}).filter((r) => r.createdAt);\nconst row = rows[0] || {};\nconst src = $('Build Input From Text').isExecuted ? 'Build Input From Text' : ($('Build Input From Voice').isExecuted ? 'Build Input From Voice' : 'Build Input From Image');\nconst cur = $(src).first().json;\nconst chatInput = String(cur.chatInput ?? '');\nconst replyTo = ($('Receive Telegram Message').first().json.message || {}).reply_to_message || null;\nconst classifierRan = $('Router: Classify Request').isExecuted;\nconst base = { chat_id: String(cur.chat_id), chatInput: chatInput };\nconst send = (request, agent, extra) => [{ json: { ...base, request_text: request, follow_agent: agent, redirected: false, explicit_tag: false, ...extra } }];\nconst hoursAgo = (r) => DateTime.now().diff(DateTime.fromISO(r.createdAt), 'hours').hours;\nconst AGENTS = ['productivity', 'budget', 'subscriptions', 'project'];\n\n// A reply can end with a tag line. \"➡️ #budget\" alone redirects the user's request; \"➡️ #productivity <request>\" carries the request for the next agent (the Projects Coach hands weekly goals over this way).\nconst tagLine = (text) => String(text || '').match(/(?:^|\\n)[ \\t*_]*(?:➡️?)?[ \\t]*#(productivity|budget|subscriptions|project)\\b[ \\t:*_]*([^\\n]*)\\s*$/i); // only the reply's last line\nconst handoffIn = (text, agent) => {\n  const m = tagLine(text);\n  if (!m || (agent && m[1].toLowerCase() !== agent)) return '';\n  const t = m[2].replace(/[*_]+$/, '').trim();\n  return t.length > 15 ? t : '';\n};\n// What a tag line passes on: the handed-over request (or his earlier message), plus what he writes now (user, 2026-10-26)\nconst passOn = (handed, earlier, now, replied) => {\n  const before = handed || earlier;\n  if (isFiller(now)) return before || now;\n  return before ? before + '\\n\\nHe adds: ' + now : now + quote(replied);\n};\nconst quote = (text) => '\\n\\n(He is replying to this earlier message: \"' + String(text || '').replace(/\\s+/g, ' ').trim().slice(0, 300) + '\")';\n\n// Sam's chat (0000000000) is a fixed rule, not a model decision: every message, tag or reply goes to the Family Budget Coach only.\nif (String(cur.chat_id) === '0000000000') return send(chatInput + (replyTo && replyTo.text ? quote(replyTo.text).replace('He is replying', 'She is replying') : ''), 'budget');\n\n// Words that add nothing: \"yes\", \"try again\", \"please\", \"do it\".\nconst isFiller = (text) => String(text).replace(/\\b(please|ok|okay|yes|yeah|sure|try|again|retry|redo|resend|do|it|send|there|now|thanks)\\b/ig, '').replace(/[^\\p{L}\\p{N}]+/gu, '') === '';\nconst explicit = chatInput.match(/(?:#|\\bhashtag\\s+)(productivity|budget|subscriptions|project|idea)\\b/i);\nconst rest = chatInput.replace(/(?:#|\\bhashtag\\s+)(productivity|budget|subscriptions|project|idea)\\b/ig, ' ').replace(/\\s+/g, ' ').trim();\nconst bare = isFiller(rest);\n\n// 0. A Telegram reply points at one message: that message decides, with no time limit.\n// Checked once, before the classifier; a reply that cannot be traced goes to the classifier like a new message.\nif (replyTo && !classifierRan) {\n  const fromBot = !!(replyTo.from && replyTo.from.is_bot);\n  const rid = Number(replyTo.message_id);\n  const r = rows.find((x) => Number(fromBot ? x.reply_message_id : x.user_message_id) === rid) || null;\n  const original = r ? String(r.user_message || '') : (fromBot ? '' : String(replyTo.text || ''));\n  const replied = r ? String(r.agent_reply || '') : (fromBot ? String(replyTo.text || '') : '');\n  if (explicit) {\n    const agent = explicit[1].toLowerCase() === 'idea' ? 'project' : explicit[1].toLowerCase();\n    if (!fromBot && original) return send(original + (bare ? '' : '\\n\\nNote: ' + rest), agent, { explicit_tag: true });\n    if (fromBot && bare && (handoffIn(replied, agent) || original)) return send(handoffIn(replied, agent) || original, agent, { explicit_tag: true });\n    if (fromBot && !bare) return send((explicit[1].toLowerCase() === 'idea' ? 'Idea: ' : '') + rest + quote(replied), agent, { explicit_tag: true });\n  } else if (fromBot) {\n    const m = tagLine(replied);\n    // A reply to a message that ends with a tag line goes to the tagged agent, whatever he writes (user, 2026-10-26)\n    if (m) return send(passOn(handoffIn(replied, m[1].toLowerCase()), original, chatInput, replied), m[1].toLowerCase(), { redirected: true });\n    if (r && AGENTS.includes(String(r.agent))) return send(chatInput + quote(replied), String(r.agent));\n    if (r && original) return send(original + '\\n\\n' + chatInput, 'classify'); // answer to the Router's clarifying question\n    return send(chatInput, 'classify');\n  } else if (r && AGENTS.includes(String(r.agent))) {\n    return send(chatInput + quote(original), String(r.agent));\n  } else {\n    return send(chatInput, 'classify');\n  }\n}\n\nconst lastAgent = String(row.agent ?? '');\nconst lastUser = String(row.user_message ?? '');\nconst lastReply = String(row.agent_reply ?? '');\n// Follow the last agent for 6 hours; a last reply that hands a request over stays valid for 48 hours.\nconst recent = !!(row.createdAt && lastAgent && (hoursAgo(row) < 6 || (hoursAgo(row) < 48 && handoffIn(lastReply))));\n\n// 1. The user wrote an explicit tag (#budget, #productivity, #subscriptions, #project, #idea): that agent, always. #idea goes to the project agent with the prefix \"Idea: \".\nif (explicit) {\n  const agent = explicit[1].toLowerCase();\n  const isIdea = agent === 'idea';\n  // \"#productivity yes\" also finds the newest request handed to that agent in the last 48 hours, even if other agents answered since.\n  const saysYes = /\\b(yes|yeah|ok|okay|sure)\\b/i.test(rest);\n  const lastTagged = recent && !!tagLine(lastReply) && tagLine(lastReply)[1].toLowerCase() === agent;\n  const handed = bare && saysYes && !lastTagged ? rows.filter((x) => hoursAgo(x) < 48).map((x) => handoffIn(x.agent_reply, agent)).find((t) => t) || '' : '';\n  // a bare tag, or a tag plus only filler (\"try again\", \"please\", \"do it\"), means: send the last request there\n  const request = bare ? (handed || (recent ? (handoffIn(lastReply, agent) || lastUser) : '')) : (isIdea ? 'Idea: ' + rest : rest);\n  return [{ json: { ...base, request_text: request, follow_agent: request ? (isIdea ? 'project' : agent) : '', redirected: false, explicit_tag: true } }];\n}\n\n// 2. Follow the conversation. The Router's own \"I couldn't tell what you mean\" reply is not one: follow the agent that spoke before it.\nconst conv = lastAgent === 'router' ? (rows.find((x) => AGENTS.includes(String(x.agent))) || {}) : row;\nconst convAgent = String(conv.agent ?? '');\nconst convUser = String(conv.user_message ?? '');\nconst convReply = String(conv.agent_reply ?? '');\nconst convRecent = !!(conv.createdAt && convAgent && (hoursAgo(conv) < 6 || (hoursAgo(conv) < 48 && handoffIn(convReply))));\n// The last reply ended with a tag line (➡️ #project): the next message goes to that agent for 6 hours, with what he writes now;\n// a bare \"yes\" or \"try again\" also within 48 hours when that line hands a request over (user, 2026-10-26).\n// \"Follows A Tag Line?\" sends such a message here before the classifier, with the same test.\nconst tag = tagLine(convReply);\nconst handedConv = tag ? handoffIn(convReply, tag[1].toLowerCase()) : '';\nconst tagRecent = !!(tag && conv.createdAt && (hoursAgo(conv) < 6 || (hoursAgo(conv) < 48 && handedConv && isFiller(chatInput))));\nif (tagRecent) return send(passOn(handedConv, convUser, chatInput, convReply), tag[1].toLowerCase(), { redirected: true });\nconst followAgent = convRecent ? convAgent : '';\nreturn [{ json: { ...base, request_text: chatInput, follow_agent: followAgent, redirected: false, explicit_tag: false } }];\n"
+      }
+    },
+    {
+      "id": "has-agent-tag",
+      "name": "Has Agent Tag Or Reply?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        1120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "tag-cond-1",
+              "leftValue": "={{ /(#|\\bhashtag\\s+)(productivity|budget|subscriptions|project|idea)\\b/i.test($json.chatInput) || !!$('Receive Telegram Message').first().json.message.reply_to_message || String($json.chat_id) === '0000000000' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "note-telegram",
+      "name": "Telegram Input Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        528
+      ],
+      "parameters": {
+        "content": "## Telegram Input\n\nTriggered by: a Telegram message (text, voice or photo) to the demo bot, from the demo chat only.\n\n1. Photo: downloaded and read by a vision model (Venice, openai-gpt-6-luna) into plain text: merchant, amount, dates for a receipt, or each item of a task list.\n2. Voice note: downloaded and transcribed (Venice, nvidia/parakeet-tdt-0.6b-v3).\n3. Anything else is plain text.\n4. A caption or words sent with the media stay first. Every path ends with chat_id and chatInput, which go to the Classifier & Router section.",
+        "height": 1288,
+        "width": 1532,
+        "color": 6
+      }
+    },
+    {
+      "id": "set-agent-error-reply",
+      "name": "Build Agent Error Reply",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3808,
+        1664
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1",
+              "name": "error_reason",
+              "type": "string",
+              "value": "={{ /time(d)? ?out/i.test(JSON.stringify($json.error || '')) ? 'it timed out' : ('it failed: ' + String(typeof $json.error === 'object' ? ($json.error.message || JSON.stringify($json.error)) : ($json.error || 'unknown error')).slice(0, 200)) }}"
+            },
+            {
+              "id": "e2",
+              "name": "output",
+              "type": "string",
+              "value": "=⚠️ The {{ $json.agent_name }} agent did not finish your request: {{ /time(d)? ?out/i.test(JSON.stringify($json.error || '')) ? 'it timed out' : ('it failed: ' + String(typeof $json.error === 'object' ? ($json.error.message || JSON.stringify($json.error)) : ($json.error || 'unknown error')).slice(0, 200)) }}.\n\nSome of it may already be done, so nothing is lost: if you say \"try again\" I send this request again and the agent skips what already exists.\n\nYour request: \"{{ String($json.chatInput).slice(0, 300) }}{{ String($json.chatInput).length > 300 ? '…' : '' }}\"\n\n➡️ #{{ $json.agent_name }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "tg-send-ack",
+      "name": "Send Acknowledgement Reply",
+      "webhookId": "0577cc0f-1bd3-4517-89ab-c6463ce824b7",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2512,
+        1216
+      ],
+      "parameters": {
+        "chatId": "={{ $('Build Input From Text').isExecuted ? $('Build Input From Text').item.json.chat_id : ($('Build Input From Voice').isExecuted ? $('Build Input From Voice').item.json.chat_id : $('Build Input From Image').item.json.chat_id) }}",
+        "text": "👍 Anytime.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Telegram Budget Coach Demo"
+        }
+      }
+    },
+    {
+      "id": "set-add-user-msg-id",
+      "name": "Add User Message Id",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        3840,
+        1472
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "u1",
+              "name": "user_message_id",
+              "type": "number",
+              "value": "={{ $('Receive Telegram Message').first().json.message.message_id }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "dt-get-previous",
+      "name": "Get Previous Messages",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        1680,
+        1328
+      ],
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_LOG_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "chat_id",
+              "keyValue": "={{ $json.chat_id }}"
+            }
+          ]
+        },
+        "limit": 5,
+        "orderBy": true
+      }
+    },
+    {
+      "id": "set-classifier-input",
+      "name": "Build Classifier Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "executeOnce": true,
+      "position": [
+        1680,
+        1520
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Has Agent Tag Or Reply?').first().json.chat_id }}"
+            },
+            {
+              "id": "c2",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ $('Has Agent Tag Or Reply?').first().json.chatInput }}"
+            },
+            {
+              "id": "c3",
+              "name": "classifier_text",
+              "type": "string",
+              "value": "={{ (() => { const cur = $('Has Agent Tag Or Reply?').first().json; const agents = ['productivity', 'budget', 'subscriptions', 'project']; const r = $('Get Previous Messages').all().map(i => i.json).find(x => x && agents.includes(String(x.agent))); if (!r || !r.createdAt) return cur.chatInput; const mins = Math.max(0, Math.round(DateTime.now().diff(DateTime.fromISO(r.createdAt), 'minutes').minutes)); if (mins > 360) return cur.chatInput; return 'PREVIOUS MESSAGE, sent ' + mins + ' minutes ago by the ' + r.agent + ' agent: \"' + String(r.agent_reply || '').replace(/\\s+/g, ' ').trim().slice(-400) + '\"\\nNEW MESSAGE: ' + cur.chatInput; })() }}"
+            },
+            {
+              "id": "c4",
+              "name": "tag_follow",
+              "type": "boolean",
+              "value": "={{ (() => { const cur = $('Has Agent Tag Or Reply?').first().json; const agents = ['productivity', 'budget', 'subscriptions', 'project']; const r = $('Get Previous Messages').all().map(i => i.json).find(x => x && agents.includes(String(x.agent))); if (!r || !r.createdAt) return false; const m = String(r.agent_reply || '').match(/(?:^|\\n)[ \\t*_]*(?:➡️?)?[ \\t]*#(productivity|budget|subscriptions|project)\\b[ \\t:*_]*([^\\n]*)\\s*$/i); if (!m) return false; const hrs = DateTime.now().diff(DateTime.fromISO(r.createdAt), 'hours').hours; const filler = String(cur.chatInput || '').replace(/\\b(please|ok|okay|yes|yeah|sure|try|again|retry|redo|resend|do|it|send|there|now|thanks)\\b/ig, '').replace(/[^\\p{L}\\p{N}]+/gu, '') === ''; return hrs < 6 || (hrs < 48 && m[2].replace(/[*_]+$/, '').trim().length > 15 && filler); })() }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "if-follows-tag",
+      "name": "Follows A Tag Line?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1920,
+        1680
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "follows-tag-1",
+              "leftValue": "={{ $json.tag_follow === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "reply-outside-demo",
+      "name": "Reply Outside This Demo",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3072,
+        912
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "o1",
+              "name": "agent_name",
+              "type": "string",
+              "value": "router"
+            },
+            {
+              "id": "o2",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Build Input From Text').isExecuted ? $('Build Input From Text').item.json.chat_id : ($('Build Input From Voice').isExecuted ? $('Build Input From Voice').item.json.chat_id : $('Build Input From Image').item.json.chat_id) }}"
+            },
+            {
+              "id": "o3",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ $('Build Input From Text').isExecuted ? $('Build Input From Text').item.json.chatInput : ($('Build Input From Voice').isExecuted ? $('Build Input From Voice').item.json.chatInput : $('Build Input From Image').item.json.chatInput) }}"
+            },
+            {
+              "id": "o4",
+              "name": "output",
+              "type": "string",
+              "value": "This demo assistant handles family budget and subscriptions only. That request belongs to the Productivity Coach demo bot (tasks, your day, the weekly plan and projects)."
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Has Voice?": {
+      "main": [
+        [
+          {
+            "node": "Download Voice File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Input From Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Voice File": {
+      "main": [
+        [
+          {
+            "node": "Transcribe Voice (Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe Voice (Venice)": {
+      "main": [
+        [
+          {
+            "node": "Build Input From Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router: Classify Request": {
+      "main": [
+        [
+          {
+            "node": "Reply Outside This Demo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag As Budget",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag As Subscriptions",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Last Exchange",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply Outside This Demo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Acknowledgement Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Last Exchange",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask To Clarify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Router: Classify Request",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Use Last Agent If Recent": {
+      "main": [
+        [
+          {
+            "node": "Reply Outside This Demo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag As Subscriptions",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tag As Budget",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply Outside This Demo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Router: Classify Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask To Clarify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag As Budget": {
+      "main": [
+        [
+          {
+            "node": "Call Family Budget Coach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag As Subscriptions": {
+      "main": [
+        [
+          {
+            "node": "Call Subscription Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Telegram Message": {
+      "main": [
+        [
+          {
+            "node": "Has Photo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Photo?": {
+      "main": [
+        [
+          {
+            "node": "Download Photo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Has Voice?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Photo": {
+      "main": [
+        [
+          {
+            "node": "Build Vision Request Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Vision Request Body": {
+      "main": [
+        [
+          {
+            "node": "Describe Image (Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Describe Image (Venice)": {
+      "main": [
+        [
+          {
+            "node": "Build Input From Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Family Budget Coach": {
+      "main": [
+        [
+          {
+            "node": "Add User Message Id",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Agent Error Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Subscription Agent": {
+      "main": [
+        [
+          {
+            "node": "Add User Message Id",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Agent Error Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Last Exchange": {
+      "main": [
+        [
+          {
+            "node": "Resolve Follow-up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Follow-up": {
+      "main": [
+        [
+          {
+            "node": "Use Last Agent If Recent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Input From Text": {
+      "main": [
+        [
+          {
+            "node": "Has Agent Tag Or Reply?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Input From Voice": {
+      "main": [
+        [
+          {
+            "node": "Has Agent Tag Or Reply?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Input From Image": {
+      "main": [
+        [
+          {
+            "node": "Has Agent Tag Or Reply?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Agent Tag Or Reply?": {
+      "main": [
+        [
+          {
+            "node": "Get Last Exchange",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Previous Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask To Clarify": {
+      "main": [
+        [
+          {
+            "node": "Add User Message Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Agent Error Reply": {
+      "main": [
+        [
+          {
+            "node": "Add User Message Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add User Message Id": {
+      "main": [
+        [
+          {
+            "node": "Call Send And Log Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Previous Messages": {
+      "main": [
+        [
+          {
+            "node": "Build Classifier Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Classifier Input": {
+      "main": [
+        [
+          {
+            "node": "Follows A Tag Line?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follows A Tag Line?": {
+      "main": [
+        [
+          {
+            "node": "Get Last Exchange",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Router: Classify Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply Outside This Demo": {
+      "main": [
+        [
+          {
+            "node": "Add User Message Id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timezone": "Europe/Rome"
+  },
+  "active": false
+}

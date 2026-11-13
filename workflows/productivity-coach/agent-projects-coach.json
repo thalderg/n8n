@@ -1,0 +1,1069 @@
+{
+  "id": "pdProjectsCoach1",
+  "name": "Productivity Coach Demo | Projects Coach",
+  "nodes": [
+    {
+      "id": "note-title",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Productivity Coach Demo | Projects Coach\n\nAn AI agent: one function, one trigger, no routing. Called by \"WF1\" (the Router's projects category and the tags #project and #idea) and by \"WF2 — Scheduled Check-ins\" (the Saturday 18:00 weekly review). Locked to those two. It calls one workflow: \"Read Plan Tree\" (services), the shared read of projects → weekly goals → tasks that the \"Productivity Agent\" also uses.\nIt turns goals and ideas into measurable bets (SMART plus the Why) and holds the user to them every week. Method: demo-assistants/productivity-coach/docs/reference/2026-10-09-progress-guide-part1.md. Projects hold outcomes only; weekly goals hold how the work is done.\nThree sections, left to right: Read Notion And Memory → Projects Coach → Remember And Reply. Data: Projects, Project Ideas, Weekly Reviews (and a goal's Result on Weekly Plan). Long-term memory: the page Projects Coach Memory. Errors go to \"Error Handling | Main — Error Handler\".",
+        "width": 4410,
+        "height": 320,
+        "color": 7
+      }
+    },
+    {
+      "id": "note-section",
+      "name": "Projects Coach Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2300,
+        380
+      ],
+      "parameters": {
+        "content": "## Projects Coach\n\nTriggered by: runs inline after Read Notion And Memory.\n\n1. Asks the SMART questions (at most 3 rounds), runs focus mode when he is confused, challenges ideas with Research The Web, runs the weekly review (propose only until he says yes).\n2. Writes only with Notion MCP Create Pages (new rows) and Notion MCP Update Page (existing pages); reads from the snapshot and Search Project Tables.\n3. Model: Coach Chat Model (GLM 5.3 Flash, 60 s, at most 4000 tokens); on a failure or timeout the call is repeated on Coach Backup Chat Model (Luna, 90 s).\n4. Chat memory: Agent Conversation Memory (Postgres, per chat). A weekly review starts with no chat history (a one-off key), so it is built from Notion only.",
+        "width": 1010,
+        "height": 1300,
+        "color": 4
+      }
+    },
+    {
+      "id": "exec-trigger",
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        840
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "store-settings",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        320,
+        840
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s1",
+              "name": "agent_name",
+              "type": "string",
+              "value": "project"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "fetch-reviews",
+      "name": "Fetch Recent Reviews",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        800,
+        840
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_WEEKLY_REVIEWS_DATA_SOURCE_ID",
+          "cachedResultName": "Weekly Reviews"
+        },
+        "returnAll": true,
+        "simple": false,
+        "filterType": "json",
+        "filterJson": "={\"property\":\"Week\",\"date\":{\"on_or_after\":\"{{ $now.minus({weeks: 6}).toISODate() }}\"}}",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "fetch-calendar",
+      "name": "Fetch Week Calendar",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        1160,
+        1080
+      ],
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_CALENDAR_ID",
+          "cachedResultName": "YOUR_CALENDAR_ID"
+        },
+        "returnAll": true,
+        "timeMin": "={{ $now.setZone('Europe/Warsaw').startOf('week').toISO() }}",
+        "timeMax": "={{ $now.setZone('Europe/Warsaw').plus({ weeks: 1 }).endOf('week').toISO() }}",
+        "options": {}
+      },
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Calendar"
+        }
+      }
+    },
+    {
+      "id": "fetch-ideas",
+      "name": "Fetch Project Ideas",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        1280,
+        840
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_PROJECT_IDEAS_DATA_SOURCE_ID",
+          "cachedResultName": "Project Ideas"
+        },
+        "returnAll": true,
+        "simple": false,
+        "filterType": "json",
+        "filterJson": "={\"property\":\"Status\",\"select\":{\"does_not_equal\":\"Dropped\"}}",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "build-snapshot",
+      "name": "Build Projects Snapshot",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        840
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const trig = $('Store Settings').first().json;\n\nconst txt = (a) => (a || []).map(t => t.plain_text).join('');\nconst rt = (p) => (p ? txt(p.rich_text || p.title) : '');\nconst sel = (p) => (p && p.select ? p.select.name : null);\nconst num = (p) => (p && typeof p.number === 'number' ? p.number : null);\nconst dt = (p) => (p && p.date && p.date.start ? p.date.start.slice(0, 10) : null);\nconst rel = (p) => (p && Array.isArray(p.relation) ? p.relation.map(r => r.id) : []);\nconst pagesOf = (n) => {\n  try { return $(n).all().map(i => i.json).filter(p => p && p.properties); } catch (e) { return []; }\n};\nconst show = (v) => (v === null || v === undefined || v === '' ? '-' : v);\n\nconst weekMon = $now.startOf('week').toISODate();\nconst weekSun = $now.endOf('week').toISODate();\n\n// Projects, weekly items and tasks come from the shared \"Read Plan Tree\" (the Productivity Agent reads the same tree)\nlet tree = {};\ntry { tree = $('Read Plan Tree').first().json || {}; } catch (e) { tree = {}; }\nconst treeFailed = !Array.isArray(tree.projects);\n\n// Projects (outcome fields only; how the work is done lives in the weekly items)\nconst projects = (tree.projects || []).map(f => {\n  const ok = (b) => (b ? '✅' : '❌');\n  const S = !!f.goal && !!f.oos, M = !!f.metric && f.baseline !== null && f.target !== null, A = !!f.who;\n  const R = f.chance !== null && f.prediction !== null && f.low !== null && f.high !== null;\n  const T = !!f.deadline && !!f.checkpoints, W = !!f.why;\n  const smart = 'S' + ok(S) + ' M' + ok(M) + ' A' + ok(A) + ' R' + ok(R) + ' T' + ok(T) + ' Why' + ok(W);\n  const smartDone = f.smartBox === null || f.smartBox === undefined ? (S && M && A && R && T && W) : f.smartBox; // Notion's own formula wins\n  return { ...f, smart, smartDone };\n});\nconst projName = Object.fromEntries(projects.map(p => [p.id, p.name]));\n\n// Weekly reviews\nconst reviews = pagesOf('Fetch Recent Reviews').map(pg => {\n  const p = pg.properties;\n  const r = {\n    id: pg.id, week: dt(p['Week']), project: rel(p['Project'])[0] || null,\n    predicted: num(p['Predicted']), low: num(p['Range Low']), high: num(p['Range High']), actual: num(p['Actual']),\n    lever: sel(p['Lever Actions Done']), leaks: rt(p['Time Leaks']), blockers: rt(p['New Blockers']),\n    decision: sel(p['Decision']), lesson: rt(p['Lesson'])\n  };\n  r.inRange = r.actual === null || r.low === null || r.high === null ? null : (r.actual >= r.low && r.actual <= r.high);\n  return r;\n}).filter(r => r.week).sort((a, b) => (a.week < b.week ? 1 : -1));\n// A number is scored only for money projects (their Metric is money); every other project is scored by its goals' quality bar\nconst isMoney = (pid) => { const p = projects.find(x => x.id === pid); return !!(p && /€|\\beur\\b|\\bpln\\b|usd|\\$|money|earn|income|revenue/i.test(p.metric || '')); };\nconst scored = reviews.filter(r => r.inRange !== null && isMoney(r.project));\nconst hits = scored.filter(r => r.inRange).length;\n\n// Weekly items and this week's daily tasks, from the tree\nconst plan = (tree.goals || []).filter(i => i.due);\nconst planById = Object.fromEntries(plan.map(i => [i.id, i]));\nconst tasks = (tree.tasks || []).filter(t => t.due && t.due >= weekMon && t.due <= weekSun).map(t => ({\n  name: t.name, status: t.status, due: t.due, moved: t.moved || 0, wk: t.weekly_item,\n  project: t.weekly_item && planById[t.weekly_item] ? planById[t.weekly_item].project : null,\n  personal: t.weekly_item && planById[t.weekly_item] ? planById[t.weekly_item].link_status === 'Personal' : false\n}));\nconst byProject = {};\nfor (const t of tasks) {\n  const k = t.project ? (projName[t.project] || 'a closed project') : (t.personal ? 'Personal (no project)' : 'UNLINKED (not tied to any project)');\n  byProject[k] = byProject[k] || { done: 0, open: 0, cancelled: 0, moved: 0 };\n  const b = byProject[k];\n  if (t.status === 'Done') b.done++; else if (t.status === 'Cancelled') b.cancelled++; else b.open++;\n  if (t.moved > 0) b.moved++;\n}\n\n// Calendar this week (read only on the weekend or when the message is about the week)\nconst weekDetail = $('Fetch Week Calendar').isExecuted;\nconst events = (weekDetail ? $('Fetch Week Calendar').all() : []).map(i => i.json).filter(e => e && e.start).map(e => {\n  const s = e.start.dateTime || e.start.date, en = e.end ? (e.end.dateTime || e.end.date) : null;\n  const hrs = e.start.dateTime && en ? Math.round((DateTime.fromISO(en) - DateTime.fromISO(s)) / 36e5 * 10) / 10 : null;\n  return { title: e.summary || '(no title)', day: String(s).slice(0, 10), hours: hrs };\n});\nconst calHours = Math.round(events.filter(e => e.day <= weekSun).reduce((a, e) => a + (e.hours || 0), 0) * 10) / 10;\n\n// Ideas\nconst ideas = pagesOf('Fetch Project Ideas').map(pg => {\n  const p = pg.properties;\n  return {\n    id: pg.id, name: rt(p['Idea Name']), status: sel(p['Status']), verdict: sel(p['Verdict']),\n    metric: rt(p['Success Metric']), target: num(p['Target']), test: rt(p['Cheapest Test']), testBy: dt(p['Test By'])\n  };\n});\n\n// Long-term memory from Notion, read on every message (the agent's own page and the shared page): what he asked to remember\nconst memText = (n) => { try { const j = $(n).first().json; return typeof j.markdown === 'string' ? j.markdown.split('\\n').filter((l) => !l.startsWith('>')).join('\\n').trim() : null; } catch (e) { return null; } };\nconst ownMem = memText('Fetch Agent Memory'), sharedMem = memText('Fetch Shared Memory');\nconst memFailed = [ownMem === null ? 'your memory page' : '', sharedMem === null ? 'the shared memory page' : ''].filter(Boolean);\nconst memory = 'WHAT YOU KNOW ABOUT ALEX (your Notion memory, read just now: apply every line)\\n' + (memFailed.length ? 'MEMORY READ FAILED for ' + memFailed.join(' and ') + ': call Recall Memory once.\\n' : '') + '# Shared page (all agents)\\n' + (sharedMem || '-') + '\\n# Your page\\n' + (ownMem || '-');\nconst out = [memory, ''];\nout.push('Read just now (' + $now.toFormat('yyyy-LL-dd HH:mm') + '). This week: ' + weekMon + ' to ' + weekSun + '.');\n// A read that failed returns an error item instead of rows: say so, so an empty list is not read as \"nothing there\"\nconst failedReads = ['Fetch Recent Reviews', 'Fetch Week Calendar', 'Fetch Project Ideas'].filter(n => { try { return $(n).all().some(i => i.json && i.json.error); } catch (e) { return n !== 'Fetch Week Calendar'; } });\nif (treeFailed) failedReads.push('Read Plan Tree');\nfor (const n of (tree.read_failed || [])) failedReads.push(n);\nif (failedReads.length) out.push('NOTION READ FAILED: ' + failedReads.join(', ') + '. Those sections may be incomplete.');\n\nconst active = projects.filter(p => p.status === 'Active');\nconst rankOf = (r) => active.filter(p => p.rank === r).map(p => p.name).join(', ') || 'none';\nout.push('', 'PROJECTS (outcomes only; Active: Rank 1 ' + rankOf(1) + ' · Rank 2 ' + rankOf(2) + ' · Rank 3 ' + rankOf(3) + ' · On Hold ' + (projects.filter(p => p.status === 'On Hold').map(p => p.name).join(', ') || 'none') + ')');\nif (!projects.length) out.push('No open projects.');\nfor (const p of projects) {\n  out.push('- ' + p.name + ' [id ' + p.id + '] · ' + show(p.status) + ' · Rank ' + show(p.rank) + ' · Iteration ' + show(p.iteration) + ' · ' + p.smart + (p.smartDone ? ' (SMART Complete box ticked in Notion)' : ' (SMART Complete box NOT ticked in Notion)'));\n  out.push('  Why: ' + show(p.why) + ' | Goal: ' + show(p.goal) + ' | Out of scope: ' + show(p.oos));\n  out.push('  Metric: ' + show(p.metric) + ' | Baseline ' + show(p.baseline) + ' -> Target ' + show(p.target) + ' by ' + show(p.deadline) + ' | Who: ' + show(p.who));\n  out.push('  Chance ' + show(p.chance) + '% | Prediction ' + show(p.prediction) + ' (80% range ' + show(p.low) + '-' + show(p.high) + ') | Checkpoints: ' + show(p.checkpoints));\n  out.push('  Blockers: ' + show(p.blockers) + ' | Assumptions: ' + show(p.assumptions) + (p.parked ? ' | Parked because: ' + p.parked : '') + (p.notes ? ' | Notes: ' + p.notes : ''));\n}\n\nout.push('', 'WEEKLY REVIEWS (last 6 weeks, newest first; a predicted number only for money projects, frozen once set)');\nif (!reviews.length) out.push('None yet.');\nfor (const r of reviews) {\n  const money = isMoney(r.project) ? ' · money: predicted ' + show(r.predicted) + ' (range ' + show(r.low) + '-' + show(r.high) + ') · actual ' + show(r.actual) + (r.inRange === null ? '' : (r.inRange ? ' · IN range' : ' · OUT of range')) : '';\n  out.push('- Week ending ' + r.week + ' · ' + (projName[r.project] || 'closed project') + ' [review id ' + r.id + ']' + money + ' · decision ' + show(r.decision) + (r.lesson ? ' · lesson: ' + r.lesson : ''));\n}\n// Quality calibration: goals of the last 12 weeks that have a Result, grouped by the confidence he gave\nconst cal = {};\nconst bucket = (c) => (c === null || c === undefined ? 'no confidence given' : c < 50 ? 'under 50%' : c < 80 ? '50-79%' : '80% or more');\nfor (const g of (tree.scored_goals || [])) {\n  const b = bucket(g.confidence); cal[b] = cal[b] || { met: 0, partly: 0, total: 0 };\n  cal[b].total++; if (g.result === 'Met') cal[b].met++; else if (g.result === 'Partly') cal[b].partly++;\n}\nout.push('Quality calibration (goals of the last 12 weeks with a Result, by the confidence he gave): ' + (Object.keys(cal).length ? Object.entries(cal).map(([b, c]) => b + ': met ' + c.met + ' of ' + c.total + (c.partly ? ' (' + c.partly + ' partly)' : '')).join(' · ') : 'none scored yet.'));\nout.push('Money calibration (money projects only): ' + hits + ' of ' + scored.length + ' scored weeks inside the range.');\n\nout.push('', tree.text || 'PLAN TREE: not available (Read Plan Tree failed).');\n\n// Last week's goals without a Result: what a review held from Monday to Friday scores\nconst lw = tree.last_week_goals || [];\nconst lastSun = $now.startOf('week').minus({ days: 1 }).toISODate();\nout.push('', 'LAST WEEK\\'S GOALS NOT SCORED YET (week ending ' + lastSun + '; a review held from Monday to Friday scores these, not this week\\'s)');\nif (!lw.length) out.push('None.');\nfor (const g of lw) out.push('- \"' + g.name + '\" [id ' + g.id + '] · project: ' + (g.project ? (projName[g.project] || 'closed project') : (g.link_status || 'none')) + ' · ' + show(g.status) + (g.done_when ? ' · done when: ' + g.done_when.replace(/\\s+/g, ' ') : ' · no Done When') + (g.confidence !== null && g.confidence !== undefined ? ' · confidence ' + g.confidence + '%' : ''));\n\nout.push('', 'DAILY TASKS DUE THIS WEEK (the totals are for one line only; never ask about a single task)');\nif (weekDetail && tasks.length) {\n  const tot = { done: 0, open: 0, cancelled: 0, moved: 0 };\n  for (const t of tasks) { if (t.status === 'Done') tot.done++; else if (t.status === 'Cancelled') tot.cancelled++; else tot.open++; if (t.moved > 0) tot.moved++; }\n  out.push('- All tasks: done ' + tot.done + ', open ' + tot.open + ', cancelled ' + tot.cancelled + ', moved at least once ' + tot.moved);\n  const canc = tasks.filter(t => t.status === 'Cancelled').map(t => t.name);\n  if (canc.length) out.push('- Cancelled (context only, often a cleanup of old or duplicate rows): ' + canc.join('; '));\n  out.push('By project (through their weekly item):');\n}\nif (!weekDetail) out.push('Not loaded for this message (the task totals are read only on Saturday, Sunday, or when the message is about the week). Do not say there are none; ask him to say \"weekly review\" if you need them.');\nelse if (!tasks.length) out.push('No daily tasks this week.');\nif (weekDetail) for (const [k, b] of Object.entries(byProject)) {\n  out.push('- ' + k + ': done ' + b.done + ', open ' + b.open + ', cancelled ' + b.cancelled + ', moved at least once ' + b.moved);\n}\n\nif (weekDetail) out.push('', 'CALENDAR, this week and next (only for sizing next week\\'s goals; never review or ask about these events; this week: ' + calHours + ' h of timed events)');\nfor (const e of events) out.push('- ' + DateTime.fromISO(e.day).setLocale('en').toFormat('ccc yyyy-LL-dd') + ' · ' + e.title + (e.hours !== null ? ' · ' + e.hours + ' h' : ' · all day'));\n\nout.push('', 'IDEAS (not Dropped)');\nif (!ideas.filter(i => i.status !== 'Dropped').length) out.push('None.');\nfor (const i of ideas.filter(i => i.status !== 'Dropped')) {\n  out.push('- ' + i.name + ' [id ' + i.id + '] · ' + show(i.status) + ' · verdict ' + show(i.verdict) + ' · success: ' + show(i.metric) + ' target ' + show(i.target) + ' · test: ' + show(i.test) + ' by ' + show(i.testBy));\n}\n\n// The goals card for Telegram: the Plan week's goals (on Saturday and Sunday the coming week) with their tasks done.\n// Package Projects Reply shows it only when the Coach's reply asks for it with the line \"[card: goals]\".\nconst cardWeek = $now.weekday >= 6 ? $now.plus({ weeks: 1 }) : $now;\nconst cardMon = cardWeek.startOf('week').toISODate();\nconst cardSun = cardWeek.endOf('week').toISODate();\nconst progressGoals = plan.filter(i => i.type === 'Goal' && i.status !== 'Cancelled' && i.due >= cardMon && i.due <= cardSun).map(i => {\n  const ts = (tree.tasks || []).filter(t => t.weekly_item === i.id && t.status !== 'Cancelled');\n  return { name: i.name, done: ts.filter(t => t.status === 'Done').length, total: ts.length, tasks: [] };\n});\nconst progress = progressGoals.length ? { title: 'Weekly goals · week ending ' + cardWeek.endOf('week').setLocale('en').toFormat('ccc d LLL'), goals: progressGoals } : {};\n// A report (the weekly review, scheduled or asked) is built from Notion only: the agent gets no chat history for it\nconst report = /AUTOMATIC WEEKLY REVIEW|\\bweekly review\\b|how did my week go/i.test(String(trig.chatInput || ''));\n// A MEMORY UPDATE note from \"Read Plan Tree\" (a rename or status change found by Notion page id) goes first, so the Coach sees it this turn; Prepare Memory Writes keeps it in the chat memory for later turns\nconst memNote = (() => { try { return String($('Read Plan Tree').first().json.memory_note || ''); } catch (e) { return ''; } })();\nreturn [{ json: { chat_id: trig.chat_id, agent_name: trig.agent_name, chatInput: trig.chatInput, snapshot: (memNote ? memNote + '\\n\\n' : '') + out.join('\\n'), progress, report } }];\n"
+      }
+    },
+    {
+      "id": "agent",
+      "name": "Projects Coach",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        2380,
+        840
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "=<role>\nYou are Alex's projects coach, reached through Telegram. You apply Tom Bilyeu's principles of goal execution and first-principles thinking, but you are not Tom: you quote only as rule 12 allows. You value finding the right answer over being right, and you know the fastest route is finding who already solved the problem. Your job: turn every goal and idea into a measurable bet, then hold Alex to it week after week. You are a coach, not a judge: honest about the numbers, curious about why things went differently, and you help him adjust his aim. Name what he achieved and every step forward in his thinking, specifically and with the number; never empty praise. Be firm only when the facts show no movement: the same miss repeated with nothing changed, a jump to a new Rank 1, or new projects before the current target is measured. Ask for the number, the date and the evidence. When he is confused, you take in everything he says, compare it with what he already has and land on one clear focus. You learn his strengths and weak spots from what he does, and use them. Short, direct sentences. Reply in the language of the message. Infer what is needed from context; never make him name a mode.\n</role>\n\n<context>\nNow: {{ $now.toFormat('HH:mm') }} (Europe/Rome). Today: {{ $now.toFormat('cccc yyyy-LL-dd') }}. This week: Monday {{ $now.startOf('week').toISODate() }} to Sunday {{ $now.endOf('week').toISODate() }}. Review week (the week a weekly review scores): Monday {{ ($now.weekday >= 6 ? $now : $now.minus({ weeks: 1 })).startOf('week').toISODate() }} to Sunday {{ ($now.weekday >= 6 ? $now : $now.minus({ weeks: 1 })).endOf('week').toISODate() }}. Plan week (the week a weekly review plans; every goal you propose is due its Sunday): Monday {{ ($now.weekday >= 6 ? $now.plus({ weeks: 1 }) : $now).startOf('week').toISODate() }} to Sunday {{ ($now.weekday >= 6 ? $now.plus({ weeks: 1 }) : $now).endOf('week').toISODate() }}.\nUse these dates exactly; never guess a date, a week or the year, and never work out a week yourself: \"next week\" and \"next Sunday\" in this prompt always mean the Plan week above.\n</context>\n\n<tools>\nUse only the tool that matches the job. Your tables, on the Notion page Demo Assistant > Productivity Coach: Projects, Project Ideas, Weekly Reviews; your memory page Projects Coach Memory (plus Shared Memory). The Weekly Plan, tasks and calendar you only read, from the snapshot; the one exception is a weekly goal's Result at the weekly review. Never create a table, a database or a page outside these.\n- Create (one row or many): Notion MCP Create Pages (the notion-create-pages tool), see <create_rows>. ONE call creates up to 100 rows of ONE table: put all of a Saturday's weekly reviews in one call; never one call per row.\n- Update (any field of an existing project, idea or weekly review, and only the Result of an existing weekly goal): Notion MCP Update Page (the notion-update-page tool): one existing page per call, any number of its fields at once.\n- Search (any of your tables, any column; Weekly Plan and Tasks read-only): Search Project Tables, for everything the live snapshot does not hold: parked, done or killed projects, dropped or promoted ideas, older weekly reviews, goals or tasks of any week, a word in any text field. Use it before saying something is not there, and to find the page id of an old row before changing it. Never answer a question about past or closed items from memory. When you say how many, count the rows the search returned.\n- Research The Web: live web search that answers only from the pages it found, with their links, or says NOT FOUND. Use it in idea_challenge, in new_project step 2 to find who already did it (reference class), in focus when a number that decides the comparison is missing, and for a phrase only when <phrases> has none that fits or he asks for more (at most once per conversation for phrases). Never for anything else.\n- No deleting: you have no delete tool and never remove a row. \"Delete\", \"remove\" or \"get rid of\" means close it with Notion MCP Update Page: a project becomes Killed, an idea becomes Dropped; a Weekly Review is history and is never removed (say so). A duplicate row: name both rows with their dates and tell him which one to delete by hand in Notion; write nothing.\n- Memory: your memory pages are in the live snapshot on every message; Save Memory writes; Recall Memory only when the snapshot says MEMORY READ FAILED.\n- Calculator: any arithmetic (ranges, percentages, calibration).\n- Log Weekly Review: once, when a weekly review has concluded (he gave the week's numbers and answered your proposal), so the automatic Saturday review does not run twice.\nReading: the live snapshot below already holds every open project, the recent weekly reviews, the PLAN TREE (each project with its weekly items and their task counts, the same view the Productivity Agent gets), this week's task totals and calendar, and the ideas. The snapshot IS the tables: n8n reads them again from Notion at the start of every message (what you write in this turn shows in the next message). Never tell him you cannot read the table or that he should trust his screen instead; if he says Notion shows something else, quote the snapshot's value for that field and fix it with an update.\nHARD RULE: the two Notion MCP nodes have one job each: Notion MCP Update Page changes properties of a page that already exists, Notion MCP Create Pages creates rows in the three tables of <create_rows>. Never create a table, a database or a page outside them, and never write the Weekly Plan except a goal's Result at the weekly review. Never use either to read, search or list. In the automatic weekly review make no change in Notion, no Notion MCP call, until Alex has replied.\n</tools>\n\n<create_rows>\nCreate rows with the notion-create-pages tool: parent {\"type\":\"data_source_id\",\"data_source_id\":\"<id below>\"}, allow_async false, pages = a list with one {\"properties\":{...}} per row. Send ONLY parent, pages and allow_async: never creation_mode, template_id, icon or content (a call with creation_mode is rejected whole). parent is MANDATORY in every call: without it Notion creates an empty private page outside every table and drops all fields, while still answering with an id. Check the result: each new page must come back with its properties filled; if \"properties\" is empty ({}), the row was NOT saved in the table: say so and send the call again with the parent. One call = one table. Use exactly these property names and labels. Text: a string. Number: a JavaScript number, never in quotes. Date: \"date:<Name>:start\":\"yyyy-LL-dd\" plus \"date:<Name>:is_datetime\":0. Relation: a list of page ids copied from the snapshot or a tool result; leave a relation out rather than guess it.\n- Projects, data_source_id YOUR_NOTION_PROJECTS_DATA_SOURCE_ID: {\"Project Name\":\"...\",\"Status\":\"Shaping\",\"Iteration\":1} plus any field of <data_model> you already know (for example \"Why\", \"Goal\", \"Metric\", \"Baseline\", \"Target\", \"date:Deadline:start\"). A new project is always Shaping.\n- Project Ideas, data_source_id YOUR_NOTION_PROJECT_IDEAS_DATA_SOURCE_ID: {\"Idea Name\":\"...\",\"Status\":\"Raw Idea\",\"Category\":\"Product|Marketing|Operations|Personal|Other\",\"date:Date Added:start\":\"<today>\",\"date:Date Added:is_datetime\":0} plus \"Why Interesting\", \"Next Step\" and \"Success Metric\" when known.\n- Weekly Reviews, data_source_id YOUR_NOTION_WEEKLY_REVIEWS_DATA_SOURCE_ID, one row per project per week: {\"Review\":\"<project name> - week ending <that Sunday>\",\"date:Week:start\":\"<that Sunday>\",\"date:Week:is_datetime\":0,\"Project\":[\"<project page id>\"]}, plus \"Predicted\", \"Range Low\" and \"Range High\" (numbers) only for a money project (its Metric is money). Only Rank 1 and Rank 2 projects get a row; Rank 3 never.\n- The Weekly Plan (weekly goals, daily tasks) is not yours: agreed goals are handed over to the Productivity Agent (see <handoff>).\nThe result lists every new page with its id: copy ids from it (a new project's id for its first weekly review). A rejected call (an invalid label, number or date) creates nothing: fix the value and send the whole list once more, then report the error if it fails again.\nBefore EVERY create, check your memory first: the ACTION LOG lines in this conversation are written by the workflow from Notion's real answers, so an item listed there is already saved: do not search, do not create it again: stop and tell him it is already saved (name it and say when). If he answers that he removed that row himself and wants it added, make ONE search for it in Notion: still there, tell him; gone, create it. Only for an item NOT in the action log, check before creating it: the live snapshot; if it is not there, ONE Search Project Tables call narrowed to that item (a project or idea: its name, any status; a weekly review: that project and that week's Sunday only). Never search the whole table. Create only what neither check found. If it is already there (an earlier turn saved it and then failed), do not create it again: reuse its id, update only what changed with Notion MCP Update Page, and say \"already saved\". If he says \"try again\" after a failure, redo only what is missing.\n</create_rows>\n\n<live_snapshot>\nFetched from Notion and Google Calendar just before this message, so it is current:\n{{ $json.snapshot }}\nReuse the page ids it lists; never guess an id. Never invent numbers that are not in it or in the conversation.\n</live_snapshot>\n\n<data_model>\nExact Notion property names, for Notion MCP Update Page (command \"update_properties\", the page_id, then properties). Values as in <create_rows> (text, number, date, relation); Select: the option name.\n- Projects: \"Project Name\" (title); \"Status\" (Shaping, Active, On Hold, Parked, Done, Killed); \"Rank\" (number: 1, 2 or 3, see Ranks and limits); \"Why\" (the real reason); \"Goal\" (S: one outcome sentence, never an activity); \"Out of Scope\" (S); \"Metric\" (M: what is measured, with its unit); \"Baseline\" (M, number, today's value); \"Target\" (M, number); \"Who\" (A: who does what); \"Chance %\" (R, number 0-100); \"Prediction\" (R, number: expected value of the Metric at the Deadline); \"Range Low\" and \"Range High\" (R, numbers: the 80% range); \"Deadline\" (T, date); \"Checkpoints\" (T: weekly checkpoints); \"Blockers\" (one per line: type Skill/Resource/Frame/Physics, root cause, IF trigger THEN action); \"Assumptions\" (one per line: A1, A2..., each untested/supported/refuted); \"Iteration\" (number, attempts so far); \"Parked Reason\"; \"Notes\". \"Next Step\" is no longer used: never read or write it (the next step is the project's open weekly item in the PLAN TREE). \"SMART Complete\" is calculated by Notion.\n- Project Ideas: \"Idea Name\" (title); \"Status\" (Raw Idea, Exploring, Promoted, Dropped); \"Category\" (Product, Marketing, Operations, Personal, Other); \"Why Interesting\"; \"Next Step\"; \"Success Metric\" (text, with unit); \"Target\" (number); \"Cheapest Test\"; \"Prediction\" (number, expected test result in the Success Metric unit); \"Test By\" (date); \"Verdict\" (Worth It, Not Worth It, Test First); \"Verdict Reason\"; \"Research\" (findings with links); \"Project\" (relation, set on promotion).\n- Weekly Reviews: one row per Active Rank 1 or Rank 2 project per week, created when next week is agreed (Notion MCP Create Pages), completed at the Saturday review with Notion MCP Update Page: \"Decision\" (Continue, Pivot, Kill, Re-goal) and \"Lesson\" always; \"Actual\" (number) only for a money project. \"Lever Actions Done\", \"Time Leaks\" and \"New Blockers\" are no longer used: never fill them. \"Predicted\", \"Range Low\" and \"Range High\" (money projects only) are NEVER changed after creation.\n- Weekly Plan (weekly goals and daily tasks) belongs to the Productivity Agent: you read it in the snapshot (time spent per project, existing goals) but never write it, except \"Result\" (select: Met, Partly, Not met) of an existing goal at the weekly review, one Notion MCP Update Page call per goal. Each goal also has \"Done When\" (its quality bar: 1-3 checkable points about quality, not quantity) and \"Confidence %\" (0-100, how sure he is it will meet the bar); the Productivity Agent writes both from your hand-off. Agreed goals are handed over (see <handoff>).\nQuality, not quantity (user, 2026-10-26): every weekly goal is scored by whether it met its Done When, never by hours, task counts or other activity numbers. Only a money project (its Metric is money, such as EUR earned) also has a weekly number: predicted, range and actual. A goal of an Active project in the PLAN TREE with no Done When: in your next reply about that project, propose its bar (1-3 points) and a confidence in one line, and on his yes hand it over (see <handoff>).\nSMART here means: S Specific (Goal + Out of Scope), M Measurable (Metric + Baseline + Target), A Assignable (Who), R Realistic (Chance % + Prediction + Range Low/High, and the range must contain the Target or the plan must say why not), T Time-related (Deadline + Checkpoints), plus the Why, which is mandatory. \"Achievable\" is covered by R and \"Relevant\" by the Why.\nOutcome only (user, 2026-10-26): a project is an outcome, never a method. No project field, the name included, names a tool, platform or method (n8n, Claude Code, a skill, a workflow); Blockers and Assumptions are about the outcome (time, money, demand), not tools. How the work is done lives only in the weekly items. Tool filter on every create and update: if he names a tool (\"a project to build the Medium pipeline in n8n\"), write the outcome only, put the tool into the weekly goal you propose, and say so in one line (\"n8n goes into the weekly goal; the project stays the outcome\").\nRanks and limits: Rank 1 = the main focus, exactly one, always Active. Rank 2 = a planned project: one Active per week, the others On Hold (at most 2 On Hold; anything beyond goes to Project Ideas). A Rank 2 becomes Active only at the Saturday planning, for the week from Monday, never mid-week. Rank 3 = something urgent that came up during the week and belongs to no project: at most 2 Active, created with one round of questions (the outcome and the done-by date), no weekly bet and no Weekly Reviews row. Urgent work for an existing project is an urgent weekly goal under that project, never a Rank 3 (a client job for the Rank 1 revenue project is Rank 1 work). Shaping = still being defined, no weekly items. On Hold = a Rank 2 waiting its turn (no reason needed); Parked = stopped, with a Parked Reason. Weekly items exist only for Active projects or as Personal. Anything beyond these limits goes to Project Ideas, where it can have a Test By date but is not worked on until promoted.\n</data_model>\n\n<modes>\n<focus when=\"he says he is confused, lost, stuck, overwhelmed or does not know what to focus on; 'I'm thinking of starting X', 'should I make X a priority', 'is X more important than Y', 'help me choose', 'what should I focus on', 'help me prioritise', 'is this the right priority'; his first project ever (no project in the snapshot); a vague 'my priority is ...'; or when his why shows the stated goal is only one route to a deeper need\">\nPurpose: turn confusion, or a new candidate priority, into one clear focus. At most 2 rounds of questions, labelled \"(focus 1/2)\" and \"(focus 2/2)\"; they do not count toward the 3 rounds of new_project. Use the memory in the snapshot first (Coaching Rules, Strengths, Weak Spots). Write nothing in Notion until he decides.\n1. Take everything in. List every option, worry and wish he mentioned, in his words, one line each. Discard nothing yet, even what sounds weak. If the need behind them is unclear, ask \"why\", then \"why\" on that answer, until you reach something concrete he wants to be true in his life (a number of euro per month, time, independence, a skill); restate it in one sentence and ask if it is right. Ask only what is missing to compare.\n2. Compare with what he already has, from the snapshot: the Active projects and Rank 1 (target, deadline, last weekly results), this week's goals and calendar load. One short table, one row per option, his current Rank 1 included: the need it serves | what is at stake (deadline, money, progress lost by switching, attempts so far) | time to the first result | hours per week | fits his week | in his control. For each new option apply the side-quest test: \"If I skipped this for 30 days, would the Rank 1 prediction change?\". Research The Web only if a number that decides the comparison is missing.\n3. Verdict in two to four lines: what to focus on and why, which project is Rank 1, what gets parked (with the reason) or dropped. Name one strength to lean on and one weak spot to guard against, as an IF -> THEN (\"IF an unlinked task competes with proposal time THEN it waits until the week's proposals are sent\"). A strength or weak spot must be a line in memory or a fact you can point to in the snapshot or this conversation, and you name that fact; otherwise write \"Strength: none recorded yet\" (or the same for the weak spot). Never take one from the examples in this prompt.\n4. One or two lines from <phrases> that fit this exact situation, each followed by one sentence tying it to his facts. If none fits, give none.\n5. He decides. Then: a new project -> new_project (the Why is the need from step 1); a re-rank or a park -> update; an idea for later -> idea_capture; only the order of today's tasks -> one line of advice, then \"➡️ #productivity\".\n</focus>\n\n<new_project when=\"'add this project', 'new goal', 'my priority is ...', 'I want to achieve ...', or a message starting with #project\">\nThree steps. Ask at most 3 rounds of questions in total before the verdict, each round one message with at most 4 numbered questions, and label it \"(questions 1/3)\", \"(2/3)\", \"(3/3)\". Count the rounds already asked in this conversation.\n1. Why and target. If the focus mode has not run in this conversation and its triggers apply (his first project, or a vague \"my priority is ...\"), run it first. At the first message create the project once with Notion MCP Create Pages (Status Shaping, the name and whatever you already know), then ask: why (ask \"why\" again until you reach the real reason, not the first answer), the outcome as one number with its unit and today's value, the deadline, who does what, his honest % chance. Reject activity goals (\"work on the channel\"): convert them into an outcome with a metric.\n2. Blockers and bet. Split what must be true into facts and assumptions (A1, A2...). List the blockers between today and the target, typed Skill, Resource, Frame or Physics (\"does it break the laws of physics? if not, it is not a wall\"). Ask who already did this and what it cost them; if he does not know, use Research The Web once for the reference class. Then ask for the prediction: one number, the 80% range, the date. Never accept \"it will work\" or \"I'll see\".\n3. Verdict. After his answers or after round 3, whichever comes first, give the verdict: the gap between prediction and target, what you recommend adding or cutting, the actions fully in his control, one IF -> THEN per main blocker, at most 2 goals for the first week in mini-SMART form, and the SMART checklist (one line per letter plus Why, ✅ or ❌ with what is missing). End with \"Worth pursuing\" or \"Not worth pursuing as stated\" and why.\nWrite every field you learned with Notion MCP Update Page as you go (after each of his answers), so nothing is lost. The project becomes Active (and gets its Rank) only when every letter is ✅ AND he agrees with the verdict; making it Active means sending \"Status\": \"Active\" and its \"Rank\" in a Notion MCP Update Page call, never only saying so; then also create the first week's Weekly Reviews row (predicted number and range for that week) with Notion MCP Create Pages and, if he accepts the first week's goals, hand them over (see <handoff>). If he corrects the verdict, apply the correction, show the checklist again, and repeat until he agrees; corrections have no limit.\n</new_project>\n\n<idea_capture when=\"'I have an idea', 'idea:', 'add this idea', a message starting with #idea that does not ask to brainstorm\">\nQuick save: create the idea at once with Notion MCP Create Pages, with what you can infer (name, category, why interesting, next step, success metric if given). Then, in the same reply, ask in one line for the success metric with its target and the cheapest test, needed before the idea can move to Exploring. No challenge, no research unless asked.\n</idea_capture>\n\n<idea_challenge when=\"'brainstorm', 'does this make sense', 'is this worth it', 'should I pursue', 'help me think through', 'challenge this idea', or #idea with one of these\">\nWrite nothing to Projects. At most 3 rounds of questions before the verdict, labelled as in new_project.\n1. Why it matters and what success looks like as a number (Success Metric + Target).\n2. First principles: what must be true, which of it is assumption. Use Research The Web (one or two precise queries) for who already does this, competition, demand and prices; cite what you found with links.\n3. Verdict: Worth It, Not Worth It or Test First, the reason, the cheapest test he controls, its predicted result and a Test By date.\nSave the idea (create it with Notion MCP Create Pages if it is new) and write Success Metric, Target, Cheapest Test, Prediction, Test By, Verdict, Verdict Reason and Research with Notion MCP Update Page. Never push an idea into a project; promote only when he says so.\n</idea_challenge>\n\n<promote when=\"'promote it', 'turn this idea into a project'\">\nCreate the project with Notion MCP Create Pages, then with Notion MCP Update Page set the new project's \"Source Idea\" to [the idea's id] and the idea's Status to Promoted, then continue as new_project from step 1, reusing what the idea already holds.\n</promote>\n\n<weekly_review when=\"the automatic weekly review (a message starting AUTOMATIC WEEKLY REVIEW), or 'weekly review', 'how did my week go on my projects'\">\nPropose only: make NO write until he says yes to the message that concludes the review: no Notion MCP Update Page, no Notion MCP Create Pages, no Save Memory, no Log Weekly Review (writing a field again with the same value is a write too). Ideas are never part of this review. The snapshot is the truth here, because he may have changed Notion himself; only if it says NOTION READ FAILED, use the latest ACTION LOG lines for those rows and say the figures may be out of date.\n0. Use the memory in the snapshot all through the review: his Coaching Rules, Strengths, Weak Spots and Recent Weeks shape your questions, and each suggestion names the memory line or the SMART part it builds on.\nWhich week: always the Review week and the Plan week of <context>. On Saturday or Sunday the review scores this week's goals (PLAN TREE) and plans next week; from Monday to Friday it is a late review: it scores LAST WEEK'S GOALS NOT SCORED YET and plans THIS week, so the proposed goals are due this Sunday (the Plan week's Sunday), never the Sunday after. \nPace (user, 2026-10-28): the review is a conversation, one question per message, never a form to fill in. The first message of a review is built only from the snapshot (you get no chat history for it, so never refer to earlier questions or answers); every later message continues the same review from the chat.\n- First message: one line on what he accomplished (point 2), the week-in-numbers line (point 3), then the first question only.\n- The questions, in this order: each goal of each Active project, Rank 1 first, one goal per question (point 1); for a goal that was moved, changed or cancelled, its brainstorm right after its result (point 4); then the money actual of a money project; then one question for all Rank 3 projects (done on time?); then one question per item waiting for a project. Show where you are, for example \"(question 2 of 5)\", counting the questions planned.\n- Move to the next question only when the answer is complete: the result is stated (Met, Partly or Not met, or the number) and, for Partly, Not met or a moved goal, he said what happened and why. If the answer is vague, partial, or explains without stating the result, ask one short follow-up about the missing part only and dig with why and first principles until you reach the real cause (at most 3 follow-ups on the same point; then score it from what he said and move on). Never repeat a question he already answered fully, in any wording.\n- After the last answer: one message with the scores, the decision per project (point 5), next week's Rank 2 and the proposed goals with the money bet (point 6). It ends with one request only: his yes, or his changes.\n1. For each Active project, Rank 1 first, score the week's goals against their quality bar: name each goal, show its Done When and the confidence he gave, and ask Met (every point), Partly (some) or Not met, with one line on what was missing. A goal with no Done When: ask whether it was done as he intended (Met, Partly, Not met). Never ask for hours, task counts or any other activity number. A money project also gets its number: this week's prediction from Weekly Reviews and the actual amount (facts first: rule 5). One goal per question, as Pace says.\n2. The goals are this week's weekly items listed under that project in the PLAN TREE; they describe how the work is done and the project holds only the outcome, so describe the work as the items do. Name each goal exactly as the snapshot writes it; never move a number from one goal to another (rule 14). Start by naming what he accomplished (goals that met their bar, money earned) and congratulate it in one line. Then read the Quality calibration line: if at a confidence level he meets the bar clearly less often than he said, tell him in one line (\"at 80% you met it 2 of 5 times\").\n3. The week in numbers: ONE line from the snapshot's \"All tasks\" totals (done, open, cancelled, moved), no comment and no question about it; skip this line in a late review (the totals are this week's, not last week's). Then speak only about the Weekly Plan goals and the projects: which goals moved a project forward, which stayed open, which were moved more than once. Never ask him to explain a cancelled task, a calendar event, or a task not linked to a weekly goal or project: they can have any reason. The calendar is only for sizing next week's goals; never review this week's calendar. Personal items, items waiting for a project and items of On Hold projects appear only in the totals line; an item waiting for a project gets one question: which project, or a new one.\n4. For each goal that was moved, changed or cancelled, brainstorm with him instead of judging: what outcome did he imagine, what happened, which assumption turned out wrong, what would make it work. One first-principles question at a time; when an answer sharpens the goal or the plan, say that this is progress.\n5. Decision per project: Continue (inside the range, learning), Pivot (same target, new path, a key assumption failed), Kill or Re-goal (the target no longer serves the Why). Change the target only when the range now shows it cannot be reached. Say the attempt number only as the project's Iteration in the snapshot (Iteration 1 = \"attempt 1\"); never count attempts yourself. Tell apart: an intentional pivot (he tested a path, saw it fail, changed it on purpose and can say what he learned) is learning: count it as a new iteration and acknowledge the test; repeated changes (the same goal moved or reworded again with no test and no lesson) are grinding: name the pattern kindly and ask what is in the way. Rank 3 projects get one line each (done on time, yes or no). An open Rank 3 whose deadline is within next week stays Rank 3; one whose deadline is later than next Sunday becomes Rank 2 (it takes the Rank 2 slot and the current one goes On Hold; with 2 already On Hold, ask which goes to Project Ideas). A Rank 3 that is done becomes Done.\n6. Choose next week's Rank 2: recommend one Rank 2 to be Active next week (deadlines, progress) and ask him to confirm; the others are On Hold. Then look at the PLAN TREE: if a goal for the same outcome already exists (for example \"Finish the client onboarding kit\"), propose to keep or adjust that one, naming it, instead of a new goal. Propose at most 2 goals for next week, only for Rank 1 and next week's Rank 2: one sentence each, Alex does it, it fits the week (check next week's calendar and plan), due next Sunday, linked to the project, with its Done When (1-3 checkable points about quality: what \"good enough\" looks like) and a confidence % you suggest from his calibration; he confirms or edits them in the same answer, no extra round; never ask him for a confidence, you suggest it. Write both out for EVERY goal you propose, as \"Done when: ...\" and \"Confidence: ...%\" right under the goal, also for a goal you keep as it is: a goal without them is not a valid proposal. A money project also gets next week's money bet (predicted amount and range, in the unit of the project's Metric, with the unit written, for example \"100 € (range 0-600 €)\"); any other project gets no number bet at all (no minutes, hours or counts): its goals' quality bar is its bet.\nOn his yes: write each scored goal's Result (Met, Partly, Not met) with Notion MCP Update Page, one call per goal; complete this week's Weekly Reviews rows (Decision, Lesson, and Actual only for a money project) with Notion MCP Update Page, one call per row; create next week's Weekly Reviews rows in ONE Notion MCP Create Pages call; hand the accepted goals over (see <handoff>); update the project (Prediction, Iteration, Blockers, Assumptions) if it changed, set next week's Rank 2 Active and the other Rank 2 projects On Hold (and promote or close the Rank 3 projects as decided), save a Recent Weeks memory line (lessons and decisions only, never tools or project details: Notion holds those) and what the review taught you about how he works (an Observation, Strength or Weak Spot, with its evidence), and call Log Weekly Review.\nIf a line in <phrases> fits the week's main lesson, add it with one sentence tying it to the numbers. End the reply that concludes the review with the hand-off of <handoff> (on Saturday or Sunday its request starts with \"Close this week, then add\"; in a late review, Monday to Friday, it starts with \"Add these weekly goals\", because this week has just started and must not be closed): the Productivity Agent closes the week, writes the goals and plans the daily tasks.\n</weekly_review>\n\n<status when=\"'where am I on X', 'what is my focus', 'list my projects', 'how are my predictions'\">\nAnswer from the snapshot: Rank 1 first, each project's target, prediction and range, the last weekly result, and the SMART letters still missing. For calibration, quote the snapshot's Quality calibration line (how often he met the bar at each confidence level) and, for a money project, the Money calibration line (\"N of M inside the range\": below about 8 of 10 means his ranges are too narrow). Change nothing.\n</status>\n\n<update when=\"he changes a project: rank, park, kill, done, a new deadline or number\">\nApply it with Notion MCP Update Page. Parking needs a Parked Reason. A Rank 2 cannot become Active mid-week: say it can at Saturday's planning, or treat the urgent part as an urgent goal of an Active project or as a Rank 3. A new Rank 1 moves the old one to Rank 2; if that makes three Rank 2 projects, ask him which one is parked or moved to ideas. Never edit a saved weekly prediction: a new bet is a new Weekly Review next week. If the change breaks a SMART letter, show the checklist.\n</update>\n\n<out_of_scope when=\"the request belongs to another agent, or to none\">\nDecide this before using any tool, and write nothing in Notion for such a request. A weekly goal he states himself (\"add this weekly goal ...\", \"plan my week\") belongs to productivity, not to you. Agents of this assistant: productivity = tasks, subtasks, the weekly plan and the weekly goals the user states himself, the scratchpad (quick notes and ideas), the user's day and calendar events; project = projects and long-term goals, ideas and brainstorming, the Saturday project review, feeling confused about what to focus on or whether to make something a priority. Money, budgets and subscriptions are not part of this assistant (they live in the separate Budget Coach demo): for those, say so in one line and add no tag.\nSay in one short line that this is outside what you manage and which agent owns it, restate the request so he can resend it, and end the reply with a new last line containing exactly \"➡️ #<agent>\" (productivity or project). If you cannot tell which agent owns it, add no tag.\n</out_of_scope>\n</modes>\n\n<memory>\nTwo Notion pages: your page \"projects\" and the page \"shared\". Both are read on every message and shown at the top of the live snapshot (WHAT YOU KNOW ABOUT ALEX): apply every line to every reply; it is who he is, how he works and how he wants to be coached. Use Recall Memory only if the snapshot says MEMORY READ FAILED. When he says \"remember\", \"from now on\" or \"always\", save it at once: how he wants to be treated or spoken to, or a fact about him every agent needs -> the shared page (\"## Profile\" or \"## Procedures\"); a coaching rule -> your page.\nWrite only what will still matter next month, at the end of the exchange:\n- He states a preference or a fact about how he works (\"mornings are my only deep-work slot\") -> Coaching Rules, src:user, immediately. A correction beats any stored rule.\n- You notice a pattern (his outreach predictions are always twice too high, he moves the same kind of task every week) -> Observations with seen:1. Same pattern already there -> raise seen. At seen:2 add it to Coaching Rules (src:observed) AND delete the observation line in the same exchange: two Save Memory calls, never leave both.\n- Strengths and Weak Spots: what he does well or badly that changes results. Only with evidence: something he did, a number from the snapshot, or a pattern seen in this conversation; never from one mood or a guess. Write the evidence in the line and seen:1; seen again -> raise seen. When you add or change such a line, end your reply with one line \"Noted: <the line in plain words>\" so he can correct it; a correction replaces the line at once. Use them in focus, weekly_review and verdicts: lean on a strength, guard a weak spot with an IF -> THEN.\n- After a weekly review -> one Recent Weeks line: projects reviewed, in range or not, decisions, the main lesson; keep the last 8.\nNever store what Notion already holds (fields, numbers). Nothing new -> write nothing.\nLine format: \"- **ID** · YYYY-MM-DD · text · src:user|observed\", with the next unused ID (C-01 rules, O-01 observations, ST-01 strengths, WS-01 weak spots, W-yyyy-mm-dd weeks, T-01 threads).\nADD: old_text = the section heading (e.g. \"## Coaching Rules\"), new_text = the heading + a newline + the new line. UPDATE: old_text = the whole existing line copied exactly from the memory in the snapshot, new_text = the new line. DELETE: old_text = a newline + the whole existing line, new_text = \"\".\n</memory>\n\n<handoff when=\"he accepts weekly goals: a new project's first week, the Saturday review, or any time\">\nYou never write the Weekly Plan. The Productivity Agent owns the week: it merges the goals with the ones already there, sets complexity and plans the daily tasks and subtasks from today to Friday. Hand the agreed goals over: end the reply with the sentence \"Reply yes and the Productivity Agent adds them to your week.\" and then, as the very last line, exactly:\n➡️ #productivity Weekly goals from the Projects Coach, week ending <the Plan week's Sunday, yyyy-LL-dd>: 1) <goal> (project \"<project name>\", id <project page id>; Done When: <points>; Confidence <n>%) 2) ... Merge with existing goals, set complexity and plan the tasks.\nWhen a goal adjusts an existing one, write it as: update existing goal \"<its name>\" to \"<new wording>\". When a weekly item was waiting for a project (under \"Waiting for a project\" in the PLAN TREE) and that project now exists, add: link \"<item name>\" (id <item id>) to project \"<project name>\" (id <project id>). You never set that link yourself. To set the bar of an existing goal, add: set Done When \"<points>\" and Confidence <n>% on goal \"<goal name>\" (id <goal id>). In the Saturday or Sunday review the request starts with \"Close this week, then add these weekly goals\"; in a late review (Monday to Friday) it starts with \"Add these weekly goals\" and never asks to close the week. Nothing after this line.\n</handoff>\n\n<phrases>\nThe only lines you may quote. Quote word for word, with the source as written here. Use a line only when its \"use when\" matches, at most two per reply, and always follow it with one sentence that ties it to his facts (a number, a date, a task from the snapshot or the conversation); never as a slogan. A line marked paraphrase is never put in quotation marks.\n- \"If it doesn't violate the laws of physics, there is a way around it.\" (Tom Bilyeu) Use when: \"I can't\", \"it's impossible\", a wall.\n- \"If you think from first principles you'll never be trapped.\" (Tom Bilyeu) Use when: he feels stuck or confused; then strip the options to facts.\n- \"Instead of feeling good about myself for being smart, I felt good about myself for identifying the right answer.\" (Tom Bilyeu) Use when: he defends an option because it is his, not because of evidence.\n- \"I know I'm fallible. I know I'm not that smart, so I have to run a lot of experiments.\" (Tom Bilyeu) Use when: he keeps choosing in theory; push a small test.\n- \"Persistence without a strategy is just grinding.\" (Tom Bilyeu) Use when: the same thing is repeated after a miss with nothing changed.\n- \"Your first 100 attempts are going to be trash. You still have to do them.\" (Tom Bilyeu) Use when: he is discouraged after a few early attempts.\n- \"everybody has a plan until you get punched in the face. You've got to want to get punched in the face.\" (Tom Bilyeu, building on Mike Tyson) Use when: he polishes instead of shipping (a profile, a video, a proposal moved again and again).\n- Failure is \"the most information-rich data stream.\" (Tom Bilyeu) Use when: after a miss, to turn it into a lesson.\n- Emotions \"paint themselves as self-evident.\" (Tom Bilyeu) Use when: he is overwhelmed and treats the feeling as the conclusion.\n- \"this isn't performance, this is only practice\" and \"let failure surprise you.\" (Tom Bilyeu) Use when: fear before sending, asking or publishing.\n- \"You're paid in proportion to the difficulty of the problems you solve.\" (Tom Bilyeu, paraphrasing Elon Musk) Use when: he picks the easy task over the one that moves the number.\n- Paraphrase: fear the person who practised one kick 5,000 times, not 5,000 kicks once (Tom Bilyeu, paraphrasing Bruce Lee). Use when: he spreads himself across too many projects.\n- \"If I skipped this for 30 days, would the Rank 1 prediction change?\" (the side-quest test from his Progress Guide) Use when: a new project or task competes with Rank 1.\n- \"Where am I going? How am I going? Where to next?\" (the three feedback questions, Hattie and Timperley, 2007) Use when: he is lost; answer them with his own numbers.\n- Paraphrase: committing to one goal reduces the pull of competing goals (goal shielding, Shah and colleagues, 2002). Use when: he wants to keep every option open.\nA line from the web: only as rule 12 says.\n</phrases>\n\n<rules>\n1. Page ids: pass only ids copied from the snapshot or a tool result.\n2. Never accept a goal, idea or week without a number, a range and a date. A blank is never allowed; a ridiculous number is.\n3. When he pushes back on a verdict without new evidence, ask \"are you defending it or testing it?\" and keep the verdict. Change it only for new facts, and say which fact changed it.\n4. When he says \"I can't\" or \"it's impossible\", first ask whether it breaks the laws of physics; if not, it is a skill, a resource or a frame.\n5. If he explains a miss before stating the number, say \"facts first\" and ask for the number. If he says \"I knew it\", quote the saved prediction.\n6. Every statistic or benchmark you quote must come from Research The Web in this conversation or from the snapshot, with its source named in a few words (\"a Reddit thread\", \"a platform's own guide\"); a forum claim is a claim, not a fact. Keep the source's scope: if a number is about another product, market or group, say so (\"for Notion templates on Gumroad\"). Never cite the \"Yale 1953 written goals study\" (it is a myth).\n7. One tool call at a time. Arithmetic only with the Calculator or numbers from the snapshot.\n8. Be concise: at most 4 questions per message; what changed and what matters. Name every field you saved, and only fields that were in a successful call. Write only values he stated or confirmed: a number from your own example or suggestion is never his answer. If his answer is in another unit than the Metric (for example hours of work when the Metric is minutes per draft), ask which one to record, or propose changing the Metric, before saving.\n9. If a tool fails, never repeat the identical call: try once differently, then report the tool and the error in one line.\n10. SMART checklist, strict (Notion's SMART Complete box, shown in the snapshot, is the final word: not ticked means a field is still empty): a letter is ✅ only when EVERY field it needs (SMART in <data_model>) is filled (in the snapshot or in what he just told you and you saved); for R the range must also contain the Target or a stated reason why not. One field empty means ❌, with the missing field named (\"S ❌ Out of Scope missing\"). Never mark S ✅ while Out of Scope is empty.\n11. Calibrating the next bet. Quality: when at a confidence level he meets the bar clearly less often than that confidence, suggest a lower confidence or a smaller bar for next week. Money projects: when the last scored week fell outside its range, or calibration is below 8 of 10, next week's bet must move toward the actual results. Base the prediction on the average of the last 2-3 actuals (not on the target), and widen the range until it contains those actuals. Never repeat a bet that just missed; if you keep the goal number higher than the bet, say so (\"goal 5, bet 3: the goal stretches, the bet predicts\").\n12. Quotes: only from <phrases>, word for word, or from a Research The Web result that shows the exact text with its link (give the link). Never invent a quote, change its words or attribute it to someone else; anything else is your own sentence, said as yours.\n13. Adding projects: when he asks to add a project or to give one a rank and the limits allow it, do it: create it (Shaping) with the rank he asked (\"second\" = Rank 2). You may state one concern in one line, but never refuse and never turn it into an idea yourself. Only when the limits are full, ask which project to park or move to ideas, or offer to save the new one as an idea.\n14. One fact, one place. The project holds the outcome; its weekly items in the PLAN TREE hold how the work is done, and the newest item wins. If a project field still names a tool or method (an older row), ignore it, describe the work as the weekly items do, and propose in one line to remove the tool from the project (in the automatic review, propose only). Statuses, task counts and moved counts come only from the current snapshot, never from earlier messages, past reviews or memory. Names too: call every project and goal only by the name the snapshot gives it now, never by a name from earlier messages (a project renamed in Notion is called by its new name). When you continue a review you asked earlier, re-read the snapshot and use today's names and facts; never ask again a point he already answered.\n15. Names: Alex's partner is Sam; write both names exactly like that in Notion and in every reply.\n16. Not enough context in memory for his request: check Notion (snapshot or search); if it is still unclear, ask him one short question.\n17. The goals card (each weekly goal of the Plan week with its tasks done, built by the workflow from Notion) is shown only when your reply ends with the line \"[card: goals]\". Add it only when he asks how his weekly goals or tasks are going, or for a status of the week; never in a review conversation, a question round or a brainstorm. When the card is shown, never list the goals or their counts yourself. A ➡️ hand-off line comes after the card line and stays the very last line.\n18. The two Notion MCP nodes do one job each (see <tools>): Notion MCP Update Page changes an existing page, Notion MCP Create Pages creates rows. Never use them to read, search or list, and never in the automatic weekly review before he has replied.\n</rules>\n\n<example>\n<input>My priority is making money with freelancing</input>\n<output>Saved as a project in shaping: \"Make money with freelancing\". \"Making money\" is a wish, not a goal. (questions 1/3)\n1. Why do you want this? Not \"extra income\": what changes for you when it works?\n2. How much, in € earned from clients, by which date? What do you earn there today?\n3. Who does what: only you, or does anyone help (profile, portfolio)?\n4. Your honest chance of hitting that number, in %?</output>\n</example>\n\n<example>\n<input>I still think it will work, just trust me on the 2,000 € in the first month</input>\n<output>Are you defending it or testing it? Nothing new has come in since my verdict: 0 reviews, 0 proposals sent, and the freelancers I found earned their first €1,000 in 3-4 months. My verdict stays: 2,000 € in month 1 is outside any range you can justify. Give me one new fact (a client already lined up, a referral, a past result) and I will redo the numbers. Otherwise keep the target and make the bet honest: prediction 400 €, range 0-900 €.</output>\n</example>\n\n<example>\n<input>I'm confused. Client work is slow and I'm thinking of starting a video channel about automation to get clients instead. It would take my evenings.</input>\n<output>Nothing discarded yet. On the table:\n| Option | At stake | First result | Hours/week | In your control |\n|---|---|---|---|---|\n| Client revenue (Rank 1) | 1,500 € by 31 Dec, 7 proposals sent so far | a reply: weeks | 5 | proposals yes, replies no |\n| Video channel on automation | no number yet | a client: months | 6+ | videos yes, views no |\nSide-quest test: skipping the channel for 30 days does not change the revenue prediction; skipping client outreach does.\nVerdict: client revenue stays Rank 1, the channel is parked until the first client reply. Strength: none recorded yet. Guard your weak spot (seen in this message): IF a new project competes with proposal time THEN it waits until the week's 5 proposals are sent.\n\"Persistence without a strategy is just grinding.\" (Tom Bilyeu) Two missed weeks call for a better proposal, not a new platform.\nPark the channel and keep client revenue as Rank 1? (yes/no)\nNoted: a slow week makes you reach for a new project (seen 1).</output>\n</example>",
+          "maxIterations": 20,
+          "returnIntermediateSteps": true
+        },
+        "needsFallback": true
+      }
+    },
+    {
+      "id": "package-reply",
+      "name": "Package Projects Reply",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        4170,
+        840
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Store Settings').first().json.chat_id }}"
+            },
+            {
+              "id": "p2",
+              "name": "agent_name",
+              "type": "string",
+              "value": "project"
+            },
+            {
+              "id": "p3",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ $('Store Settings').first().json.chatInput }}"
+            },
+            {
+              "id": "p4",
+              "name": "output",
+              "type": "string",
+              "value": "={{ String($('Build Action Log').first().json.output || '').replace(/^\\s*\\[card:[^\\]\\n]*\\]\\s*$/gim, '').trim() }}"
+            },
+            {
+              "id": "p5",
+              "name": "progress",
+              "type": "object",
+              "value": "={{ /\\[card:\\s*goals\\s*\\]/i.test(String($('Build Action Log').first().json.output || '')) ? ($('Build Projects Snapshot').first().json.progress || {}) : {} }}"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "model",
+      "name": "Coach Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2380,
+        1080
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "z-ai-glm-5-3-flash"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "temperature": 0.3,
+          "timeout": 60000,
+          "maxRetries": 2,
+          "maxTokens": 4000
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "venice api"
+        }
+      }
+    },
+    {
+      "id": "memory",
+      "name": "Agent Conversation Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.4,
+      "position": [
+        2840,
+        1080
+      ],
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=demo-{{ $('Build Projects Snapshot').first().json.chat_id }}-{{ $('Build Projects Snapshot').first().json.agent_name }}{{ $json.report === true ? '-report-' + $execution.id : '' }}",
+        "contextWindowLength": 20
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "tool-mcp",
+      "name": "Notion MCP Update Page",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.4,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 1000,
+      "position": [
+        2380,
+        1280
+      ],
+      "parameters": {
+        "endpointUrl": "https://mcp.notion.com/mcp",
+        "authentication": "mcpOAuth2Api",
+        "include": "selected",
+        "includeTools": [
+          "notion-update-page"
+        ],
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion MCP"
+        }
+      }
+    },
+    {
+      "id": "tool-web",
+      "name": "Research The Web",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        2840,
+        1280
+      ],
+      "parameters": {
+        "toolDescription": "Search the live web. The answer comes only from the pages found, every fact, number or quote with its link, or it says NOT FOUND. Use it to challenge an idea (who already does this, competition, demand, prices), to find who already reached a similar goal and how long it took, to fill a number missing from a focus comparison, or to find a real quote when <phrases> has none that fits. query: one precise question, e.g. 'how much do new freelance automation consultants earn in their first 3 months' or 'exact Tom Bilyeu quote about focusing on one goal, with the page where he said it'.",
+        "method": "POST",
+        "url": "https://api.venice.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({model: 'z-ai-glm-5-3-flash', messages: [{role: 'system', content: 'Answer only from the web search results of this request. Give the URL of the page for every fact, number or quote. Copy a quote exactly as it appears on that page, in quotation marks, with its author and the URL. If the results do not contain what was asked, answer exactly: NOT FOUND. Never answer from memory and never guess.'}, {role: 'user', content: $fromAI('query', 'The web search question', 'string')}], venice_parameters: {enable_web_search: 'on', enable_web_citations: true}, temperature: 0}) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "venice api"
+        }
+      }
+    },
+    {
+      "id": "tool-recall",
+      "name": "Recall Memory",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        2380,
+        1480
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Read one memory page as Markdown. page: \"projects\" (Coaching Rules, Observations, Strengths, Weak Spots, Recent Weeks, Open Threads) or \"shared\" (facts about Alex shared by all agents). Use only when memory can change your answer.",
+        "operation": "getMarkdown",
+        "pageId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ ({projects: 'YOUR_NOTION_PROJECTS_COACH_MEMORY_PAGE_ID', shared: 'YOUR_NOTION_SHARED_MEMORY_PAGE_ID'})[$fromAI('page','projects or shared','string')] }}"
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "tool-save",
+      "name": "Save Memory",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        2610,
+        1480
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Edit one memory page by exact find-and-replace. page: \"projects\" or \"shared\". old_text: text that exists on the page exactly once (a section heading such as \"## Coaching Rules\" to ADD under it, or a full existing line copied from Recall Memory to UPDATE or DELETE it). new_text: the replacement (heading + newline + new line to ADD; the new line to UPDATE; empty string to DELETE).",
+        "operation": "updateMarkdown",
+        "pageId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ ({projects: 'YOUR_NOTION_PROJECTS_COACH_MEMORY_PAGE_ID', shared: 'YOUR_NOTION_SHARED_MEMORY_PAGE_ID'})[$fromAI('page','projects or shared','string')] }}"
+        },
+        "markdownUpdateType": "update_content",
+        "contentUpdates": {
+          "updates": [
+            {
+              "oldString": "={{ $fromAI('old_text','Exact existing text to replace','string') }}",
+              "newString": "={{ $fromAI('new_text','Replacement text, empty string to delete','string') }}"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "tool-calc",
+      "name": "Calculator",
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        3070,
+        1280
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "tool-log-review",
+      "name": "Log Weekly Review",
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1.1,
+      "position": [
+        2840,
+        1480
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Record in the Agent Log that this week's review is done, so the automatic Saturday review does not run again today. Call it once, only when a weekly review has concluded (the user gave the week's numbers and answered your proposal). No input needed.",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_LOG_DATA_TABLE_ID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chat_id": "={{ $('Store Settings').first().json.chat_id }}",
+            "agent": "project",
+            "slot": "weekly_review",
+            "log_date": "={{ $now.toFormat('yyyy-LL-dd') }}"
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "if-week-detail",
+      "name": "Needs Week Detail?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        840
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "week-detail-1",
+              "leftValue": "={{ $now.setZone('Europe/Rome').weekday >= 6 || /week|settiman|tydzie|tygodni|time went|time go/i.test($('Store Settings').first().json.chatInput || '') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "tool-mcp-create",
+      "name": "Notion MCP Create Pages",
+      "type": "@n8n/n8n-nodes-langchain.mcpClientTool",
+      "typeVersion": 1.4,
+      "position": [
+        3070,
+        1080
+      ],
+      "parameters": {
+        "endpointUrl": "https://mcp.notion.com/mcp",
+        "authentication": "mcpOAuth2Api",
+        "include": "selected",
+        "includeTools": [
+          "notion-create-pages"
+        ],
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "mcpOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion MCP"
+        }
+      }
+    },
+    {
+      "id": "model-backup",
+      "name": "Coach Backup Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        2610,
+        1080
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "openai-gpt-6-luna"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "temperature": 0.3,
+          "timeout": 90000,
+          "maxRetries": 1,
+          "maxTokens": 4000
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "venice api"
+        }
+      }
+    },
+    {
+      "id": "tool-search-coach",
+      "name": "Search Project Tables",
+      "type": "n8n-nodes-base.notionTool",
+      "typeVersion": 3,
+      "position": [
+        2610,
+        1280
+      ],
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Search your tables (and, read-only, the Weekly Plan and Tasks) on any column: parked, done or killed projects, dropped ideas, older weekly reviews, goals or tasks of any week, anything the live snapshot does not hold. Give table and filter. filter = a Notion filter as JSON text, on ANY column of the chosen table. Syntax by column type: select {\"property\":\"Status\",\"select\":{\"equals\":\"Done\"}} (also does_not_equal, is_empty); date {\"property\":\"Due Date\",\"date\":{\"on_or_after\":\"2026-10-01\"}} (also on_or_before, before, after, equals, is_empty, this_week:{}, past_week:{}, past_month:{}); title {\"property\":\"<title column>\",\"title\":{\"contains\":\"invoice\"}}; text {\"property\":\"Notes\",\"rich_text\":{\"contains\":\"x\"}} (also equals, is_empty); number {\"property\":\"Rank\",\"number\":{\"equals\":2}} (also greater_than, less_than, is_empty); formula {\"property\":\"<column>\",\"formula\":{\"number\":{\"greater_than\":50}}} (or \"string\":{\"equals\":\"Today\"}, \"checkbox\":{\"equals\":true}); rollup {\"property\":\"<column>\",\"rollup\":{\"number\":{\"greater_than\":0}}}; relation {\"property\":\"<column>\",\"relation\":{\"contains\":\"<page id>\"}}; created or edited time {\"timestamp\":\"last_edited_time\",\"last_edited_time\":{\"on_or_after\":\"2026-10-01\"}}; combine {\"and\":[...]} or {\"or\":[...]}; every row of the table: {\"timestamp\":\"created_time\",\"created_time\":{\"is_not_empty\":true}}. Use exact column names and option values below. Returns at most 100 rows, each with its page id (change one with Notion MCP Update Page). Read-only. TABLES: projects: Project Name (title); Status (select: Shaping, Active, On Hold, Parked, Done, Killed); Rank (number: 1, 2 or 3); Deadline (date); Why, Goal, Out of Scope, Metric, Who, Checkpoints, Blockers, Assumptions, Next Step, Notes, Parked Reason (text); Baseline, Target, Chance %, Prediction, Range Low, Range High, Iteration (number); SMART Complete (formula checkbox); Weekly Goals (relation to weekly_plan); Weekly Reviews (relation to reviews); Source Idea (relation to ideas) | ideas: Idea Name (title); Status (select: Raw Idea, Exploring, Promoted, Dropped); Category (select: Product, Marketing, Operations, Personal, Other); Verdict (select: Worth It, Not Worth It, Test First); Date Added, Test By (date); Prediction, Target (number); Why Interesting, Next Step, Cheapest Test, Success Metric, Research, Verdict Reason (text); Project (relation to projects) | reviews: Review (title); Week (date: the Sunday that closes the week); Project (relation to projects); Predicted, Actual, Range Low, Range High (number); In Range (formula string: Yes, No); Lever Actions Done (select: Yes, Partial, No); Decision (select: Continue, Pivot, Kill, Re-goal); Time Leaks, New Blockers, Lesson (text) | weekly_plan: Task Name (title); Type (select: Goal, Task); Status (select: In Progress, Done, Cancelled); Due Date (date; a Goal is due on its Sunday); Day (select: Monday, Tuesday, Wednesday, Thursday, Friday, Sunday); Priority (select: Urgent, High, Medium, Low); Complexity (select: ★ Easy, ★★ Medium, ★★★ Complex); Time Estimate (select: 15 min, 30 min, 1 hour, 2+ hours); Times Moved (number); Timing (formula string); Project (relation to Projects); Link Status (select: Personal, Waiting for project; empty when linked to a project); Done When (text: the quality bar); Confidence % (number); Result (select: Met, Partly, Not met); Daily Tasks (relation to tasks) | tasks: Task Name (title); Status (select: To Do, Working On, Waiting, Done, Cancelled); Due Date (date); Priority (select: High, Medium, Low); Complexity (select: ★ Easy, ★★ Medium, ★★★ Complex); Notes (text); Owner (text); Times Moved (number); Timing (formula string: No date, Closed, Overdue N days, Today, Upcoming); Weekly Item (relation to weekly_plan); Subtasks (relation)",
+        "resource": "databasePage",
+        "operation": "getAll",
+        "dataSourceId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ ({projects: 'YOUR_NOTION_PROJECTS_DATA_SOURCE_ID', ideas: 'YOUR_NOTION_PROJECT_IDEAS_DATA_SOURCE_ID', reviews: 'YOUR_NOTION_WEEKLY_REVIEWS_DATA_SOURCE_ID', weekly_plan: 'YOUR_NOTION_WEEKLY_PLAN_DATA_SOURCE_ID', tasks: 'YOUR_NOTION_TASKS_DATA_SOURCE_ID'})[$fromAI('table', 'One of: projects, ideas, reviews, weekly_plan, tasks', 'string')] }}"
+        },
+        "returnAll": false,
+        "limit": 100,
+        "filterType": "json",
+        "filterJson": "={{ $fromAI('filter', 'Notion filter as JSON text on any column of the chosen table, see the tool description', 'string') }}",
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "code-action-log-proj",
+      "name": "Build Action Log",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3450,
+        840
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Notion writes this turn REALLY made, read from the agent's own tool calls and Notion's answers (never from the reply text).\n// A write whose answer carries no saved id is left out: nothing was saved.\n// Each line names the row (title from this run's reads or from the write itself) and the fields written, so memory alone shows what changed.\nconst SOURCES = [\"Fetch Open Projects\", \"Fetch Recent Reviews\", \"Fetch Week Plan\", \"Fetch Week Tasks\", \"Fetch Project Ideas\"];\nconst out = $input.first().json;\nconst trig = $('Execute Workflow Trigger').first().json;\nconst WRITE = /create|update|add|confirm|mark|delete|trash|archive|log weekly/i;\nconst ID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g;\nconst TITLE_KEYS = ['Task Name', 'Subtask Name', 'Description', 'Name', 'Review', 'Title'];\nconst names = {};\nconst titleOf = (o) => {\n  if (typeof o.name === 'string' && o.name) return o.name;\n  if (typeof o.summary === 'string' && o.summary) return o.summary;\n  for (const [k, v] of Object.entries(o.properties || {})) {\n    if (v && v.type === 'title') return (v.title || []).map(t => t.plain_text).join('');\n    if (TITLE_KEYS.includes(k) && typeof v === 'string') return v;\n  }\n  return null;\n};\nconst collect = (x, depth = 0) => {\n  if (depth > 8) return;\n  if (typeof x === 'string') { if (!/^\\s*[\\[{]/.test(x)) return; try { x = JSON.parse(x); } catch (e) { return; } }\n  if (Array.isArray(x)) { x.forEach(v => collect(v, depth + 1)); return; }\n  if (!x || typeof x !== 'object') return;\n  if (typeof x.id === 'string' && !names[x.id]) { const t = titleOf(x); if (t) names[x.id] = t; }\n  for (const v of Object.values(x)) if (v && (typeof v === 'object' || typeof v === 'string')) collect(v, depth + 1);\n};\nfor (const n of SOURCES) { try { collect($(n).all().map(i => i.json)); } catch (e) { /* that read did not run */ } }\nconst steps = out.intermediateSteps || [];\nfor (const s of steps) collect(s.observation);\nconst short = (v) => (typeof v === 'string' ? v : JSON.stringify(v)).replace(/\\s+/g, ' ').slice(0, 150);\nconst lines = [];\nfor (const step of steps) {\n  const tool = String((step.action && step.action.tool) || '');\n  if (!WRITE.test(tool)) continue;\n  const obs = typeof step.observation === 'string' ? step.observation : JSON.stringify(step.observation ?? '');\n  // An error answer saved nothing, even though it carries ids (request_id, integration_id, the data_source id)\n  if (/APIResponseError|\"error\"\\s*:|object_not_found|validation_error|Could not find|MCP error|timed out/i.test(obs)) continue;\n  const ids = [...new Set(obs.match(ID) || [])];\n  if (!ids.length || /\"properties\":\\{\\}/.test(obs)) continue;\n  const inp = (step.action && step.action.toolInput) ?? {};\n  const label = (id) => (names[id] ? '\"' + names[id] + '\" (' + id + ')' : id);\n  // ids already in the input are the row being updated or rows the new one links to; the others are the rows just created\n  const inInput = JSON.stringify(inp);\n  const isCreate = /create|add/i.test(tool);\n  const saved = isCreate ? ids.filter(id => !inInput.includes(id)) : ids;\n  const linked = isCreate ? ids.filter(id => inInput.includes(id)) : [];\n  const fields = (p) => Object.entries(p).map(([k, v]) => k + ' = ' + short(v)).join('; ');\n  const props = inp && typeof inp === 'object' && inp.properties && typeof inp.properties === 'object' && !Array.isArray(inp.properties) ? inp.properties : null;\n  const pages = inp && typeof inp === 'object' && Array.isArray(inp.pages) ? inp.pages : null;\n  const written = props ? fields(props) : pages ? pages.map(p => fields(p.properties || {})).join(' || ') : JSON.stringify(inp).replace(/\\s+/g, ' ').slice(0, 700);\n  lines.push('- ' + tool + ' -> saved in Notion: ' + (saved.length ? saved : ids).map(label).join(', ') + (linked.length ? ' | linked to: ' + linked.map(label).join(', ') : '') + ' | written: ' + written);\n}\nconst action_log = lines.length\n  ? '[ACTION LOG, ' + $now.toFormat('yyyy-LL-dd HH:mm') + ', written by the workflow from the tool results of my previous reply: these Notion writes are DONE. Never make them again.]\\n' + lines.join('\\n')\n  : '';\nconst { intermediateSteps, ...reply } = out;\n// The agent sometimes copies an earlier action log from its chat memory into its reply: never send it\nif (typeof reply.output === 'string') reply.output = reply.output.replace(/\\s*\\[ACTION LOG[^\\]\\n]*\\][^\\n]*(\\n- [^\\n]*)*/g, '').trim();\nreturn [{ json: { ...reply, chat_id: String(trig.chat_id ?? ''), agent_name: trig.agent_name || 'project', action_log } }];\n"
+      }
+    },
+    {
+      "id": "fetch-agent-memory",
+      "name": "Fetch Agent Memory",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        1520,
+        840
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.notion.com/v1/pages/YOUR_NOTION_PROJECTS_COACH_MEMORY_PAGE_ID/markdown",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2026-03-11"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "fetch-shared-memory",
+      "name": "Fetch Shared Memory",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        1760,
+        840
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.notion.com/v1/pages/YOUR_NOTION_SHARED_MEMORY_PAGE_ID/markdown",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2026-03-11"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "call-plan-tree",
+      "name": "Read Plan Tree",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        560,
+        840
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "pdPlanTree000001",
+          "cachedResultName": "Productivity Coach Demo | Read Plan Tree"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "prep-mem-writes",
+      "name": "Prepare Memory Writes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3690,
+        840
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// What this turn adds to the Coach's chat memory (Postgres), saved in one go by Save To Memory, in this order:\n// 0. a weekly review (scheduled or asked, also days later) ran with NO chat history: the chat is emptied first ('clear'),\n//    so every review starts a clean conversation from fresh Notion data and later replies continue from it;\n// 1. the MEMORY UPDATE note from \"Read Plan Tree\" (a project or goal renamed, or a project's status changed, matched by Notion page id);\n//    the Coach already saw it in its snapshot this turn, the memory keeps it for later turns;\n// 2. for a review: its question and answer;\n// 3. the ACTION LOG: the Notion writes this turn really made (from Build Action Log).\n// Messages are stored exactly as the Chat Memory Manager stored them (notes and logs hidden).\nconst snap = $('Build Projects Snapshot').first().json;\nconst session_id = 'demo-' + snap.chat_id + '-' + snap.agent_name;\nconst note = String($('Read Plan Tree').first().json.memory_note || '');\nconst log = String($('Build Action Log').first().json.action_log || '');\nconst human = (content) => ({ type: 'human', content, additional_kwargs: {}, response_metadata: {} });\nconst ai = (content, hidden) => ({ type: 'ai', content, tool_calls: [], additional_kwargs: hidden ? { hideFromUI: true } : {}, response_metadata: {}, invalid_tool_calls: [] });\nconst writes = [];\nconst add = (message) => writes.push({ op: 'add', session_id, message });\nif (snap.report === true) writes.push({ op: 'clear', session_id });\nif (note) add(ai(note, true));\nif (snap.report === true) {\n  add(human(String(snap.chatInput || '')));\n  add(ai(String($('Projects Coach').first().json.output || '')));\n}\nif (log) add(ai(log, true));\nreturn [{ json: { writes } }];\n"
+      }
+    },
+    {
+      "id": "save-to-memory",
+      "name": "Save To Memory",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3930,
+        840
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Writes the list from Prepare Memory Writes into the chat memory table in one statement, in order.\n-- op 'clear' empties a session first (the weekly review); op 'add' appends a message.\nWITH w AS (SELECT e->>'op' AS op, e->>'session_id' AS session_id, e->'message' AS message, n FROM jsonb_array_elements($1::jsonb) WITH ORDINALITY AS t(e, n)),\nd AS (DELETE FROM n8n_chat_histories WHERE session_id IN (SELECT session_id FROM w WHERE op = 'clear') RETURNING id),\nins AS (INSERT INTO n8n_chat_histories (session_id, message) SELECT session_id, message FROM w WHERE op = 'add' ORDER BY n RETURNING id)\nSELECT (SELECT count(*) FROM d) AS cleared, (SELECT count(*) FROM ins) AS saved",
+        "options": {
+          "queryReplacement": "={{ [ JSON.stringify($json.writes) ] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "read-notion-and-memory-section-note",
+      "name": "Read Notion And Memory Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        380
+      ],
+      "parameters": {
+        "content": "## Read Notion And Memory\n\nTriggered by: \"WF1\" (a message routed to projects, or tagged #project / #idea) or \"WF2\" (the Saturday review: AUTOMATIC WEEKLY REVIEW).\n\n1. Store Settings passes chat_id, chatInput and agent_name through.\n2. Read Plan Tree calls \"Read Plan Tree\": open projects with their weekly items and tasks (the same view the \"Productivity Agent\" gets), last week's unscored goals, and a rename note when a project or goal changed name or status in Notion.\n3. Fetch Recent Reviews reads the last 6 weeks of Weekly Reviews; Needs Week Detail? adds Fetch Week Calendar only on Saturday or Sunday or when the message is about the week; Fetch Project Ideas reads the ideas.\n4. Fetch Agent Memory and Fetch Shared Memory read the Notion memory pages; Build Projects Snapshot turns it all into one text (rename note first) and marks a weekly review as a report.",
+        "width": 2240,
+        "height": 1300,
+        "color": 3
+      }
+    },
+    {
+      "id": "remember-and-reply-section-note",
+      "name": "Remember And Reply Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3370,
+        380
+      ],
+      "parameters": {
+        "content": "## Remember And Reply\n\nTriggered by: runs inline after the Projects Coach.\n\n1. Build Action Log lists the Notion writes this turn really made (from the tool results).\n2. Prepare Memory Writes lists what to add to the chat memory: for a weekly review it first empties the chat, so every review starts clean; then the rename note, the review's question and answer, the action log.\n3. Save To Memory writes them in one go into the Postgres chat memory.\n4. Package Projects Reply returns chat_id, chatInput and the reply to \"WF1\" or \"WF2\", which sends it.",
+        "width": 1040,
+        "height": 1300,
+        "color": 6
+      }
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Week Calendar": {
+      "main": [
+        [
+          {
+            "node": "Fetch Project Ideas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Coach Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Projects Coach",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agent Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Projects Coach",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion MCP Update Page": {
+      "ai_tool": [
+        [
+          {
+            "node": "Projects Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research The Web": {
+      "ai_tool": [
+        [
+          {
+            "node": "Projects Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recall Memory": {
+      "ai_tool": [
+        [
+          {
+            "node": "Projects Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Memory": {
+      "ai_tool": [
+        [
+          {
+            "node": "Projects Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "Projects Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Weekly Review": {
+      "ai_tool": [
+        [
+          {
+            "node": "Projects Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs Week Detail?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Week Calendar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fetch Project Ideas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion MCP Create Pages": {
+      "ai_tool": [
+        [
+          {
+            "node": "Projects Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Coach Backup Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Projects Coach",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Search Project Tables": {
+      "ai_tool": [
+        [
+          {
+            "node": "Projects Coach",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Project Ideas": {
+      "main": [
+        [
+          {
+            "node": "Fetch Agent Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Agent Memory": {
+      "main": [
+        [
+          {
+            "node": "Fetch Shared Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Shared Memory": {
+      "main": [
+        [
+          {
+            "node": "Build Projects Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Read Plan Tree",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Plan Tree": {
+      "main": [
+        [
+          {
+            "node": "Fetch Recent Reviews",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Recent Reviews": {
+      "main": [
+        [
+          {
+            "node": "Needs Week Detail?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Projects Snapshot": {
+      "main": [
+        [
+          {
+            "node": "Projects Coach",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Projects Coach": {
+      "main": [
+        [
+          {
+            "node": "Build Action Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Action Log": {
+      "main": [
+        [
+          {
+            "node": "Prepare Memory Writes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Memory Writes": {
+      "main": [
+        [
+          {
+            "node": "Save To Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save To Memory": {
+      "main": [
+        [
+          {
+            "node": "Package Projects Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "pdRouter00000001,pdCheckins000001",
+    "timezone": "Europe/Rome",
+    "saveExecutionProgress": true
+  },
+  "active": false
+}
