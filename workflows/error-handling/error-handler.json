@@ -1,0 +1,905 @@
+{
+  "name": "Error Handling | Main — Error Handler",
+  "description": "Started by n8n itself whenever a workflow that names it as its error workflow fails. Classifies the alert P1-P4, alerts in Telegram, Slack and email by priority, and logs to Google Sheets and Notion.",
+  "nodes": [
+    {
+      "id": "sticky-title",
+      "name": "Title",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        -304
+      ],
+      "parameters": {
+        "content": "# Error Handling — Main Workflow\n\nSystem-wide error handler for all n8n workflows. Set as the `errorWorkflow` on every other production workflow — n8n invokes this automatically when a linked workflow fails.\n\n**Sections on this canvas:**\n1. **Main / Classify & Notify** — Error Trigger fires → classifies severity (P1–P4) → sends Telegram + Slack/Gmail alerts by priority.\n2. **Logger** (runs inline, right after Main, for every priority P1–P4) — appends the error to Google Sheets and creates a Notion page.\n3. **Owner Notifier** (runs inline, right after Main, for P1–P3 only — P4 is too low-severity to page an owner) — looks up which owner tag is on the failed workflow and DMs them on Slack if it's not the primary owner.\n\nThe separate **Watchdog** workflow (its own Schedule Trigger, own deployment) lives alongside this one under the same `error-handling/` project folder, but is NOT merged here — it runs independently every 4 hours, not as a step in this execution.",
+        "height": 196,
+        "width": 2804,
+        "color": 4
+      }
+    },
+    {
+      "id": "sticky-main",
+      "name": "Main Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        -32
+      ],
+      "parameters": {
+        "content": "## Main — Classify & Notify\n\nTriggered by: Error Trigger, fired automatically by n8n when a linked workflow fails (this workflow set as that workflow's `errorWorkflow`)\n\nWhat it does, step by step:\n1. Receives the error payload from the failed workflow\n2. Normalizes it and classifies a priority: P1 (critical/payment/OOM), P2 (auth/sync/4xx), P3 (5xx/timeout), P4 (everything else)\n3. Routes by priority to the matching Telegram + Slack (P1–P3) or Telegram + Gmail (P4) alert\n4. Flows inline into the Logger section (all priorities) and the Owner Notifier section (P1–P3 only)",
+        "height": 880,
+        "width": 2758,
+        "color": 6
+      }
+    },
+    {
+      "id": "sticky-logger",
+      "name": "Logger Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        912
+      ],
+      "parameters": {
+        "content": "## Logger\n\nTriggered by: runs inline after Main — Classify & Notify (every priority, P1–P4)\n\nWhat it does, step by step:\n1. Appends the error record to Google Sheets\n2. Creates a tracking page in Notion (status: Open)",
+        "height": 468,
+        "width": 980,
+        "color": 3
+      }
+    },
+    {
+      "id": "sticky-owner",
+      "name": "Owner Notifier Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        912,
+        912
+      ],
+      "parameters": {
+        "content": "## Owner Notifier\n\nTriggered by: runs inline after Main — Classify & Notify (P1–P3 only — P4 skips this section)\n\nWhat it does, step by step:\n1. Looks up the failed workflow's tags via the n8n API\n2. Extracts an `owner:` tag, if any\n3. If the owner isn't the primary owner, looks up their Slack ID\n4. DMs that owner directly on Slack",
+        "height": 484,
+        "width": 1692,
+        "color": 5
+      }
+    },
+    {
+      "id": "wf1-trigger",
+      "name": "On Workflow Error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        256
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "wf1-normalize",
+      "name": "Normalize & Classify",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        256
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json;\nconst workflowName = raw.workflow?.name || raw.execution?.workflowName || 'unknown';\nconst err = raw.execution?.error || raw.error || {};\nconst errorMsg = (err.message || '').toLowerCase();\nconst failedNode = err.node?.name || raw.execution?.lastNodeExecuted || 'unknown';\nconst workflowId = raw.workflow?.id || raw.execution?.workflowId || '';\nconst executionId = raw.execution?.id || '';\n// n8n builds this link from the server's own address, so local and production alerts each point to the right place\nconst executionUrl = raw.execution?.url || '';\nconst timestamp = new Date().toISOString();\nconst statusMatch = errorMsg.match(/status code (\\d{3})/);\nconst statusCode = statusMatch ? parseInt(statusMatch[1]) : (parseInt(err.httpCode) || 0);\nconst fnLower = failedNode.toLowerCase();\n\nlet priority;\n\nconst overrideMatch = failedNode.match(/\\bp[1-4]\\b/i) || errorMsg.match(/\\bp[1-4]\\b/i);\nif (overrideMatch) {\n  priority = overrideMatch[0].toUpperCase();\n}\nelse if (/payment|stripe|charge|invoice|billing/.test(fnLower) || /payment|stripe|charge|invoice|billing/.test(errorMsg)) {\n  priority = 'P1';\n}\nelse if (/out of memory|oom|killed|sigkill/.test(errorMsg)) {\n  priority = 'P1';\n}\nelse if (statusCode === 401 || statusCode === 403 || /unauthorized|forbidden/.test(errorMsg)) {\n  priority = 'P2';\n}\nelse if (/sync|crm|import|export/.test(fnLower) || /sync|crm|import|export/.test(errorMsg)) {\n  priority = 'P2';\n}\nelse if (statusCode >= 400 && statusCode < 500) {\n  priority = 'P2';\n}\nelse if (statusCode >= 500 || /econnreset|etimedout|timeout/.test(errorMsg)) {\n  priority = 'P3';\n}\nelse {\n  priority = 'P4';\n}\n\n// Agents: anything that stops an agent from working (a tool or the MCP unreachable, a table write failing, the model failing) is at least P2.\n// An output-format / parse error is a new bug that needs a fix now: P1. An explicit P1-P4 tag in the node name always wins.\nconst nodeType = String((err.node && err.node.type) || '').toLowerCase();\nconst agentRelated = /langchain|tool$/.test(nodeType) || /agent|coach|router/i.test(workflowName);\nconst formatError = /output format|output parser|parse|parsing|doesn't fit|does not fit|invalid json|not valid json|unexpected token|malformed/.test(errorMsg);\nif (!overrideMatch && agentRelated) {\n  if (formatError) priority = 'P1';\n  else if (priority === 'P3' || priority === 'P4') priority = 'P2';\n}\n\nreturn [{ json: { priority, workflowName, workflowId, executionId, executionUrl, failedNode, errorMessage: err.message || '', statusCode, timestamp } }];"
+      }
+    },
+    {
+      "id": "wf1-switch",
+      "name": "Route by Priority",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        224
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "sw-p1",
+                    "leftValue": "={{ $json.priority }}",
+                    "rightValue": "P1",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "sw-p2",
+                    "leftValue": "={{ $json.priority }}",
+                    "rightValue": "P2",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "sw-p3",
+                    "leftValue": "={{ $json.priority }}",
+                    "rightValue": "P3",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "sw-p4",
+                    "leftValue": "={{ $json.priority }}",
+                    "rightValue": "P4",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "wf1-tg-p1",
+      "name": "Telegram P1",
+      "webhookId": "f8ee3023-ddd3-4c8e-aa04-c308300d12f8",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        784,
+        48
+      ],
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=🚨 CRITICAL FAILURE\n\nWorkflow: {{ $json.workflowName }}\nNode: {{ $json.failedNode }}\nError: {{ $json.errorMessage }}\nTime: {{ $json.timestamp }}\n\n▶ View execution: {{ $json.executionUrl }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "id": "wf1-sl-p1",
+      "name": "Slack P1 @channel",
+      "webhookId": "7859b7f8-87b5-4766-9263-f1a41d4065eb",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "onError": "continueRegularOutput",
+      "position": [
+        1200,
+        48
+      ],
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_SLACK_P1_CHANNEL_ID"
+        },
+        "text": "=<!channel> :rotating_light: *P1 CRITICAL* | {{ $('Normalize & Classify').first().json.workflowName }}\n\n:x: Node: `{{ $('Normalize & Classify').first().json.failedNode }}`\n:speech_balloon: {{ $('Normalize & Classify').first().json.errorMessage }}\n:clock1: {{ $('Normalize & Classify').first().json.timestamp }}\n:link: <{{ $('Normalize & Classify').first().json.executionUrl }}|View execution>",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "id": "wf1-tg-p2",
+      "name": "Telegram P2",
+      "webhookId": "1ba6fc4e-5038-4885-b396-fe6f5eb312b1",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        768,
+        208
+      ],
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=⚠️ HIGH FAILURE\n\nWorkflow: {{ $json.workflowName }}\nNode: {{ $json.failedNode }}\nError: {{ $json.errorMessage }}\nTime: {{ $json.timestamp }}\n\n▶ View execution: {{ $json.executionUrl }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "id": "wf1-sl-p2",
+      "name": "Slack P2",
+      "webhookId": "1931b1d2-d802-459c-aa51-60c379dc3852",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "onError": "continueRegularOutput",
+      "position": [
+        1184,
+        208
+      ],
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_SLACK_P2_CHANNEL_ID"
+        },
+        "text": "=:warning: *P2 HIGH* | {{ $('Normalize & Classify').first().json.workflowName }}\n\n:x: Node: `{{ $('Normalize & Classify').first().json.failedNode }}`\n:speech_balloon: {{ $('Normalize & Classify').first().json.errorMessage }}\n:clock1: {{ $('Normalize & Classify').first().json.timestamp }}\n:link: <{{ $('Normalize & Classify').first().json.executionUrl }}|View execution>",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "id": "wf1-tg-p3",
+      "name": "Telegram P3",
+      "webhookId": "a2babc31-3023-43bf-993a-d8f1d1ac3db9",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        768,
+        368
+      ],
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=🔶 MEDIUM FAILURE\n\nWorkflow: {{ $json.workflowName }}\nNode: {{ $json.failedNode }}\nError: {{ $json.errorMessage }}\nTime: {{ $json.timestamp }}\n\n▶ View execution: {{ $json.executionUrl }}",
+        "additionalFields": {
+          "parse_mode": "Markdown"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "id": "wf1-sl-p3",
+      "name": "Slack P3",
+      "webhookId": "ad7b726c-77d9-4858-a87d-77a3c568f4c3",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "onError": "continueRegularOutput",
+      "position": [
+        1184,
+        368
+      ],
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_SLACK_P3_CHANNEL_ID"
+        },
+        "text": "=:large_orange_circle: *P3 MEDIUM* | {{ $('Normalize & Classify').first().json.workflowName }}\n\n:x: Node: `{{ $('Normalize & Classify').first().json.failedNode }}`\n:speech_balloon: {{ $('Normalize & Classify').first().json.errorMessage }}\n:clock1: {{ $('Normalize & Classify').first().json.timestamp }}\n:link: <{{ $('Normalize & Classify').first().json.executionUrl }}|View execution>",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "id": "wf1-tg-p4",
+      "name": "Telegram P4",
+      "webhookId": "82ff0482-2625-461e-af21-1f15ba0b2c44",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        768,
+        528
+      ],
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=ℹ️ LOW FAILURE\n\nWorkflow: {{ $json.workflowName }}\nNode: {{ $json.failedNode }}\nError: {{ $json.errorMessage }}\nTime: {{ $json.timestamp }}\n\n▶ View execution: {{ $json.executionUrl }}",
+        "additionalFields": {}
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "id": "wf1-gm-p4",
+      "name": "Gmail P4",
+      "webhookId": "e144ba57-f96e-4d7c-8038-23a8963fb9d9",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1200,
+        528
+      ],
+      "parameters": {
+        "sendTo": "YOUR_ALERT_EMAIL",
+        "subject": "=[n8n] Workflow failure: {{ $('Normalize & Classify').first().json.workflowName }}",
+        "message": "=Workflow failure detected.\n\nWorkflow: {{ $('Normalize & Classify').first().json.workflowName }}\nPriority: {{ $('Normalize & Classify').first().json.priority }}\nFailed Node: {{ $('Normalize & Classify').first().json.failedNode }}\nError: {{ $('Normalize & Classify').first().json.errorMessage }}\nTime: {{ $('Normalize & Classify').first().json.timestamp }}\n\nView execution: {{ $('Normalize & Classify').first().json.executionUrl }}",
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "id": "sheets-001",
+      "name": "Append to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "onError": "continueErrorOutput",
+      "position": [
+        336,
+        1200
+      ],
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_SPREADSHEET_ID"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "timestamp": "={{ $json.timestamp }}",
+            "priority": "={{ $json.priority }}",
+            "workflowName": "={{ $json.workflowName }}",
+            "workflowId": "={{ $json.workflowId }}",
+            "executionId": "={{ $json.executionId }}",
+            "executionUrl": "={{ $json.executionUrl }}",
+            "failedNode": "={{ $json.failedNode ?? 'N/A' }}",
+            "errorMessage": "={{ $json.errorMessage }}",
+            "statusCode": "={{ $json.statusCode ?? '' }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "priority",
+              "displayName": "priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflowName",
+              "displayName": "workflowName",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "workflowId",
+              "displayName": "workflowId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "executionId",
+              "displayName": "executionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "executionUrl",
+              "displayName": "executionUrl",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "failedNode",
+              "displayName": "failedNode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "errorMessage",
+              "displayName": "errorMessage",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "statusCode",
+              "displayName": "statusCode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "id": "notion-001",
+      "name": "Create Notion Page",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "position": [
+        576,
+        1200
+      ],
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_NOTION_DATABASE_ID"
+        },
+        "title": "={{ $json.workflowName }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Severity|select",
+              "selectValue": "={{ $json.priority }}"
+            },
+            {
+              "key": "Status|status",
+              "statusValue": "New"
+            },
+            {
+              "key": "Workflow|rich_text",
+              "textContent": "={{ $json.workflowName }}"
+            },
+            {
+              "key": "Triggered At|date",
+              "date": "={{ $json.timestamp }}"
+            },
+            {
+              "key": "Description|rich_text",
+              "textContent": "={{ $json.errorMessage }}"
+            },
+            {
+              "key": "Execution URL|url",
+              "urlValue": "={{ $json.executionUrl }}"
+            },
+            {
+              "key": "Failed Node|rich_text",
+              "textContent": "={{ $json.failedNode ?? 'N/A' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "notionApi": {
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "id": "wf4-http",
+      "name": "Get Workflow Tags",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "onError": "continueRegularOutput",
+      "position": [
+        1040,
+        1184
+      ],
+      "parameters": {
+        "url": "=http://localhost:5678/api/v1/workflows/{{ $json.workflowId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "n8n API key"
+        }
+      }
+    },
+    {
+      "id": "wf4-extract",
+      "name": "Extract Owner",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1264,
+        1184
+      ],
+      "parameters": {
+        "jsCode": "const PRIMARY_OWNER = 'YOUR_NAME'; // your own owner: tag; you get the priority alerts already\nconst workflowData = $input.first().json;\nconst tags = workflowData.tags || [];\nconst ownerTag = tags.find(t => t.name?.startsWith('owner:'));\nconst owner = ownerTag ? ownerTag.name.replace('owner:', '') : null;\nconst isPrimaryOwner = !owner || owner === PRIMARY_OWNER;\nconst originalPayload = $('Normalize & Classify').first().json;\nreturn [{ json: { ...originalPayload, detectedOwner: owner, isPrimaryOwner: isPrimaryOwner } }];"
+      }
+    },
+    {
+      "id": "wf4-if",
+      "name": "Has Different Owner?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1520,
+        1184
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cond-owner",
+              "leftValue": "={{ $json.isPrimaryOwner }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "wf4-lookup",
+      "name": "Lookup Slack ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        976
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const ownerLookup = {\n  'anna':  { slackId: 'U0123456789' },\n  'maxim': { slackId: 'U9876543210' }\n};\nconst owner = $json.detectedOwner;\nconst entry = ownerLookup[owner];\nif (!entry) return [];\nreturn [{ json: { ...$json, ownerSlackId: entry.slackId } }];"
+      }
+    },
+    {
+      "id": "wf4-slack",
+      "name": "DM Workflow Owner",
+      "webhookId": "1bcd7d98-08b7-400d-914e-d6fb97a1cef7",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "onError": "continueRegularOutput",
+      "position": [
+        2000,
+        976
+      ],
+      "parameters": {
+        "select": "user",
+        "user": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.ownerSlackId }}"
+        },
+        "text": "=:warning: *Workflow failure in a workflow you own*\n\n*{{ $json.workflowName }}*\nPriority: {{ $json.priority }}\nNode: `{{ $json.failedNode }}`\nError: {{ $json.errorMessage }}\nTime: {{ $json.timestamp }}\n\n<{{ $json.executionUrl }}|View execution>",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "On Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "Normalize & Classify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize & Classify": {
+      "main": [
+        [
+          {
+            "node": "Route by Priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Priority": {
+      "main": [
+        [
+          {
+            "node": "Telegram P1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append to Google Sheets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Notion Page",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Workflow Tags",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram P2",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append to Google Sheets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Notion Page",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Workflow Tags",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram P3",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append to Google Sheets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Notion Page",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Workflow Tags",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram P4",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Append to Google Sheets",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Create Notion Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram P1": {
+      "main": [
+        [
+          {
+            "node": "Slack P1 @channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram P2": {
+      "main": [
+        [
+          {
+            "node": "Slack P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram P3": {
+      "main": [
+        [
+          {
+            "node": "Slack P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram P4": {
+      "main": [
+        [
+          {
+            "node": "Gmail P4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Workflow Tags": {
+      "main": [
+        [
+          {
+            "node": "Extract Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Owner": {
+      "main": [
+        [
+          {
+            "node": "Has Different Owner?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Different Owner?": {
+      "main": [
+        [
+          {
+            "node": "Lookup Slack ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Lookup Slack ID": {
+      "main": [
+        [
+          {
+            "node": "DM Workflow Owner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "error-handler"
+    }
+  ],
+  "active": false
+}
