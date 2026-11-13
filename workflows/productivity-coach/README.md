@@ -108,6 +108,10 @@ flowchart TD
 
 ## WF1: how a message finds its agent
 
+The real workflow in n8n (click to enlarge). Left to right: Telegram input (photo, voice or text becomes plain text), the classifier and router, and the hand-off to the agents and the reply service. Every section has a sticky note that explains it.
+
+![WF1 Telegram Router in n8n](images/n8n-wf1-telegram-router.png)
+
 ```mermaid
 flowchart TD
     A["Telegram message"] --> B{"Type?"}
