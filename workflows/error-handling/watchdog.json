@@ -1,0 +1,254 @@
+{
+  "name": "Error Handling | Watchdog",
+  "description": "Runs by itself every 4 hours (when active). Not called by any workflow: a safety net for crashed or killed executions and critical workflows that went silent, which the error handler cannot see.",
+  "nodes": [
+    {
+      "id": "sticky-wd-title",
+      "name": "Title",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        -288
+      ],
+      "parameters": {
+        "content": "# Error Handling — Watchdog\n\nCalled by: entry point — own Schedule Trigger (not part of the Main Error Handler's execution; deployed separately under the same `error-handling` project folder because it has its own independent trigger)\nTrigger: Schedule Trigger, every 4 hours\nStandalone-capable: Yes — this is its own standalone workflow, always runs on its own schedule\nPurpose: a safety net ONLY for failures the normal error path cannot see (an execution killed or crashed, e.g. out of memory, or a critical workflow that went silent). Ordinary errors are handled by the Main Error Handler and never reach this workflow.\n\nWhat it does, step by step:\n1. Every 4 hours, checks the n8n API for crashed executions in the last 4 hours and sends a Telegram crash alert for each\n2. In parallel, checks the critical-workflows list in 'Stale Workflow List' (empty by default) for how long since each one's last successful execution, and sends a Telegram stale-workflow alert if any has gone silent past its expected interval\n\nStatus: switched OFF until a very critical workflow needs it.",
+        "height": 700,
+        "width": 1780,
+        "color": 2
+      }
+    },
+    {
+      "id": "wf3-http-crash",
+      "name": "Get Crashed Executions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "onError": "continueRegularOutput",
+      "position": [
+        256,
+        -32
+      ],
+      "parameters": {
+        "url": "http://localhost:5678/api/v1/executions?status=crashed&limit=50",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "n8n API key"
+        }
+      }
+    },
+    {
+      "id": "wf3-code-crash",
+      "name": "Filter Crashes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        -32
+      ],
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst executions = response.data || [];\nconst windowStart = Date.now() - (4 * 60 * 60 * 1000); // same as the schedule interval (every 4 hours)\nconst recent = executions.filter(function(ex) {\n  return new Date(ex.startedAt || ex.createdAt).getTime() > windowStart;\n});\nreturn recent.map(function(ex) {\n  const name = (ex.workflowData && ex.workflowData.name) || ex.workflowId || 'Unknown';\n  const data = {\n    workflowName: name,\n    executionId: ex.id,\n    startedAt: ex.startedAt,\n    alertMsg: '🚨 CRITICAL — Workflow Crashed (OOM/Abort)\\n\\nWorkflow: ' + name + '\\nExecution: ' + ex.id + '\\nTime: ' + ex.startedAt + '\\n\\n▶ Check n8n: YOUR_N8N_URL'\n  };\n  return {json: data};\n});"
+      }
+    },
+    {
+      "id": "wf3-tg-crash",
+      "name": "Telegram Crash Alert",
+      "webhookId": "c1b0e447-da79-4994-af55-2e21c95fe2c0",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        736,
+        -32
+      ],
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "={{ $json.alertMsg }}",
+        "additionalFields": {}
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "id": "wf3-code-stalelist",
+      "name": "Stale Workflow List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        192
+      ],
+      "parameters": {
+        "jsCode": "// Critical workflows to watch for silence. EMPTY by default: add an entry only for a workflow that can fail silently (hard stop, out of memory).\n// Entry format: { id: '<real workflow id>', name: '<display name>', maxMinutesSinceSuccess: <minutes> }\nconst criticalWorkflows = [];\nreturn criticalWorkflows.map(function(wf) { return {json: wf}; });"
+      }
+    },
+    {
+      "id": "wf3-http-stale",
+      "name": "Get Last Success",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "onError": "continueRegularOutput",
+      "position": [
+        448,
+        192
+      ],
+      "parameters": {
+        "url": "=http://localhost:5678/api/v1/executions?workflowId={{ $json.id }}&status=success&limit=1",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "name": "n8n API key"
+        }
+      }
+    },
+    {
+      "id": "wf3-code-stalecheck",
+      "name": "Check Stale",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        688,
+        192
+      ],
+      "parameters": {
+        "jsCode": "const httpItems = $input.all();\nconst workflowItems = $('Stale Workflow List').all();\nconst alerts = [];\nfor (let i = 0; i < httpItems.length; i++) {\n  const httpData = httpItems[i].json;\n  const wfData = workflowItems[i] ? workflowItems[i].json : null;\n  if (!wfData) continue;\n  const executions = httpData.data || [];\n  if (!executions.length) {\n    const alert1 = {alertMsg: '⚠️ WATCHDOG — Silent Failure Detected\\n\\nWorkflow: ' + wfData.name + '\\nLast success: Never\\nExpected: every ' + wfData.maxMinutesSinceSuccess + ' min\\n\\n▶ Check n8n: YOUR_N8N_URL'};\n    alerts.push({json: Object.assign({}, wfData, alert1)});\n    continue;\n  }\n  const lastSuccess = new Date(executions[0].startedAt).getTime();\n  const minutesSince = (Date.now() - lastSuccess) / 60000;\n  if (minutesSince > wfData.maxMinutesSinceSuccess) {\n    const h = Math.floor(minutesSince / 60);\n    const m = Math.round(minutesSince % 60);\n    const alert2 = {minutesSince: Math.round(minutesSince), alertMsg: '⚠️ WATCHDOG — Silent Failure Detected\\n\\nWorkflow: ' + wfData.name + '\\nLast success: ' + h + 'h ' + m + 'm ago\\nExpected: every ' + wfData.maxMinutesSinceSuccess + ' min\\n\\n▶ Check n8n: YOUR_N8N_URL'};\n    alerts.push({json: Object.assign({}, wfData, alert2)});\n  }\n}\nreturn alerts;"
+      }
+    },
+    {
+      "id": "wf3-tg-stale",
+      "name": "Telegram Stale Alert",
+      "webhookId": "fc8f03fe-93ba-408a-96a3-fff471d5c6a6",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        944,
+        192
+      ],
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "={{ $json.alertMsg }}",
+        "additionalFields": {}
+      },
+      "credentials": {
+        "telegramApi": {
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "id": "wf3-sched",
+      "name": "Every 4 hours",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -48,
+        64
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 4
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Get Crashed Executions": {
+      "main": [
+        [
+          {
+            "node": "Filter Crashes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Crashes": {
+      "main": [
+        [
+          {
+            "node": "Telegram Crash Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stale Workflow List": {
+      "main": [
+        [
+          {
+            "node": "Get Last Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Last Success": {
+      "main": [
+        [
+          {
+            "node": "Check Stale",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Stale": {
+      "main": [
+        [
+          {
+            "node": "Telegram Stale Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 4 hours": {
+      "main": [
+        [
+          {
+            "node": "Get Crashed Executions",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Stale Workflow List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "scheduled"
+    },
+    {
+      "name": "error-handler"
+    }
+  ],
+  "active": false
+}

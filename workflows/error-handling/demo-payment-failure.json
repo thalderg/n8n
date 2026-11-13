@@ -1,0 +1,161 @@
+{
+  "name": "Error Handling | Demo — Payment Failure Alert",
+  "description": "Started by opening its demo URL (GET /webhook/demo-payment-failure): records a payment, shows an error page and stops on purpose (Stripe Payment Failed) so the error handler alerts. Not called by any workflow; for demos only.",
+  "nodes": [
+    {
+      "id": "title-note",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "color": 5,
+        "width": 1340,
+        "height": 280,
+        "content": "## Error Handling | Demo — Payment Failure Alert\n\nShows the \"Error Handler\" reacting to a real failure, for demos and videos. Opening the webhook link starts a payment step that fails on purpose (the test address always answers 503). The browser gets a 502 Bad Gateway page, and the run fails at Stripe Payment Failed, so the handler rates it P1: Telegram + Slack alert, row in Sheets, page in Notion.\n\nActivate it to record, deactivate after (while active, anyone with the link can raise a P1 alert), then clean the Notion alert page and the Sheet row."
+      }
+    },
+    {
+      "id": "section-note",
+      "name": "Simulated Payment Failure Section Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        340
+      ],
+      "parameters": {
+        "color": 4,
+        "width": 1340,
+        "height": 520,
+        "content": "## Simulated Payment Failure\n\nTriggered by: Start Payment Demo (open GET /webhook/demo-payment-failure in a browser). Runs started from the editor never call the error handler, so use the link.\n\n1. Record Stripe Payment calls a test address that always fails (503); its error output continues.\n2. Show Payment Error Page answers the browser with a 502 Bad Gateway page.\n3. Stripe Payment Failed stops the run with an error, and n8n hands it to \"Error Handler\", which sends the P1 alert."
+      }
+    },
+    {
+      "id": "start-payment-demo",
+      "name": "Start Payment Demo",
+      "webhookId": "5f1d7c2e-9a4b-4c1e-8d3f-6b2a1e9c7d40",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        160,
+        740
+      ],
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "demo-payment-failure",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "record-stripe-payment",
+      "name": "Record Stripe Payment",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueErrorOutput",
+      "position": [
+        480,
+        740
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://httpbin.org/status/503",
+        "authentication": "none",
+        "sendQuery": false,
+        "sendHeaders": false,
+        "sendBody": false,
+        "options": {
+          "timeout": 10000
+        }
+      }
+    },
+    {
+      "id": "show-payment-error-page",
+      "name": "Show Payment Error Page",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        800,
+        740
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "<!doctype html><html><head><meta charset=\"utf-8\"><title>502 Bad Gateway</title></head><body style=\"font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;text-align:center;padding-top:90px;color:#222\"><h1 style=\"font-size:42px;margin:0\">502 Bad Gateway</h1><p style=\"font-size:18px;margin-top:16px\">Your payment could not be processed: the payment provider did not respond.</p><p style=\"color:#888\">Please try again in a few minutes.</p><hr style=\"width:320px;margin:28px auto;border:0;border-top:1px solid #ddd\"><p style=\"color:#aaa;font-size:13px\">checkout service</p></body></html>",
+        "options": {
+          "responseCode": 502,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "stripe-payment-failed",
+      "name": "Stripe Payment Failed",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        740
+      ],
+      "parameters": {
+        "errorType": "errorMessage",
+        "errorMessage": "Stripe did not answer (503 Service Unavailable): the payment was not recorded"
+      }
+    }
+  ],
+  "connections": {
+    "Start Payment Demo": {
+      "main": [
+        [
+          {
+            "node": "Record Stripe Payment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Stripe Payment": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Show Payment Error Page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Show Payment Error Page": {
+      "main": [
+        [
+          {
+            "node": "Stripe Payment Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "webhook"
+    }
+  ],
+  "active": false
+}

@@ -6,6 +6,8 @@ A company that has had a job open for weeks is struggling to hire. This system f
 
 Built with n8n: 4 workflows and one Google Sheet.
 
+<p align="center"><a href="https://youtu.be/DE-Y3OhYy2g"><img src="https://img.youtube.com/vi/DE-Y3OhYy2g/maxresdefault.jpg" alt="Watch the 5-minute demo on YouTube" width="560"></a><br><b>▶ <a href="https://youtu.be/DE-Y3OhYy2g">Watch the 5-minute demo on YouTube</a></b></p>
+
 ---
 
 ## In 30 seconds
@@ -89,6 +91,8 @@ flowchart LR
 ```
 
 Each tap opens a short confirmation page: **Approved**, **Rejected** or **Opening the editor**. No answer within 24 hours leaves the lead untouched.
+
+<p align="center"><img src="images/n8n-wf1-approve-section.png" alt="The Approve And Mark Ready section of WF1 in the n8n editor" width="760"><br><sub>The approval section of WF1 in n8n.</sub></p>
 
 <p align="center"><img src="images/telegram-draft-review.png" alt="A draft email in Telegram with the buttons Approve, Reject and Edit" width="520"></p>
 <p align="center"><i>A draft as it arrives in Telegram: why it scored 5/5, who receives it, the email with its legal footer, and the three buttons. (Real screenshot, personal data replaced.)</i></p>
