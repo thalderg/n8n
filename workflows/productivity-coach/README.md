@@ -41,6 +41,9 @@ Every message has the same shape, and every list of tasks is the same card. The 
 ━━━━━━━━━━━━━━                                        ← top bar
 Marked "Write the cover email" done.                   ← 1-2 lines from the agent
 
+📅 CALENDAR                                           ← only when these days have events
+   ▫️ 15:00–15:15 · Call the physio studio              ← time range, title links to the event
+
 📋 FRIDAY 13 NOV                                       ← the card, built by code from Notion
 🎯 Sign a second retainer: the physio studio          ← weekly goal
    🟩🟩🟩🟩🟩🟩🟩⬜⬜⬜ 2/3 tasks                         ← goal progress
@@ -140,6 +143,7 @@ flowchart TD
 
 - **Weekly goals.** Each goal belongs to an active project or is Personal. A goal from the Coach arrives with its quality bar ("Done when") and a confidence.
 - **Daily tasks.** It proposes 2-5 tasks per goal, from today to Friday. A day you name always wins. At most 1-2 complex tasks a day, hardest first, all inside 09:00-17:00.
+- **Your own list is saved at once.** Tasks you send with their days (and the lines under a task as its subtasks) are written straight away, even when a day goes over the 5-task limit: one line then tells you which day is full and offers a move. A question about one task never holds back the rest.
 - **Subtasks.** Complex tasks get 2-5 subtasks, split across days when needed.
 - **Proposals wait for a yes; orders do not.** "Plan my week" gives a proposal that is written only after "confirm". "Add X", "mark Y done" or "all done except Z" are written at once.
 - **Calendar.** Anything with a clock time becomes a Google Calendar event (calls 15 min, meetings 1 h, else 30 min).
