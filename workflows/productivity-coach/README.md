@@ -57,6 +57,8 @@ Marked "Write the cover email" done.                   ← 1-2 lines from the ag
 - **Status icons:** ✅ done, 🔄 working on, ⏳ waiting, ✖️ cancelled, 🔲 to do.
 - **Nothing skipped, nothing repeated.** Every goal shows all its tasks, every task all its subtasks. The agent writes 1-2 lines and never retells the card.
 - **The card always shows Notion after the write**, so what you see is what is saved.
+- **Calendar events come first.** When the days you asked about have Google Calendar events, the card starts with a 📅 CALENDAR block: day, time range (or "all day") and the event title as a link. No events, no block.
+- **Today stands out.** On a card of several days (the week, "Monday to Wednesday"), today's tasks, subtasks and events are in bold, with 👉 on today's tasks and events.
 
 ```mermaid
 flowchart LR
