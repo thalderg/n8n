@@ -2,9 +2,9 @@
 
 **A research desk in Telegram: what people are saying about your topics, checked against real sources, every morning.**
 
-Pick a few topics (for example "New discoveries made with AI" or "crypto hacks and exploits"). Every morning Claim Checks reads what people posted about them on Reddit, Hacker News and X, groups the posts into claims, checks each claim against official sources and reliable news, and gives every claim a label: **Corroborated**, **Single source**, **Disputed**, **Unverified** or **Opinion**. You get a short summary in Telegram and a PDF report. Every story keeps a permanent number, so you can dig into it, ask questions about it and look for news on it later.
+Pick a few topics (for example "New discoveries made with AI" or "crypto hacks and exploits"). Every morning Claim Checks reads what people posted about them on Reddit, Hacker News and X, groups the posts into claims, checks each claim against official sources and reliable news, and gives every claim a label: **Corroborated**, **Single source**, **Disputed**, **Unverified** or **Opinion**. You get a short summary in Telegram and a PDF report. Every story keeps a permanent number, so you can dig into it, ask questions about it and look for news on it later. Ask it a question instead of a topic ("what are the best projects at the NEAR hackathon?") and it also looks the answer up on the web, marking each item confirmed, claimed or unverified.
 
-Built with n8n: 10 workflows, one Airtable base, one Postgres database and one Telegram bot.
+Built with n8n: 12 workflows, one Airtable base, one Postgres database and one Telegram bot.
 
 <!-- SCREENSHOTS TO ADD (coming from the user):
      images/telegram-summary.png  - the morning summary in Telegram
@@ -16,13 +16,13 @@ Built with n8n: 10 workflows, one Airtable base, one Postgres database and one T
 
 ## In 30 seconds
 
-1. **You set the topics** in an Airtable table: keyword, daily or weekly, who gets the report. Or you send `search <topic>` to the bot.
+1. **You set the topics** in an Airtable table: keyword, daily or weekly, who gets the report. Or you send `search <topic>` to the bot, or a question: `search what are the best projects at the NEAR hackathon?`
 2. **Plan:** a language model gives every topic its own 6 search angles and writes, for each one, every way people phrase it. A topic written as a question also gets its answer looked up on the web.
 3. **Collect:** Reddit, Hacker News and X are searched for the posts of the last 24 hours (or 7 days); Google Trends adds what people are searching for right now. Only posts with real engagement pass.
 4. **Group:** posts about the same thing become one claim.
 5. **Check:** each claim is searched on Google and Venice web search; every page found is read, dated and judged (supports, contradicts or only mentions the claim; official, reliable or other).
 6. **Label:** fixed rules, not the model, turn those judgements into one of five labels.
-7. **Deliver:** a PDF briefing in Google Drive, a summary in Telegram, an email for weekly runs, and every story saved to a searchable archive with a permanent number.
+7. **Deliver:** for a question, the answer from the web comes first; then a PDF briefing in Google Drive, a summary in Telegram, an email for weekly runs, and every story saved to a searchable archive with a permanent number.
 8. **Ask:** `dig 214` shows a story in full, `update 214` looks for news on it, and any question opens a conversation with a research assistant that knows the story.
 
 ---
@@ -94,13 +94,16 @@ flowchart LR
     B --> C["Reddit · Hacker News · X<br/>per angle"]
     C --> D["Keep posts with<br/>real engagement"]
     D --> E["Filter<br/>(model)"]
-    E --> F["Group into claims<br/>(model)"]
+    E --> Q{"Topic is a<br/>question?"}
+    Q -- yes --> QA["Answer from the web<br/>(Answer Question)"]
+    QA --> F
+    Q -- no --> F["Group into claims<br/>(model)"]
     F --> G["Verify the top 5 claims<br/>of each topic (Verify Story)"]
     G --> H["Write the briefing<br/>(model)"]
     H --> I["PDF · Telegram ·<br/>email · archive"]
 ```
 
-A daily run with two topics takes about 7-10 minutes and costs about 0.25 USD of model credit, plus a few search credits.
+A run with two topics takes about 10-15 minutes (12.5 in the last test, with a question). Model and search costs grow with the number of topics, since each one gets its own 6 angles and up to 5 checks; a question adds 2 model calls, 6 Google searches and up to 8 page reads.
 
 ---
 
@@ -179,6 +182,19 @@ Each page gets its publication date from its own metadata, else from its address
 
 Every page is first read directly. Only a page that refuses (blocked, rate-limited, empty) is read again through **Bright Data's Web Unlocker**. Some pages load their text with scripts (an official blog, for example), so the unlocker returns an empty shell: those get **one more try with `render`**, where Bright Data runs the page's scripts first. It is slower, so it is used only for pages still without text, and never for video or LinkedIn pages. A page that still cannot be read is listed as blocked, so you can open it yourself, but it never counts. One shared workflow, "Read Web Pages", does this for both the claim checks and the answers.
 
+```mermaid
+flowchart LR
+    P["Page"] --> D{"Read directly:<br/>real text?"}
+    D -- yes --> OK["Read<br/>+ its date"]
+    D -- no --> U{"Bright Data<br/>Web Unlocker:<br/>real text?"}
+    U -- yes --> OK
+    U -- no --> R{"Video or<br/>LinkedIn?"}
+    R -- no --> RS{"Bright Data again,<br/>page scripts run:<br/>real text?"}
+    RS -- yes --> OK
+    RS -- no --> B["Blocked<br/>listed, never counted"]
+    R -- yes --> B
+```
+
 ### 8. One story, one number, forever
 
 Every checked claim is saved to the story archive with a **permanent story number**: story 214 is the same story in the morning summary, in `list`, `dig` and `update`, at any time. When a later run finds a post (or the article a post links to) that an archived story already has, it is the **same story**: it keeps its number, gets the new label, and a dated "checked again" entry is added to its history. Stories are never merged on a guess.
@@ -193,8 +209,28 @@ Nothing is saved automatically. `save` keeps a summary of the conversation, `clo
 
 - Every model call goes through **Ask Venice**: the main model, then a backup model if the first fails or returns broken output.
 - A source that fails does not stop the run: the report says which source failed.
+- **No silent failures:** see the next part.
 - **One alert per run** (Report Run Problems), not one per failure.
 
+
+### 11. No silent failures
+
+A report that quietly misses a source looks exactly like a good one, so every failure is named:
+
+- A source that is down (a service error, a network drop) does not stop its search: "Collect Findings" returns **failed** with the error, the run goes on with the other sources, and the alert and the PDF footer say which source, for which angle, and why (for example `X for "All news on crypto hacks and exploits" failed: getaddrinfo ENOTFOUND …`). When only some searches of a source fail, the alert says how many, and the rest are used.
+- n8n itself can lose the results of a whole step when one sub-workflow fails inside it (it hands back its inputs instead). The run checks that every result has a status; if results are missing, it says so ("results of 6 of 6 source calls lost") instead of looking clean.
+- A question that could not be answered, and a claim that could not be checked, are listed the same way.
+
+```mermaid
+flowchart LR
+    S["Source search"] --> F{"Failed?"}
+    F -- no --> R["Posts kept"]
+    F -- yes --> E["Result: failed + error"]
+    R --> C["WF3 checks every result<br/>has a status"]
+    E --> C
+    C -- "failed" --> A["Named in the ONE alert<br/>and the PDF footer"]
+    C -- "status missing" --> L["'Results lost' line<br/>in the alert"]
+```
 ---
 
 ## The Telegram bot
@@ -205,6 +241,7 @@ Commands work with or without a symbol in front: `search`, `/search` and `#searc
 |---|---|
 | `/start` or `help` | the how-to message, pinned in the chat |
 | `search <topic>` | a run on that topic (last 7 days; add "today" for the last 24 hours). The summary and the PDF link arrive when it is done |
+| `search <question>` | the same run, plus an answer from the web at the top of the summary and the PDF, e.g. `search what are the most revolutionary projects submitted to the NEAR hackathon?` |
 | `list` | the stories of the last 7 days, by day: number, label, title |
 | `list <dates>` | the stories in a date range, e.g. `list 13 October - 21 October 2026` (dates read by fixed rules, not a model) |
 | `dig <number>` or `dig <words>` | the full story: where it came from (the original posts, with dates), what happened, what is confirmed and what is not, why it matters, every source with its date, every update, your saved conversations |
@@ -225,9 +262,10 @@ Only the chat ids listed in WF2's settings can use the bot; any other chat is ig
 One PDF per run, saved in a Google Drive folder:
 
 - a short front page that explains the five labels and lists the topics, the window and the search terms used (Google Trends terms included);
+- for a question, the **Answer** first: a direct answer, then each item (a project, a team, a reason) with its status (confirmed, claimed by its team, unverified) and its dated links, and what could not be found;
 - the **briefing**, by topic, with the label next to each statement, and "the other side" for each topic;
 - one entry per story: its number, label, where it came from (the original posts first, with author and date), what happened, what is confirmed and what is not, why it matters, the open question, and every source with its date;
-- the numbered source list, and a footer with the sources that returned nothing or failed.
+- the numbered source list, and a footer with the sources that returned nothing or failed, each failure with its error.
 
 <!-- images/pdf-page-1.png and images/pdf-page-2.png go here -->
 

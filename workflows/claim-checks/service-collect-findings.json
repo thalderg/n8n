@@ -12,7 +12,7 @@
         0
       ],
       "parameters": {
-        "content": "# Claim Checks | Collect Findings\n\nSearches ONE source for ONE angle of a Claim Checks run, throws away the trash and saves every item (kept and dropped, with the reason) to Airtable table Findings. Returns a short status to the caller; the findings themselves stay in Airtable.\n\n**Called by:** \"WF3 — Research Pipeline\": Google Trends once per keyword (its angles share the terms), then Reddit, Hacker News and X once per angle. Locked to \"WF3\".\n**Sections:** Entry → one source section (Google Trends, Reddit, Hacker News or X) → for Reddit, Hacker News and X, \"Shared: Reddit + Hacker News + X\" (duplicates, filter, save). Google Trends saves nothing: it returns up to 2 rising search terms.\n**Alerts:** a failed step stops this call and goes back to \"WF3\", which lists every problem of the run in ONE alert (\"Report Run Problems\"). An empty source is normal, not an error.\nstructure-ok: no error workflow on purpose, so a run with several failures sends one alert, not one per failure.\n**Services called:** SerpApi (Google Trends) · ScrapeCreators (Reddit) · HN Algolia (Hacker News) · twitterapi.io (X) · Venice (GLM-5.3 Flash: pick terms, filter posts) · Airtable (Findings) · \"Ask Venice\" (every model step; backup model GPT-6 Luna).",
+        "content": "# Claim Checks | Collect Findings\n\nSearches ONE source for ONE angle of a Claim Checks run, throws away the trash and saves every item (kept and dropped, with the reason) to Airtable table Findings. Returns a short status to the caller; the findings themselves stay in Airtable.\n\n**Called by:** \"WF3 — Research Pipeline\": Google Trends once per keyword (its angles share the terms), then Reddit, Hacker News and X once per angle. Locked to \"WF3\".\n**Sections:** Entry → one source section (Google Trends, Reddit, Hacker News or X) → for Reddit, Hacker News and X, \"Shared: Reddit + Hacker News + X\" (duplicates, filter, save). Google Trends saves nothing: it returns up to 2 rising search terms.\n**Alerts:** a source search that fails (service down, network error) does not stop this call: it returns status \"failed\" with the error, and \"WF3\" names that source in the run's ONE alert (\"Report Run Problems\"). Any other failed step stops this call and goes back to \"WF3\", which reports it too. An empty source is normal, not an error.\nstructure-ok: no error workflow on purpose, so a run with several failures sends one alert, not one per failure.\n**Services called:** SerpApi (Google Trends) · ScrapeCreators (Reddit) · HN Algolia (Hacker News) · twitterapi.io (X) · Venice (GLM-5.3 Flash: pick terms, filter posts) · Airtable (Findings) · \"Ask Venice\" (every model step; backup model GPT-6 Luna).",
         "width": 4220,
         "height": 300,
         "color": 5
@@ -323,7 +323,7 @@
       "name": "Search Google Trends (SerpApi)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "onError": "stopWorkflow",
+      "onError": "continueRegularOutput",
       "position": [
         880,
         700
@@ -426,7 +426,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const s = $('Store Settings').first().json;\nlet terms = [];\nif ($('Pick Trend Terms (via Ask Venice)').isExecuted) {\n  const out = $('Pick Trend Terms (via Ask Venice)').first().json.output || {};\n  terms = (out.terms || []).filter(t => typeof t === 'string' && t.trim()).slice(0, 2);\n}\nreturn [{ json: { run_id: s.run_id, angle: s.angle, source: 'google_trends', status: terms.length ? 'ok' : 'empty',\n  kept_count: 0, dropped_count: 0, trend_terms: terms, context: s.context || null } }];"
+        "jsCode": "const s = $('Store Settings').first().json;\nconst errText = (e) => String(typeof e === 'string' ? e : (e && (e.message || e.description || JSON.stringify(e))) || 'unknown error').replace(/\\s+/g, ' ').slice(0, 160);\n// A failed Trends search comes back as an error item: reported as \"failed\" with the error, never a silent empty.\nconst err = $('Search Google Trends (SerpApi)').first().json.error;\nlet terms = [];\nif ($('Pick Trend Terms (via Ask Venice)').isExecuted) {\n  const out = $('Pick Trend Terms (via Ask Venice)').first().json.output || {};\n  terms = (out.terms || []).filter(t => typeof t === 'string' && t.trim()).slice(0, 2);\n}\nreturn [{ json: { run_id: s.run_id, angle: s.angle, source: 'google_trends', status: err ? 'failed' : (terms.length ? 'ok' : 'empty'), error: err ? errText(err) : null,\n  kept_count: 0, dropped_count: 0, trend_terms: terms, context: s.context || null } }];"
       }
     },
     {
@@ -451,7 +451,7 @@
       "name": "Search Reddit (ScrapeCreators)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "onError": "stopWorkflow",
+      "onError": "continueRegularOutput",
       "position": [
         1100,
         1440
@@ -535,7 +535,7 @@
       "name": "Search Hacker News (HN Algolia)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "onError": "stopWorkflow",
+      "onError": "continueRegularOutput",
       "position": [
         1100,
         2000
@@ -740,7 +740,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const s = $('Store Settings').first().json;\nconst rows = $('Apply Filter Decisions').isExecuted ? $('Apply Filter Decisions').first().json.rows : [];\nconst kept = rows.filter(r => r.kept).length;\nreturn [{ json: { run_id: s.run_id, angle: s.angle, source: s.source, status: kept ? 'ok' : 'empty',\n  kept_count: kept, dropped_count: rows.length - kept, trend_terms: [], context: s.context || null } }];"
+        "jsCode": "const s = $('Store Settings').first().json;\nconst errText = (e) => String(typeof e === 'string' ? e : (e && (e.message || e.description || JSON.stringify(e))) || 'unknown error').replace(/\\s+/g, ' ').slice(0, 160);\n// A search that fails comes back as an error item (the search nodes continue on error), so this call never fails for a source that is down:\n// it returns status \"failed\" with the error, and \"WF3\" names the source in the run's alert.\nconst SEARCH = { reddit: 'Search Reddit (ScrapeCreators)', hacker_news: 'Search Hacker News (HN Algolia)', x: 'Search X (twitterapi.io)' };\nconst searches = SEARCH[s.source] && $(SEARCH[s.source]).isExecuted ? $(SEARCH[s.source]).all() : [];\nconst errs = searches.filter(i => i.json.error).map(i => errText(i.json.error));\nconst allFailed = searches.length > 0 && errs.length === searches.length;\nconst rows = $('Apply Filter Decisions').isExecuted ? $('Apply Filter Decisions').first().json.rows : [];\nconst kept = rows.filter(r => r.kept).length;\nreturn [{ json: { run_id: s.run_id, angle: s.angle, source: s.source, status: allFailed ? 'failed' : (kept ? 'ok' : 'empty'), error: errs[0] || null, failed_searches: errs.length, searches: searches.length,\n  kept_count: kept, dropped_count: rows.length - kept, trend_terms: [], context: s.context || null } }];"
       }
     },
     {
@@ -815,7 +815,7 @@
       "name": "Search X (twitterapi.io)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "onError": "stopWorkflow",
+      "onError": "continueRegularOutput",
       "position": [
         1100,
         2520
