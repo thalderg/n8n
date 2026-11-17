@@ -4,7 +4,7 @@
 
 Pick a few topics (for example "New discoveries made with AI" or "crypto hacks and exploits"). Every morning Claim Checks reads what people posted about them on Reddit, Hacker News and X, groups the posts into claims, checks each claim against official sources and reliable news, and gives every claim a label: **Corroborated**, **Single source**, **Disputed**, **Unverified** or **Opinion**. You get a short summary in Telegram and a PDF report. Every story keeps a permanent number, so you can dig into it, ask questions about it and look for news on it later. Ask it a question instead of a topic ("what are the best projects at the NEAR hackathon?") and it also looks the answer up on the web, marking each item confirmed, claimed or unverified.
 
-Built with n8n: 12 workflows, one Airtable base, one Postgres database and one Telegram bot.
+Built with n8n: 13 workflows, one Airtable base, one Postgres database and one Telegram bot.
 
 <!-- SCREENSHOTS TO ADD (coming from the user):
      images/telegram-summary.png  - the morning summary in Telegram
@@ -64,6 +64,7 @@ flowchart TD
 | **Bot Commands** | WF2 | `list`, `dig`, `reports`, `provide`, the pinned how-to |
 | **Story Chat** | WF2 | the research assistant: answers questions about a story, saves or forgets conversations |
 | **Follow Up Story** | Story Chat (`update`) | looks for reliable news published after the story and saves it as an update |
+| **Clean Old Records** | every day at 06:30, or by hand | deletes Airtable rows no workflow reads any more, to stay under the Free plan's 1,000 records |
 
 ---
 
@@ -298,6 +299,18 @@ flowchart LR
 
 **Airtable** keeps the working data of each run, readable by a person: the topics, each run, every post found (kept or dropped, with the reason) and every claim with its evidence. You can open it and see why a post was dropped.
 
+**Airtable stays small, on the Free plan.** Its Free plan allows 1,000 records per base, and a run with two topics saves about 95 rows. **Clean Old Records** runs every day at 06:30, before the morning run, and deletes the rows no workflow reads any more; the archive in Postgres keeps everything that lasts:
+
+| Rows | Kept for | Why that long |
+|---|---|---|
+| dropped posts | 1 day | read only during their own run |
+| kept posts | 7 days | the "already reported" check looks back 7 days |
+| Clusters (claims) | 14 days | the bot's `reports` list goes back 14 days |
+| Runs | 14 days | same |
+| Keywords | always | your topics |
+
+That holds the base at about 500 rows with two daily topics (room for about four). The days are settings; `count_only` shows what would be deleted without deleting. It finds old rows page by page and deletes 10 per request, 4 requests a second (Airtable allows 5), each table in its own execution (the workflow calls its own block), so it scales with the data. Deleted rows go to Airtable's trash.
+
 **Postgres** keeps the **story archive**: what the bot reads and what lasts.
 
 | Table | One row per | What it is for |
@@ -410,6 +423,7 @@ Import the ten JSON files. Every node that calls another workflow is named `… 
 | angles per topic | WF3 · Store Settings `max_angles` | 6 |
 | claims checked per topic | WF3 · Store Settings `max_verify` | 5 |
 | pages read for an answer | Answer Question · Store Settings `max_pages` | 8 |
+| days Airtable rows are kept | Clean Old Records · Store Settings | dropped posts 1, kept posts 7, Clusters 14, Runs 14 |
 | posts kept per angle | Collect Findings · Store Settings | Reddit 3, Hacker News 2, X 3 |
 | engagement minimums | Collect Findings · Store Settings | Reddit score 20 and 5 comments (daily), X 50 likes and 2 reposts (daily); doubled for weekly runs |
 | pages read per claim | Verify Story · Store Settings `max_candidates` | 8 |
@@ -442,5 +456,6 @@ Import the ten JSON files. Every node that calls another workflow is named `… 
 | `service-follow-up-story.json` | Follow Up Story: `update`, news since the story |
 | `service-answer-question.json` | Answer Question: the answer to a question topic, from the web |
 | `service-read-web-pages.json` | Read Web Pages: page text and dates, Bright Data for blocked pages |
+| `wf-clean-old-records.json` | Clean Old Records: daily Airtable cleanup (schedule or by hand) |
 | `database/claim-checks-database.sql` | the Postgres tables of the story archive and the read-only login |
 | `images/` | screenshots |

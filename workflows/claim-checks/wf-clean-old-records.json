@@ -1,0 +1,560 @@
+{
+  "id": "arFuvGn0Zmo1mcZG",
+  "name": "Claim Checks | Clean Old Records",
+  "nodes": [
+    {
+      "id": "7f619b5d-5651-4ba0-b594-a60f431e637f",
+      "name": "Run Every Day At 06:30",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        60,
+        760
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 6,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "5a7350d3-f003-4ba2-bd8a-0fd908b89fb2",
+      "name": "Run Now By Hand",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        60,
+        960
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "c6ddb711-3f51-400c-bcce-1c94d2a6b61d",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        300,
+        860
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8cd41926-b3b6-4fd1-b03f-0de21aa24480",
+              "name": "airtable_base",
+              "type": "string",
+              "value": "YOUR_AIRTABLE_BASE_ID"
+            },
+            {
+              "id": "cb4fc064-95a1-4e9c-8421-7a47d3500ed7",
+              "name": "findings_table",
+              "type": "string",
+              "value": "YOUR_AIRTABLE_FINDINGS_TABLE_ID"
+            },
+            {
+              "id": "68688707-aeb1-4a0d-a466-0000329f24c0",
+              "name": "clusters_table",
+              "type": "string",
+              "value": "YOUR_AIRTABLE_CLUSTERS_TABLE_ID"
+            },
+            {
+              "id": "f909f073-84e7-464b-9833-b56b1a30e871",
+              "name": "runs_table",
+              "type": "string",
+              "value": "YOUR_AIRTABLE_RUNS_TABLE_ID"
+            },
+            {
+              "id": "1db75a0c-6f3a-428e-a1f4-9ff8b91f9ae6",
+              "name": "keywords_table",
+              "type": "string",
+              "value": "YOUR_AIRTABLE_KEYWORDS_TABLE_ID"
+            },
+            {
+              "id": "6385bc13-1941-4f23-a9cb-12098cf1dbb1",
+              "name": "keep_dropped_posts_days",
+              "type": "number",
+              "value": 1
+            },
+            {
+              "id": "e6fa4ff1-89be-4605-a5bd-98a293e7289a",
+              "name": "keep_kept_posts_days",
+              "type": "number",
+              "value": 7
+            },
+            {
+              "id": "20974bda-570e-45bb-af3c-ea04985fa018",
+              "name": "keep_clusters_days",
+              "type": "number",
+              "value": 14
+            },
+            {
+              "id": "ebdafe3c-1f98-4c47-b1d4-ae19435a0e17",
+              "name": "keep_runs_days",
+              "type": "number",
+              "value": 14
+            },
+            {
+              "id": "cd7235ae-55e1-4b17-80ea-2a947dcc2f5f",
+              "name": "count_only",
+              "type": "boolean",
+              "value": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "73ed46bb-c7c6-4aa6-b4ee-dec18c2a86a9",
+      "name": "Build Targets",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        860
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: builds one Airtable filter per kind of row from the keep times in Store Settings. Keywords are never in this list.\nconst s = $('Store Settings').first().json;\nconst older = (days) => `IS_BEFORE(CREATED_TIME(), DATEADD(NOW(), -${Number(days)}, 'days'))`;\nconst base = { airtable_base: s.airtable_base, keywords_table: s.keywords_table, count_only: s.count_only === true };\nreturn [\n  { name: 'Findings, dropped posts', table: s.findings_table, keep_days: s.keep_dropped_posts_days, formula: `AND(NOT({kept}), ${older(s.keep_dropped_posts_days)})` },\n  { name: 'Findings, kept posts', table: s.findings_table, keep_days: s.keep_kept_posts_days, formula: `AND({kept}, ${older(s.keep_kept_posts_days)})` },\n  { name: 'Clusters', table: s.clusters_table, keep_days: s.keep_clusters_days, formula: older(s.keep_clusters_days) },\n  { name: 'Runs', table: s.runs_table, keep_days: s.keep_runs_days, formula: older(s.keep_runs_days) },\n].map(t => ({ json: { ...base, ...t } }));"
+      }
+    },
+    {
+      "id": "f1ae1f36-9996-495e-a30e-53705b493189",
+      "name": "Loop Over Kinds Of Rows",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        740,
+        860
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "9eea05d1-171f-48be-86db-cbe895a73bbe",
+      "name": "Clean One Table (via this workflow)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        960,
+        1000
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $workflow.id }}"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "79e2e61a-e46d-4334-a3e9-c5bcc84c44ce",
+      "name": "Build Clean Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1180,
+        860
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: one line per kind of row for the execution log (found, deleted).\nconst r = $input.all().map(i => i.json);\nconst found = r.reduce((n, x) => n + (x.found || 0), 0), deleted = r.reduce((n, x) => n + (x.deleted || 0), 0);\nreturn [{ json: { found, deleted, count_only: r.some(x => x.count_only), by_kind: r.map(x => `${x.name}: ${x.found} older than ${x.keep_days} days, ${x.deleted} deleted`) } }];"
+      }
+    },
+    {
+      "id": "bdc54307-193c-4c2c-a26d-b60ad618dac9",
+      "name": "When Called By This Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        1720
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "9f0c3bdc-d066-4fe2-93e1-451c3ecd3ebc",
+      "name": "Find Old Rows (Airtable)",
+      "notesInFlow": true,
+      "notes": "All pages of one table, 100 rows each.",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "position": [
+        300,
+        1720
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.airtable.com/v0/{{ $json.airtable_base }}/{{ $json.table }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "={{ $json.formula }}"
+            },
+            {
+              "name": "pageSize",
+              "value": "100"
+            },
+            {
+              "name": "fields[]",
+              "value": "run_id"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000,
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "offset",
+                    "value": "={{ $response.body.offset }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.offset }}",
+              "limitPagesFetched": true,
+              "maxRequests": 100,
+              "requestInterval": 250
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "57104eb6-73a3-47e7-8f56-76c644ae2618",
+      "name": "Build Delete Batches",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        1720
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: joins the pages of this one table and cuts the rows into deletes of 10 (Airtable's maximum per request).\nconst t = $('When Called By This Workflow').first().json;\nif (t.table === t.keywords_table) throw new Error('The Keywords table must never be cleaned');\nconst ids = [...new Set($input.all().flatMap(i => (i.json.records || []).map(r => r.id)))];\nconst out = [];\nfor (let i = 0; i < ids.length; i += 10) out.push({ json: { url: `https://api.airtable.com/v0/${t.airtable_base}/${t.table}?` + ids.slice(i, i + 10).map(x => 'records[]=' + x).join('&'), found: ids.length } });\nreturn out.length ? out : [{ json: { none: true, found: 0 } }];"
+      }
+    },
+    {
+      "id": "949b8232-bdf8-4888-ae31-832b0a76646a",
+      "name": "Delete Or Only Count?",
+      "notesInFlow": true,
+      "notes": "Old rows and count_only off: delete. Else: nothing deleted.",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        740,
+        1720
+      ],
+      "parameters": {
+        "looseTypeValidation": true,
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "7277ee0d-433e-444b-93e1-5b5b1ee36d57",
+              "leftValue": "={{ $('When Called By This Workflow').first().json.count_only !== true && $json.none !== true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "5520e27d-04c7-4964-849b-fbdbec751d37",
+      "name": "Delete Old Rows (Airtable)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000,
+      "position": [
+        960,
+        1600
+      ],
+      "parameters": {
+        "method": "DELETE",
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "options": {
+          "timeout": 30000,
+          "batching": {
+            "batch": {
+              "batchSize": 4,
+              "batchInterval": 1100
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "daf756bf-cacd-4cd1-a708-9dc0cebaff10",
+      "name": "Build Table Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1180,
+        1720
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: the small result this block returns to the loop: what kind of row, how many old, how many deleted.\nconst t = $('When Called By This Workflow').first().json;\nconst found = $('Build Delete Batches').first().json.found || 0;\nconst deleted = $('Delete Old Rows (Airtable)').isExecuted ? $('Delete Old Rows (Airtable)').all().reduce((n, i) => n + (i.json.records || []).filter(r => r.deleted).length, 0) : 0;\nreturn [{ json: { name: t.name, keep_days: t.keep_days, found, deleted, count_only: t.count_only === true } }];"
+      }
+    },
+    {
+      "id": "98dfe8fb-de3d-424f-80e7-25e4a6cdbd3c",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Claim Checks | Clean Old Records\n\nKeeps the Airtable base under the Free plan's limit of 1,000 records by deleting rows that no workflow reads any more. Deleted rows go to Airtable's trash. The story archive is in Postgres and is never touched.\n\n**Started by:** its own schedule, every day at 06:30 (before the 07:00 run), or by hand (Run Now By Hand). Publish it on production only; the base is shared with the local copy.\n**Keeps:** dropped posts 1 day, kept posts 7 days (the \"already reported\" check reads 7 days), Clusters 14 days and Runs 14 days (the bot's `reports` reads 14 days). Keywords are never cleaned. Change the days in Store Settings; `count_only` = true only counts.\n**Sections:** Choose What To Clean → Clean One Table (a block this workflow calls once per kind of row, case 1).\n**Alerts:** a failure goes to the central error handler (main chat). **Services called:** Airtable (Findings, Clusters, Runs) · this workflow's own block.",
+        "width": 1400,
+        "height": 340,
+        "color": 5
+      }
+    },
+    {
+      "id": "69f232bc-cd0c-42c5-bb07-d154e1ad9714",
+      "name": "Main Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        420
+      ],
+      "parameters": {
+        "content": "## Choose What To Clean\n\nTriggered by: Run Every Day At 06:30, or Run Now By Hand.\n\nWhat it does, step by step:\n1. Store Settings: the base, the tables, how many days each kind of row is kept, and count_only.\n2. Build Targets: one Airtable filter per kind of row (dropped posts, kept posts, Clusters, Runs), by the date each row was created.\n3. Loop Over Kinds Of Rows → Clean One Table (via this workflow): one call per kind, each in its own execution, so a big table never fills one run's memory.\n4. Build Clean Summary: found and deleted per kind, in the execution log.",
+        "width": 1400,
+        "height": 820,
+        "color": 4
+      }
+    },
+    {
+      "id": "f6f97777-6d86-498f-bc9f-b41db937896c",
+      "name": "Block Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        1300
+      ],
+      "parameters": {
+        "content": "## Clean One Table (block)\n\nTriggered by: Clean One Table (via this workflow), once per kind of row.\n\n1. Find Old Rows (Airtable) reads every matching row, page by page. 2. Build Delete Batches cuts them into deletes of 10 and refuses the Keywords table. 3. Delete Or Only Count? 4. Delete Old Rows (Airtable): at most 4 requests a second (Airtable allows 5), 3 tries each. 5. Build Table Result returns found and deleted to the loop.",
+        "width": 1400,
+        "height": 560,
+        "color": 6
+      }
+    }
+  ],
+  "connections": {
+    "Run Every Day At 06:30": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Now By Hand": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Build Targets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Targets": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Kinds Of Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Kinds Of Rows": {
+      "main": [
+        [
+          {
+            "node": "Build Clean Summary",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Clean One Table (via this workflow)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean One Table (via this workflow)": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Kinds Of Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When Called By This Workflow": {
+      "main": [
+        [
+          {
+            "node": "Find Old Rows (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Old Rows (Airtable)": {
+      "main": [
+        [
+          {
+            "node": "Build Delete Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Delete Batches": {
+      "main": [
+        [
+          {
+            "node": "Delete Or Only Count?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Or Only Count?": {
+      "main": [
+        [
+          {
+            "node": "Delete Old Rows (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Table Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Old Rows (Airtable)": {
+      "main": [
+        [
+          {
+            "node": "Build Table Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "timezone": "Europe/Rome",
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "arFuvGn0Zmo1mcZG"
+  },
+  "active": false
+}
