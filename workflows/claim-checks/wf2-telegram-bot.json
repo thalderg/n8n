@@ -1,0 +1,837 @@
+{
+  "id": "ccTelegramBot001",
+  "name": "Claim Checks | WF2 — Telegram Bot",
+  "nodes": [
+    {
+      "id": "6af03991-0e81-52a2-b221-7a97c04c581b",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Claim Checks | WF2 — Telegram Bot\n\nThe Claim Checks bot. Commands work with or without # (search, list, dig, update, reports, provide, provide-all, help). Everything else is a conversation: after dig or update the chat stays on that story, and a reasoning model with web search answers the follow-up questions. A conversation is kept only when the user says save, close or wrap up. Only chats in Store Settings (allowed_chats) are answered; their email gets the weekly PDFs.\n\n**Calls:** \"WF3 — Research Pipeline\" (search, without waiting), \"Bot Commands\" (the fixed commands), \"Story Chat\" (open, ask, save, forget).\n**Sections:** Telegram Input → Hand-Off → Reply.\n**Standalone:** yes, a main workflow with its own Telegram trigger (a dedicated bot: Telegram sends one bot's messages to one n8n only).\n**Alerts:** a failed step in \"Bot Commands\" or \"Story Chat\" alerts in the main chat (central handler), and the bot still answers \"something went wrong, try again\".\n**Services called:** Telegram (the Claim Checks bot) · Postgres (claim_checks.conversation_messages) · \"WF3 — Research Pipeline\", \"Bot Commands\", \"Story Chat\".",
+        "width": 2900,
+        "height": 280,
+        "color": 5
+      }
+    },
+    {
+      "id": "151be862-be1e-5292-a2de-e0bc7845efc1",
+      "name": "Input Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        360
+      ],
+      "parameters": {
+        "content": "## Telegram Input\n\nTriggered by: Receive Bot Message, every message to the Claim Checks bot.\n\nWhat it does, step by step:\n1. Store Settings: allowed chats with their email, the id of \"WF3\".\n2. Read Command reads the chat, the message and the message it replies to. The command is the first word, with or without a symbol in front (#search, @search, 2search and search are the same). save, close, wrap up, enough, done and forget take \"last 2\" or \"this one only\". Anything else is a question.\n3. Allowed Chat? ignores any chat that is not in allowed_chats.\n4. Route Command: help, search, a fixed command, or the conversation.",
+        "width": 1120,
+        "height": 1160,
+        "color": 4
+      }
+    },
+    {
+      "id": "17b223b3-f2be-50ff-8d43-d9eea441442d",
+      "name": "Commands Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1180,
+        360
+      ],
+      "parameters": {
+        "content": "## Hand-Off\n\nTriggered by: Route Command, one row per route.\n\nWhat it does, step by step:\n1. help: Send How-To sends the how-to message (Telegram); Pin How-To pins it.\n2. search: Build Run Input → Start Research Run (via WF3), without waiting → Reply Started. \"WF3\" sends the summary and the PDF link here when done.\n3. a fixed command: Answer Command (via Bot Commands). When dig or update shows one story, Story Opened? → Open Story Chat (via Story Chat) opens the conversation on it (update also starts \"Follow Up Story\").\n4. a question, save or forget: Talk In Story Chat (via Story Chat).",
+        "width": 760,
+        "height": 1160,
+        "color": 6
+      }
+    },
+    {
+      "id": "d90bb433-290d-5fec-872a-a329d456f294",
+      "name": "Reply Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2000,
+        360
+      ],
+      "parameters": {
+        "content": "## Reply (closing step: send to Telegram)\n\nTriggered by: every row of Hand-Off except help.\n\nWhat it does, step by step:\n1. Reformat For Telegram turns the text into Telegram HTML and cuts it into messages under 3,800 characters (a failed step becomes \"something went wrong, try again\").\n2. Send Reply (Telegram); if Telegram refuses the HTML, Send Plain Reply sends the same text without tags.\n3. Link Reply To Conversation (Postgres) records which conversation each sent message belongs to, so replying to it later works.",
+        "width": 900,
+        "height": 1160,
+        "color": 7
+      }
+    },
+    {
+      "id": "3056566c-6bae-5533-8b0f-33aa453fa4d5",
+      "name": "Receive Bot Message",
+      "webhookId": "cc-telegram-bot-0001",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        700
+      ],
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Claim Checks"
+        }
+      }
+    },
+    {
+      "id": "bad677b7-9ed5-593a-99e8-ea7c07020bd4",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        280,
+        700
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bd155b69-807e-5fbb-b8d6-bfb664dc74c4",
+              "name": "allowed_chats",
+              "type": "object",
+              "value": "={{ { \"YOUR_TELEGRAM_CHAT_ID\": \"you@example.com\" } }}"
+            },
+            {
+              "id": "41f5e4e7-ea48-5ff4-8e38-74092f462b68",
+              "name": "wf3_id",
+              "type": "string",
+              "value": "ccResearchPipe01"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "05c7a373-0a51-5639-8dff-66a25df06cbd",
+      "name": "Read Command",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        700
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const s = $('Store Settings').first().json;\nconst m = $('Receive Bot Message').first().json.message || {};\nconst chat_id = String((m.chat || {}).id || '');\nconst message_id = String(m.message_id || '');\nconst reply_to_id = String((m.reply_to_message || {}).message_id || '');\nconst text = String(m.text || '').trim();\nconst email = (s.allowed_chats || {})[chat_id] || '';\nlet command = 'question', topic = '', mode = '7days', number = null;\n// list dates -> from/to (YYYY-MM-DD); dig / update -> a story number or search words; save / forget -> how many exchanges.\nlet from = '', to = '', range_label = '', range_error = '', dig_number = '', dig_query = '', question = '', count = '', end_conversation = false;\nconst STOP = new Set(['the', 'a', 'an', 'about', 'story', 'that', 'what', 'with', 'of', 'to', 'for', 'did', 'was', 'is', 'and', 'in', 'on', 'made', 'by', 'this', 'it', 'from', 'happened', 'news']);\nconst wordsOf = (t) => [...new Set(t.toLowerCase().replace(/[^\\p{L}\\p{N}\\s-]/gu, ' ').split(/\\s+/).filter(w => w.length > 1 && !STOP.has(w)))].join(' or ');\nconst today = $now.setZone('Europe/Rome').toISODate();\nconst MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];\nconst iso = (d) => d.toISOString().slice(0, 10);\nconst day = (y, mo, d) => new Date(Date.UTC(y, mo - 1, d));\nconst fmt = (d) => d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()][0].toUpperCase() + MONTHS[d.getUTCMonth()].slice(1) + ' ' + d.getUTCFullYear();\nconst readPart = (p) => { // \"13\", \"13 October\", \"October 2026\", \"September 26\", \"13 Oct 2026\"\n  const words = p.toLowerCase().replace(/[,.]/g, ' ').split(/\\s+/).filter(Boolean);\n  let month = null, d = null, y = null, monthAt = -1;\n  words.forEach((w, i) => { const k = MONTHS.findIndex(n => w.length >= 3 && n.startsWith(w)); if (k >= 0 && month === null) { month = k + 1; monthAt = i; } });\n  words.forEach((w, i) => { if (!/^\\d+$/.test(w)) return; const n = Number(w);\n    if (w.length === 4) y = n;\n    else if (month !== null && i === monthAt + 1 && w.length === 2 && !words.slice(0, monthAt).some(x => /^\\d+$/.test(x))) y = 2000 + n; // \"September 26\" = September 2026\n    else if (n >= 1 && n <= 31 && d === null) d = n; });\n  return { month, d, y };\n};\nconst readRange = (t) => {\n  const thisYear = Number(today.slice(0, 4));\n  const now = day(thisYear, Number(today.slice(5, 7)), Number(today.slice(8, 10)));\n  t = t.trim().toLowerCase();\n  if (!t) return { a: new Date(now - 6 * 864e5), b: now };\n  let mm;\n  if ((mm = t.match(/^(?:last|past)\\s+(\\d+)\\s+(day|days|week|weeks)$/))) { const n = Number(mm[1]) * (mm[2].startsWith('week') ? 7 : 1); return { a: new Date(now - (n - 1) * 864e5), b: now }; }\n  if (t === 'this week') { const back = (now.getUTCDay() + 6) % 7; return { a: new Date(now - back * 864e5), b: now }; }\n  if (t === 'last week') { const back = (now.getUTCDay() + 6) % 7 + 7; const a = new Date(now - back * 864e5); return { a, b: new Date(+a + 6 * 864e5) }; }\n  const parts = t.split(/\\s*(?:\\s-\\s|-|–|—|\\bto\\b|\\buntil\\b)\\s*/).filter(Boolean);\n  if (parts.length < 1 || parts.length > 2) return null;\n  const p1 = readPart(parts[0]), p2 = parts[1] ? readPart(parts[1]) : null;\n  if (!p2) {\n    if (p1.month === null) return null;\n    const y = p1.y || thisYear;\n    if (p1.d === null) return { a: day(y, p1.month, 1), b: day(y, p1.month + 1, 0) };\n    return { a: day(y, p1.month, p1.d), b: day(y, p1.month, p1.d) };\n  }\n  const m2 = p2.month, y2 = p2.y || p1.y || thisYear;\n  const m1 = p1.month || m2, y1 = p1.y || (p1.month && m2 && p1.month > m2 ? y2 - 1 : y2);\n  if (m1 === null || m2 === null) return null;\n  const a = day(y1, m1, p1.d || 1), b = p2.d ? day(y2, m2, p2.d) : day(y2, m2 + 1, 0);\n  return { a, b };\n};\n// The command is the first word, with or without a symbol or digit in front: \"#search\", \"@search\", \"2search\", \"/search\" and \"search\" are the same.\nconst head = text.replace(/^[^\\p{L}]+/u, '');\nconst word = (head.match(/^\\p{L}[\\p{L}_-]*/u) || [''])[0].toLowerCase();\nconst rest = head.slice(word.length).replace(/^[\\s:,.-]+/, '').trim();\nconst nWords = text.split(/\\s+/).filter(Boolean).length;\nconst NUM = { one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10 };\n// \"last 2\", \"last two messages\" -> 2; \"this one only\", \"just this\", \"last message\" -> 1; nothing -> the whole conversation.\nconst readCount = (t) => { const x = t.toLowerCase(); const mm = x.match(/\\blast\\s+(\\d+|one|two|three|four|five|six|seven|eight|nine|ten)\\b/);\n  if (mm) return String(NUM[mm[1]] || Number(mm[1]));\n  return /\\b(this one|only|just this|this message|that one|last message|last answer|last exchange|last question)\\b/.test(x) ? '1' : ''; };\nif (/^\\d{1,2}$/.test(text)) { command = 'number'; number = Number(text); }\nelse if (word === 'help' || (word === 'start' && nWords === 1)) command = 'help';\nelse if (word === 'search') {\n  command = 'search'; topic = rest;\n  if (/^(today|last day)\\b/i.test(topic) || /\\b(today|last day)$/i.test(topic)) {\n    mode = 'today'; topic = topic.replace(/^(today|last day)\\s*/i, '').replace(/\\s*(today|last day)$/i, '').trim();\n  }\n}\nelse if (word === 'reports') command = 'reports';\nelse if (word === 'list') {\n  const r = readRange(rest);\n  // A sentence that starts with \"list\" but has no dates in it is a question, not the list command.\n  if (!r && nWords > 4) command = 'question';\n  else {\n    command = 'list';\n    if (!r || isNaN(r.a) || isNaN(r.b) || r.b < r.a) range_error = 'I could not read those dates. Examples: list, list 13 October - 21 October 2026, list September 2026, list last 2 weeks.';\n    else if ((r.b - r.a) / 864e5 + 1 > 31) range_error = 'That is more than a month. Ask for one month at most, e.g. list September 2026.';\n    else { from = iso(r.a); to = iso(r.b); range_label = from === to ? fmt(r.a) : fmt(r.a).replace(/ \\d{4}$/, r.a.getUTCFullYear() === r.b.getUTCFullYear() ? '' : ' ' + r.a.getUTCFullYear()) + ' to ' + fmt(r.b); }\n    if (range_error) { from = '1900-01-01'; to = '1900-01-01'; }\n  }\n}\nelse if (word === 'dig') {\n  command = 'dig'; topic = rest;\n  if (/^#?\\d+$/.test(topic)) dig_number = topic.replace('#', ''); else dig_query = wordsOf(topic);\n}\nelse if (word === 'update') {\n  // \"update 214 did the patient survive?\" or \"update the AI virus story, did the patient survive?\"\n  command = 'update'; topic = rest;\n  const mm = topic.match(/^#?(\\d+)\\b\\s*(.*)$/);\n  if (mm) { dig_number = mm[1]; question = mm[2].trim(); } else { dig_query = wordsOf(topic); question = topic; }\n}\nelse if (word === 'provide-all' || word === 'provide_all' || word === 'provideall' || (word === 'provide' && /^all\\b/i.test(rest))) command = 'provide_all';\nelse if (word === 'provide') command = 'provide';\nelse if (['save', 'close', 'wrap', 'wrapup', 'wrap-up', 'enough', 'done'].includes(word) && nWords <= 8) {\n  command = 'save'; count = readCount(rest); end_conversation = word !== 'save';\n}\nelse if (word === 'forget' && nWords <= 8) { command = 'forget'; count = readCount(rest); }\n// Where Route Command sends it: help, search (with a topic), a fixed command (\"Bot Commands\"), or the conversation (\"Story Chat\").\nconst route = command === 'help' ? 'help' : command === 'search' ? (topic ? 'search' : 'command') : ['save', 'forget', 'question'].includes(command) ? 'chat' : 'command';\nconst fn = command === 'save' ? 'save' : command === 'forget' ? 'forget' : 'ask';\nreturn [{ json: { chat_id, message_id, reply_to_id, email, text, command, route, function: fn, topic, mode, number, from, to, range_label, range_error,\n  dig_number, dig_query, question, count, end_conversation, allowed: !!email && !!text } }];\n"
+      }
+    },
+    {
+      "id": "1e8b95ff-e55b-5ebe-a6ac-8f4f621f99cd",
+      "name": "Allowed Chat?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        700
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "75423289-c04d-5cf8-b1ef-32e355be23fe",
+              "leftValue": "={{ $json.allowed }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "e1f2db47-46f3-5200-b713-a7223b136444",
+      "name": "Route Command",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        940,
+        700
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "rc-help",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "help",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "help"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "rc-search",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "search",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "search"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "rc-command",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "command",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "command"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "rc-chat",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "chat",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "chat"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      }
+    },
+    {
+      "id": "21f3553f-adf6-59d3-9971-5e4c4f5224fd",
+      "name": "Send How-To",
+      "webhookId": "ce98f4c9-234c-4711-a8af-9801188b5dba",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1240,
+        700
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Read Command').first().json.chat_id }}",
+        "text": "<b>Claim Checks — how to use me</b>\nI search Reddit, Hacker News and X for a topic (Google Trends adds what people search for right now), check every claim against official and reliable sources, explain each story, and keep every story in an archive you can search later. Commands work with or without # in front.\n\n1. <b>Start a search:</b> <code>search &lt;topic&gt;</code> looks at the last 7 days; add \"today\" for the last 24 hours. Example: <code>search AI coding agents today</code>\n2. <b>Wait about 10 minutes:</b> the summary arrives here with a link to the PDF; 7-day searches also email the PDF.\n3. <b>News by date:</b> <code>list</code> shows the stories of the last 7 days. Add dates, one month at most: <code>list 13 October - 21 October 2026</code>, <code>list September 2026</code>, <code>list last 2 weeks</code>.\n4. <b>One story in full:</b> <code>dig 214</code> or <code>dig the AI virus that kills bacteria</code>.\n5. <b>What happened since:</b> <code>update 214 did the patient survive?</code> looks for reliable news after the story.\n6. <b>Talk about it:</b> after dig or update just ask, e.g. \"how did they find out?\" or \"what does it mean for me?\". I search the web and read the sources.\n7. <b>Keep it or not:</b> <code>save</code> keeps a summary of the conversation (dig and update use it later); <code>close</code> or <code>enough</code> saves and ends it; <code>save last 2</code> or <code>save this one only</code> keeps just part. <code>forget</code> or <code>forget last message</code> drops it. A conversation you never save is not remembered.\n8. <b>Older conversations:</b> reply to any of their messages with <code>save</code>, <code>forget</code> or a new question.\n9. <b>Reports:</b> <code>reports</code> lists the reports of the last 14 days; reply with a number for its summary. <code>provide</code> gives the latest one, <code>provide-all</code> the full briefing of the one you opened last.\n10. <b>This message again:</b> <code>help</code>\n\nLabels: ✅ <b>Corroborated</b> (2+ independent sources), 🔹 <b>Single source</b> (one official or reliable source so far), ⚠️ <b>Disputed</b> (a trustworthy source says otherwise), ❔ <b>Unverified</b> (nothing trustworthy found), 💬 <b>Opinion</b> (a view, not a checkable fact).",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Claim Checks"
+        }
+      }
+    },
+    {
+      "id": "9fa04a1b-d2ce-51e8-bca7-00d974714ebb",
+      "name": "Pin How-To",
+      "webhookId": "96ca23c5-e88c-47ea-bcda-4130cee3885b",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1460,
+        700
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "pinChatMessage",
+        "chatId": "={{ $('Read Command').first().json.chat_id }}",
+        "messageId": "={{ $json.result.message_id }}",
+        "additionalFields": {
+          "disable_notification": true
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Claim Checks"
+        }
+      }
+    },
+    {
+      "id": "e0f33aa7-57ac-5d1d-9218-66112aa7d6f2",
+      "name": "Build Run Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1240,
+        900
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const c = $('Read Command').first().json;\nconst stamp = $now.setZone('Europe/Rome').toFormat('yyyyLLdd-HHmmss');\nreturn [{ json: { run_id: 'CC-' + stamp + '-' + Math.random().toString(36).slice(2, 6).toUpperCase(), keywords: [c.topic], mode: c.mode,\n  recipient: c.email, requested_by: 'telegram', chat_id: c.chat_id, check_duplicates: false } }];"
+      }
+    },
+    {
+      "id": "c002dac4-17ef-5c9d-a6ce-c78d6f2b15ed",
+      "name": "Start Research Run (via WF3)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1460,
+        900
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ccResearchPipe01",
+          "cachedResultName": "Claim Checks | WF3 — Research Pipeline"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      }
+    },
+    {
+      "id": "90be5dda-8a38-5a87-b00e-17d6c00f7716",
+      "name": "Reply Started",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1680,
+        900
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a08332e2-07d9-5581-92cc-60980b7323a1",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Read Command').first().json.chat_id }}"
+            },
+            {
+              "id": "dbf41187-ed77-5b61-82ec-cc00da427cca",
+              "name": "text",
+              "type": "string",
+              "value": "={{ 'Started ' + $('Build Run Input').first().json.run_id + ' on \"' + $('Read Command').first().json.topic + '\" (' + ($('Read Command').first().json.mode === 'today' ? 'last 24 hours' : 'last 7 days') + '). The summary and the PDF link come here in about 10 minutes' + ($('Read Command').first().json.mode === 'today' ? '.' : '; the PDF also goes to ' + $('Read Command').first().json.email + '.') }}"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "0247174e-c9c9-5cbb-8627-3b68dff4b962",
+      "name": "Reformat For Telegram",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2060,
+        700
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Markdown-ish text -> Telegram HTML, split between lines into messages under 3,800 characters.\n// Escape first; every tag opens and closes on its own line, so a cut never leaves a tag open.\nconst LIMIT = 3800;\nconst esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst FLAG = { 'Corroborated': '✅', 'Single source': '🔹', 'Disputed': '⚠️', 'Unverified': '❔', 'Opinion': '💬', 'Not checked': '⏸️' };\nconst linkify = (s) => esc(s).replace(/(https?:\\/\\/[^\\s<]+)/g, (u) => '<a href=\"' + u.replace(/\"/g, '&quot;') + '\">' + u.replace(/^https?:\\/\\/(www\\.)?/, '').slice(0, 60) + '</a>');\nconst out = [];\nconst rc = $('Read Command').first().json;\nfor (const it of $input.all()) {\n  // A failed hand-off arrives without text: the user still gets an answer (the sub-workflow has already alerted).\n  const chat_id = it.json.chat_id || rc.chat_id;\n  const conversation_id = String(it.json.conversation_id || ''), exchange_no = String(it.json.exchange_no ?? '');\n  const lines = String(it.json.text || 'Something went wrong on my side. Try again in a minute.').replace(/\\r\\n?/g, '\\n').split('\\n').map((l) => {\n    let m;\n    if ((m = l.match(/^###\\s+(.*)$/))) return '<b>' + esc(m[1]) + '</b>';\n    if ((m = l.match(/^##\\s+(.*)$/))) return '<b>' + esc(m[1].toUpperCase()) + '</b>';\n    if ((m = l.match(/^\\[(Corroborated|Single source|Disputed|Unverified|Opinion|Not checked)(?::\\s*([^\\]]+))?\\]\\s*(.*)$/))) return (FLAG[m[1]] || '▪️') + ' <b>' + esc(m[1]) + (m[2] ? ': ' + esc(m[2]) : '') + '</b> ' + linkify(m[3]);\n    if ((m = l.match(/^\\s*[-*]\\s+(.*)$/))) return '▫️ ' + linkify(m[1]);\n    return linkify(l);\n  });\n  const chunks = []; let cur = [];\n  for (const l of lines) {\n    if ((cur.join('\\n').length + l.length + 1) > LIMIT && cur.length) { chunks.push(cur.join('\\n')); cur = []; }\n    cur.push(l.length > LIMIT ? l.slice(0, LIMIT - 20) + '…' : l);\n  }\n  if (cur.length) chunks.push(cur.join('\\n'));\n  chunks.forEach((c, i) => {\n    const html = (chunks.length > 1 ? '<i>(' + (i + 1) + '/' + chunks.length + ')</i>\\n' : '') + c.replace(/\\n{3,}/g, '\\n\\n').trim();\n    out.push({ json: { chat_id, conversation_id, exchange_no, telegram_text: html, telegram_plain: html.replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '\"').replace(/&amp;/g, '&') } });\n  });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "c0fee549-2eff-5c0f-9e81-961c20b4d091",
+      "name": "Send Reply",
+      "webhookId": "e46804b1-3218-4e47-a3dd-093e64874cce",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "onError": "continueErrorOutput",
+      "position": [
+        2280,
+        700
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.telegram_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Claim Checks"
+        }
+      }
+    },
+    {
+      "id": "45728178-fd80-51c0-8fe1-17d313310112",
+      "name": "Send Plain Reply",
+      "webhookId": "a35a55b7-d109-4e38-9696-b24a82411282",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        2500,
+        900
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chat_id }}",
+        "text": "={{ $json.telegram_plain }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "disable_web_page_preview": true
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Claim Checks"
+        }
+      }
+    },
+    {
+      "id": "w2-cmd",
+      "name": "Answer Command (via Bot Commands)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1240,
+        1100
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "d3M6MGHnlxvPBk9j",
+          "cachedResultName": "Claim Checks | Bot Commands"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "w2-opened",
+      "name": "Story Opened?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1460,
+        1100
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "w2-so",
+              "leftValue": "={{ $json.function === 'open' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "w2-open",
+      "name": "Open Story Chat (via Story Chat)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1680,
+        1100
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "3B9Il26esYH8IJEP",
+          "cachedResultName": "Claim Checks | Story Chat"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "w2-talk",
+      "name": "Talk In Story Chat (via Story Chat)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1240,
+        1300
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "3B9Il26esYH8IJEP",
+          "cachedResultName": "Claim Checks | Story Chat"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "w2-link",
+      "name": "Link Reply To Conversation",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "onError": "continueRegularOutput",
+      "position": [
+        2720,
+        700
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Remembers which conversation each sent message belongs to, so replying to it later saves, forgets or continues that conversation.\nINSERT INTO claim_checks.conversation_messages (chat_id, telegram_message_id, conversation_id, exchange_no)\nSELECT $1, NULLIF($2, '')::bigint, NULLIF($3, '')::int, coalesce(NULLIF($4, '')::int, 0) WHERE NULLIF($2, '') IS NOT NULL AND NULLIF($3, '') IS NOT NULL\nON CONFLICT (chat_id, telegram_message_id) DO NOTHING;",
+        "options": {
+          "queryReplacement": "={{ [String($('Reformat For Telegram').item.json.chat_id), String(($json.result || {}).message_id || ''), String($('Reformat For Telegram').item.json.conversation_id || ''), String($('Reformat For Telegram').item.json.exchange_no || '0')] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Receive Bot Message": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Read Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Command": {
+      "main": [
+        [
+          {
+            "node": "Allowed Chat?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Allowed Chat?": {
+      "main": [
+        [
+          {
+            "node": "Route Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send How-To": {
+      "main": [
+        [
+          {
+            "node": "Pin How-To",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Run Input": {
+      "main": [
+        [
+          {
+            "node": "Start Research Run (via WF3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Research Run (via WF3)": {
+      "main": [
+        [
+          {
+            "node": "Reply Started",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply Started": {
+      "main": [
+        [
+          {
+            "node": "Reformat For Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reformat For Telegram": {
+      "main": [
+        [
+          {
+            "node": "Send Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Reply": {
+      "main": [
+        [
+          {
+            "node": "Link Reply To Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Plain Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Command": {
+      "main": [
+        [
+          {
+            "node": "Send How-To",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Run Input",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Answer Command (via Bot Commands)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Talk In Story Chat (via Story Chat)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer Command (via Bot Commands)": {
+      "main": [
+        [
+          {
+            "node": "Story Opened?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Story Opened?": {
+      "main": [
+        [
+          {
+            "node": "Open Story Chat (via Story Chat)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reformat For Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open Story Chat (via Story Chat)": {
+      "main": [
+        [
+          {
+            "node": "Reformat For Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Talk In Story Chat (via Story Chat)": {
+      "main": [
+        [
+          {
+            "node": "Reformat For Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Plain Reply": {
+      "main": [
+        [
+          {
+            "node": "Link Reply To Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "timezone": "Europe/Rome"
+  },
+  "active": false
+}

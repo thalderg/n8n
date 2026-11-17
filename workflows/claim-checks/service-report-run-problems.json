@@ -1,0 +1,134 @@
+{
+  "id": "lghXfI9eF1NOXLko",
+  "name": "Claim Checks | Report Run Problems",
+  "nodes": [
+    {
+      "id": "rp-title",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Claim Checks | Report Run Problems\n\nTurns everything that failed during one Claim Checks run (sources that could not be searched, claims that could not be checked) into ONE alert in your main chat, instead of one alert per failure.\n\n**Called by:** \"WF3 — Research Pipeline\", once at the end of every run (WF3 does not wait for it). Locked to \"WF3\".\n**How the alert is sent:** this workflow stops on purpose with the list as its error message; its error setting points to \"Error Handling | Main — Error Handler\", which sends it to the main chat (level P3, from the node name).\n**Services called:** none directly; the central error handler sends the alert to the main chat.",
+        "width": 900,
+        "height": 300,
+        "color": 5
+      }
+    },
+    {
+      "id": "rp-note",
+      "name": "Report Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        380
+      ],
+      "parameters": {
+        "content": "## Report Problems\n\nTriggered by: \"WF3\" (When Called By Pipeline) with run_id, keywords and problems.\n\nWhat it does, step by step:\n1. Any Problems? checks the list; an empty list ends here quietly.\n2. Run Problems P3 stops with one message listing every problem; the central error handler sends it to the main chat.",
+        "width": 900,
+        "height": 560,
+        "color": 3
+      }
+    },
+    {
+      "id": "rp-trigger",
+      "name": "When Called By Pipeline",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        680
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "rp-if",
+      "name": "Any Problems?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        280,
+        680
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "rp-c1",
+              "leftValue": "={{ [].concat($json.problems || []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "rp-stop",
+      "name": "Run Problems P3",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        500,
+        680
+      ],
+      "parameters": {
+        "errorType": "errorMessage",
+        "errorMessage": "={{ 'Claim Checks run ' + $json.run_id + ' (' + [].concat($json.keywords || []).join(', ') + ') finished with ' + [].concat($json.problems).length + ' problem(s): ' + [].concat($json.problems).join(' · ') }}"
+      }
+    }
+  ],
+  "connections": {
+    "When Called By Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Any Problems?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Problems?": {
+      "main": [
+        [
+          {
+            "node": "Run Problems P3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "timezone": "Europe/Rome",
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "ccResearchPipe01"
+  },
+  "active": false
+}

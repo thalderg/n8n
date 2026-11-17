@@ -1,0 +1,568 @@
+{
+  "id": "ccFollowUpStor01",
+  "name": "Claim Checks | Follow Up Story",
+  "nodes": [
+    {
+      "id": "fu-title",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "width": 3160,
+        "height": 300,
+        "color": 5,
+        "content": "# Claim Checks | Follow Up Story\n\nAnswers update in the Claim Checks bot: for ONE archived story it looks for official and reliable news published after the story's date (or after its last update), says what changed, saves the update in the archive and replies in the chat.\n\n**Called by:** \"Story Chat\" when the bot opens a story conversation for update (without waiting, so the bot answers \"looking\" at once). Locked to \"Story Chat\". Errors go to the central error handler (main chat).\n**Sections:** Entry → Search And Read → Judge, Save And Reply.\n**Services called:** Postgres (claim_checks.stories, story_updates) · Serper (Google results after the date) · Venice (GLM-5.3 Flash: web search; Kimi K2.6: update writer) · Bright Data (page reads) · Telegram (the Claim Checks bot) · Postgres (claim_checks.conversation_exchanges, conversation_messages) · \"Ask Venice\" (every model step; backup model GPT-6 Luna)."
+      }
+    },
+    {
+      "id": "fu-entry-note",
+      "name": "Entry Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        380
+      ],
+      "parameters": {
+        "width": 680,
+        "height": 560,
+        "color": 4,
+        "content": "## Entry\n\nTriggered by: \"Story Chat\" (When Called By Bot) with story_number, question, chat_id and conversation_id.\n\nWhat it does, step by step:\n1. Store Settings adds the source lists and caps.\n2. Read Story From Archive (Postgres) gets the story, every link it already has, and the date to search from."
+      }
+    },
+    {
+      "id": "fu-search-note",
+      "name": "Search Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        740,
+        380
+      ],
+      "parameters": {
+        "width": 1180,
+        "height": 560,
+        "color": 6,
+        "content": "## Search And Read\n\nTriggered by: runs inline after Entry.\n\nWhat it does, step by step:\n1. Search Google Since Story (Serper, after: the date) and Search Web Since Story (Venice web search) look for news on the story.\n2. Build Candidates keeps up to 8 new pages (no platforms, no link the story already has).\n3. Read Pages (Bright Data) reads them as HTML; Build Writer Input keeps the part about the story and finds each page's publication date (page metadata, else the address, else Google's date)."
+      }
+    },
+    {
+      "id": "fu-judge-note",
+      "name": "Judge Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1980,
+        380
+      ],
+      "parameters": {
+        "width": 1180,
+        "height": 560,
+        "color": 3,
+        "content": "## Judge, Save And Reply\n\nTriggered by: runs inline after Search And Read.\n\nWhat it does, step by step:\n1. Write Update (via Ask Venice, Kimi K2.6): what is new, the answer to the question, the key points now, a tier for each page.\n2. Build Update Reply counts it as new only with a relevant official or reliable page; every source is shown and saved with its date.\n3. Save Update To Archive (Postgres story_updates) → Send Update To Chat (Telegram) → Add Update To Conversation (Postgres): the update becomes part of the story conversation, so the user can ask about it and save it."
+      }
+    },
+    {
+      "id": "when-called-by-bot",
+      "name": "When Called By Bot",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        700
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "store-settings",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        280,
+        700
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0c792d05-5a04-5ae7-847e-8a16fe4358fe",
+              "name": "reliable_outlets",
+              "type": "array",
+              "value": "[\"reuters.com\", \"apnews.com\", \"bbc.com\", \"bbc.co.uk\", \"theguardian.com\", \"nytimes.com\", \"wsj.com\", \"ft.com\", \"bloomberg.com\", \"economist.com\", \"washingtonpost.com\", \"cnbc.com\", \"cnn.com\", \"npr.org\", \"axios.com\", \"theverge.com\", \"techcrunch.com\", \"arstechnica.com\", \"wired.com\", \"engadget.com\", \"zdnet.com\", \"venturebeat.com\", \"technologyreview.com\", \"theinformation.com\", \"404media.co\", \"nature.com\", \"science.org\", \"spectrum.ieee.org\", \"lemonde.fr\", \"elpais.com\", \"spiegel.de\"]"
+            },
+            {
+              "id": "d0f5c76c-efd4-5ab1-80b1-d5faa6f528b1",
+              "name": "platform_domains",
+              "type": "array",
+              "value": "[\"reddit.com\", \"redd.it\", \"news.ycombinator.com\", \"x.com\", \"twitter.com\", \"facebook.com\", \"fb.com\", \"instagram.com\"]"
+            },
+            {
+              "id": "fu-max",
+              "name": "max_candidates",
+              "type": "number",
+              "value": 8
+            },
+            {
+              "id": "fu-zone",
+              "name": "unlocker_zone",
+              "type": "string",
+              "value": "mcp_unlocker"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "read-story-from-archive",
+      "name": "Read Story From Archive",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        500,
+        700
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT s.story_number, s.found_on::text AS found_on, s.title, s.label, s.claim, s.explainer, s.search_terms,\n  concat_ws(E'\\n', s.official_links, s.supporting_links, s.contradicting_links,\n    (SELECT string_agg(u.links, E'\\n') FROM claim_checks.story_updates u WHERE u.story_number = s.story_number)) AS known_links,\n  coalesce((SELECT max(u.asked_on AT TIME ZONE 'Europe/Rome')::date::text FROM claim_checks.story_updates u WHERE u.story_number = s.story_number), s.found_on::text) AS since\nFROM claim_checks.stories s WHERE s.story_number = $1::int;",
+        "options": {
+          "queryReplacement": "={{ [String($json.story_number)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "search-google-since-story-serper",
+      "name": "Search Google Since Story (Serper)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        800,
+        700
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ q: $json.title + ' after:' + $json.since, num: 10 }) }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Serper"
+        }
+      }
+    },
+    {
+      "id": "search-web-since-story-venice",
+      "name": "Search Web Since Story (Venice)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "executeOnce": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        1020,
+        700
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.venice.ai/api/v1/chat/completions",
+        "options": {
+          "timeout": 90000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'z-ai-glm-5-3-flash', temperature: 0, max_tokens: 700, messages: [{ role: 'system', content: 'Answer only from the web search results of this request. List official, primary and reliable sources published after the given date about this story: one line per source, the URL first, then what the page adds in at most 20 words. If nothing about it was published after that date, answer exactly: NOT FOUND.' }, { role: 'user', content: 'Story: ' + $('Read Story From Archive').first().json.claim + '\\nPublished after: ' + $('Read Story From Archive').first().json.since + ($('Store Settings').first().json.question ? '\\nQuestion: ' + $('Store Settings').first().json.question : '') }], venice_parameters: { enable_web_search: 'on', enable_web_citations: true } }) }}"
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "venice api"
+        }
+      }
+    },
+    {
+      "id": "build-candidates",
+      "name": "Build Candidates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1240,
+        700
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// New pages only: Google results after the date and Venice's cited sources, minus platforms and every link the story already has.\nconst s = $('Store Settings').first().json;\nconst story = $('Read Story From Archive').first().json;\nconst host = (u) => { const m = String(u || '').match(/^https?:\\/\\/([^\\/?#:]+)/i); return m ? m[1].replace(/^www\\./, '').toLowerCase() : ''; };\nconst known = new Set(String(story.known_links || '').split('\\n').map(l => l.trim().split(' ')[0]).filter(Boolean));\nconst seen = new Map();\nconst add = (url, found_by, gdate) => {\n  if (!url || !/^https?:/i.test(url)) return;\n  const clean = url.split('#')[0].replace(/[.,;]+$/, ''); const h = host(clean);\n  if (!h || s.platform_domains.some(p => h === p || h.endsWith('.' + p)) || known.has(clean) || seen.has(clean)) return;\n  seen.set(clean, { url: clean, domain: h, found_by, gdate: gdate || '' });\n};\nconst serper = $('Search Google Since Story (Serper)').all().flatMap(i => (i.json.organic || []).map(r => ({ link: r.link, date: r.date || '' })));\nconst v = $('Search Web Since Story (Venice)').first().json || {};\nconst vurls = ((v.venice_parameters || {}).web_search_citations || []).map(c => c.url)\n  .concat(((((v.choices || [])[0] || {}).message || {}).content || '').match(/https?:\\/\\/[^\\s)\\]>\"']+/g) || []);\nfor (let i = 0; i < Math.max(serper.length, vurls.length); i++) { if (serper[i]) add(serper[i].link, 'serper', serper[i].date); add(vurls[i], 'venice'); }\nconst list = [...seen.values()].slice(0, s.max_candidates);\n// One item per page to read; an empty run still passes one item so the reply is sent.\nreturn list.length ? list.map(c => ({ json: c })) : [{ json: { url: '', domain: '', found_by: 'none' } }];"
+      }
+    },
+    {
+      "id": "read-pages-bright-data",
+      "name": "Read Pages (Bright Data)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1460,
+        700
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brightdata.com/request",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "text",
+              "outputPropertyName": "body"
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ zone: $('Store Settings').first().json.unlocker_zone, url: $json.url || 'https://example.com', format: 'raw' }) }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Bright Data Unlocker"
+        }
+      }
+    },
+    {
+      "id": "build-writer-input",
+      "name": "Build Writer Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        700
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Publication date of a page: its metadata, then its address, then Google's date. No date found = unknown (never a guess from the text).\nconst MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };\nconst iso = (y, m, d) => { const t = new Date(Date.UTC(+y, +m - 1, +d)); return +y > 1990 && t.getUTCMonth() === +m - 1 && t.getUTCDate() === +d && t.getTime() < Date.now() + 2 * 864e5 ? t.toISOString().slice(0, 10) : ''; };\nconst dateIn = (s, rel) => { s = String(s || ''); let m;\n  if ((m = s.match(/\\b(20\\d\\d)[-\\/.](\\d{1,2})[-\\/.](\\d{1,2})/))) return iso(m[1], m[2], m[3]);\n  if ((m = s.match(/\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?,?\\s+(20\\d\\d)\\b/i))) return iso(m[3], MON[m[2].toLowerCase()], m[1]);\n  if ((m = s.match(/\\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(20\\d\\d)\\b/i))) return iso(m[3], MON[m[1].toLowerCase()], m[2]);\n  if (rel && (m = s.match(/\\b(\\d+)\\s+(minute|hour|day|week|month)s?\\s+ago\\b/i))) return new Date(Date.now() - m[1] * { minute: 6e4, hour: 36e5, day: 864e5, week: 6048e5, month: 2592e6 }[m[2].toLowerCase()]).toISOString().slice(0, 10);\n  return ''; };\nconst META = /(?:article:published_time|og:published_time|datePublished|date_published|publish[-_]?date|citation_publication_date|citation_date|dc\\.date(?:\\.issued)?|parsely-pub-date|sailthru\\.date|pubdate)[\"']?\\s*(?:content\\s*=|:|=)\\s*[\"']?\\s*([^\"'<>]{6,40})/i;\nconst pageDate = (url, html, gdate) => {\n  const h = String(html || '').slice(0, 400000);\n  const meta = h.match(META) || h.match(/<time[^>]+datetime=[\"']([^\"']+)/i);\n  const um = String(url || '').match(/\\/(20\\d\\d)[\\/-](\\d{1,2})[\\/-](\\d{1,2})(?:[\\/-]|$)/);\n  const hit = [[meta ? dateIn(meta[1]) : '', 'page'], [um ? iso(um[1], um[2], um[3]) : '', 'address'], [dateIn(gdate, true), 'google']].find(t => t[0]);\n  return hit ? { published: hit[0], date_from: hit[1] } : { published: '', date_from: '' };\n};\nconst toText = (html) => String(html || '')\n  .replace(/<script[\\s\\S]*?<\\/script>/gi, ' ').replace(/<style[\\s\\S]*?<\\/style>/gi, ' ').replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, ' ')\n  .replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '\"').replace(/&#39;/g, \"'\")\n  .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\\s+/g, ' ').trim();\n// Pairs each candidate with its page, keeps the part about the story, and writes what the update writer reads.\nconst story = $('Read Story From Archive').first().json;\nconst q = $('Store Settings').first().json;\nconst cands = $('Build Candidates').all().map(i => i.json);\nconst x = story.explainer || {};\nconst words = [...new Set(String(story.claim + ' ' + story.title + ' ' + (story.search_terms || '')).toLowerCase().match(/[a-z0-9][a-z0-9.\\-]{2,}/g) || [])];\nconst windowOf = (t) => { if (t.length <= 3000) return t; const low = t.toLowerCase(); let best = 0, bs = -1;\n  for (let i = 0; i < low.length - 3000; i += 500) { const w = low.slice(i, i + 3000); const sc = words.reduce((a, k) => a + (w.includes(k) ? 1 : 0), 0); if (sc > bs) { bs = sc; best = i; } }\n  return t.slice(best, best + 3000); };\nconst esc = (t) => String(t || '').replace(/</g, '(').replace(/>/g, ')');\nconst pages = $input.all().map((it, i) => { const c = cands[i] || {}; const code = Number(it.json.statusCode || 0);\n  const raw = String(it.json.body || ''); const d = pageDate(c.url, raw, c.gdate);\n  const text = toText(raw).replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F�]/g, ' ').replace(/\\s+/g, ' ').trim();\n  return { n: i + 1, url: c.url, domain: c.domain, published: d.published, read: !!c.url && code >= 200 && code < 300 && text.length > 400, text }; });\nconst readable = pages.filter(p => p.read);\nconst known = (x.status_points || []).map(p => '- ' + p.status + ': ' + p.point).join('\\n');\nconst writer_input = `<story>${esc(story.title)}. ${esc(story.claim)}</story>\\n<label>${story.label}</label>\\n<published_after>${story.since}</published_after>\\n<question>${esc(q.question || x.open_question || '')}</question>\\n<known_points>\\n${known || '(none)'}\\n</known_points>\\n<pages>\\n${readable.map(p => `<page n=\"${p.n}\" url=\"${p.url}\" date=\"${p.published || 'unknown'}\">${esc(windowOf(p.text))}</page>`).join('\\n') || '(no readable page)'}\\n</pages>`;\nreturn [{ json: { writer_input, pages: pages.map(({ text, ...p }) => p), readable_count: readable.length } }];"
+      }
+    },
+    {
+      "id": "build-update-reply",
+      "name": "Build Update Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2260,
+        700
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Turns the writer's answer into the saved update and the Telegram reply. found_new needs a relevant official or reliable page (checked here, not left to the model).\nconst story = $('Read Story From Archive').first().json;\nconst q = $('Store Settings').first().json;\nconst bi = $('Build Writer Input').first().json;\nconst o = $('Write Update (via Ask Venice)').first().json.output;\nconst byN = Object.fromEntries((o.sources || []).map(x => [x.n, x]));\nconst used = bi.pages.filter(p => p.read && byN[p.n] && byN[p.n].relevant).map(p => ({ ...p, tier: byN[p.n].tier }));\nconst found_new = !!o.found_new && used.some(p => p.tier === 'official' || p.tier === 'reliable');\nconst STATUS = { confirmed: 'Confirmed', stated_only: 'Stated by the source only', not_disclosed: 'Not disclosed', contradicted: 'Contradicted' };\n// Every source with its publication date.\nconst day = (d) => d ? new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : 'date unknown';\nconst dateOf = (u) => { const pg = bi.pages.find(x => x.url === u); return pg ? ', ' + day(pg.published) : ''; };\nconst since = new Date(story.since + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });\nconst lines = found_new ? ['What changed since ' + since + ': ' + o.what_changed] : ['Nothing new from a reliable source since ' + since + '.'];\nif (o.answer) lines.push('Answer: ' + o.answer);\nif (found_new) for (const p of o.status_points || []) lines.push('- ' + (STATUS[p.status] || p.status) + ': ' + p.point + (p.source ? ' (' + p.source + dateOf(p.source) + ')' : ''));\nconst result = lines.join('\\n');\nconst links = used.map(p => p.url + ' (' + p.tier + ', ' + day(p.published) + ')').join('\\n');\nconst e = (t) => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst tg = ['<b>Update on #' + story.story_number + ' · ' + e(story.title) + '</b>', '', ...lines.map(e),\n  ...(used.length ? ['', '<b>Sources</b>', ...used.map(p => '▫️ <a href=\"' + e(p.url) + '\">' + e(p.domain) + '</a> (' + p.tier + ', ' + day(p.published) + ')')] : []),\n  '', bi.readable_count + ' new page(s) read. Ask me anything about it here; send <code>save</code> to keep this conversation, <code>dig ' + story.story_number + '</code> for the whole story.'].join('\\n');\nreturn [{ json: { story_number: story.story_number, question: q.question || '', result, found_new, links, chat_id: String(q.chat_id), telegram_text: tg.slice(0, 4000) } }];"
+      }
+    },
+    {
+      "id": "save-update-to-archive",
+      "name": "Save Update To Archive",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        2480,
+        700
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO claim_checks.story_updates (story_number, question, result, found_new, links) VALUES ($1::int, $2, $3, $4::boolean, $5) RETURNING update_id;",
+        "options": {
+          "queryReplacement": "={{ [String($json.story_number), $json.question, $json.result, String($json.found_new), $json.links] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "send-update-to-chat",
+      "name": "Send Update To Chat",
+      "webhookId": "5b1f2e7a-3c4d-4e8f-9a0b-1c2d3e4f5a6b",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2700,
+        700
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Build Update Reply').first().json.chat_id }}",
+        "text": "={{ $('Build Update Reply').first().json.telegram_text }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Claim Checks"
+        }
+      }
+    },
+    {
+      "id": "av-writeupdate",
+      "name": "Write Update (via Ask Venice)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        2040,
+        700
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RzRuzMVi64lHyHwy",
+          "cachedResultName": "Claim Checks | Ask Venice"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "step": "Write Update",
+            "body": "={{ { model: 'kimi-k2-6', temperature: 0.2, max_tokens: 2500, venice_parameters: { disable_thinking: true }, response_format: { type: 'json_schema', json_schema: { name: 'story_update', strict: true, schema: {\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"found_new\", \"what_changed\", \"answer\", \"status_points\", \"sources\"], \"properties\": {\"found_new\": {\"type\": \"boolean\"}, \"what_changed\": {\"type\": \"string\"}, \"answer\": {\"type\": \"string\"}, \"status_points\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"point\", \"status\", \"source\"], \"properties\": {\"point\": {\"type\": \"string\"}, \"status\": {\"type\": \"string\", \"enum\": [\"confirmed\", \"stated_only\", \"not_disclosed\", \"contradicted\"]}, \"source\": {\"type\": \"string\"} } } }, \"sources\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"n\", \"tier\", \"relevant\"], \"properties\": {\"n\": {\"type\": \"integer\"}, \"tier\": {\"type\": \"string\", \"enum\": [\"official\", \"reliable\", \"other\"]}, \"relevant\": {\"type\": \"boolean\"} } } } } } } }, messages: [{ role: 'system', content: \"<role>You follow up ONE news story for a reader who asked what happened since it was first checked. You read pages found after the story's date and say, only from those pages, what is new.</role>\\n\\n<input>\\n<story> the story; <label> how it was labelled then; <published_after> the date of the last check; <question> what the reader wants to know; <known_points> what was known then; <pages> pages found now, numbered.\\n</input>\\n\\n<rules>\\n1. Use only the pages. Never your own knowledge of the story. A page counts only if it is about this same story and gives information that is new compared with <known_points> or that answers <question>.\\n2. For every page give its tier (official: the company, person or body the story is about, a government body, the paper or filing itself; reliable: an established news or trade outlet; other: blogs, forums, copies) and relevant (true only under rule 1).\\n3. found_new: true only if at least one relevant page is official or reliable. Otherwise false, and what_changed is \\\"\\\".\\n4. what_changed: 2-4 plain sentences on what is new, naming the source. answer: one or two sentences that answer <question> from the pages, or say plainly that no page answers it yet.\\n5. status_points: the key points now, each confirmed, stated_only, not_disclosed or contradicted, with the url that shows it (\\\"\\\" if none). Keep a point not_disclosed when no page settles it; never fill it in.\\n6. Plain English, no hype, no markdown.\\n</rules>\\n\\n<example>\\n<input>\\n<story>Example Bio says it treated a patient with AI-designed bacteriophages.</story>\\n<label>Single source</label>\\n<published_after>2026-10-20</published_after>\\n<question>Did the patient recover?</question>\\n<known_points>\\n- stated_only: The phages were given to a patient\\n- not_disclosed: Whether the infection cleared\\n</known_points>\\n<pages>\\n<page n=\\\"1\\\" url=\\\"https://www.nature.com/articles/x\\\">Example Bio's preprint, now peer reviewed, reports that the patient's infection cleared after 14 days of phage treatment...</page>\\n<page n=\\\"2\\\" url=\\\"https://someblog.net/post\\\">Is AI phage therapy the future? We think so...</page>\\n</pages>\\n</input>\\n<output>{\\\"found_new\\\":true,\\\"what_changed\\\":\\\"Nature published Example Bio's peer-reviewed results: the patient's infection cleared after 14 days of treatment with the AI-designed phages.\\\",\\\"answer\\\":\\\"Yes: according to the peer-reviewed paper in Nature, the infection cleared after 14 days.\\\",\\\"status_points\\\":[{\\\"point\\\":\\\"The phages were given to a patient\\\",\\\"status\\\":\\\"confirmed\\\",\\\"source\\\":\\\"https://www.nature.com/articles/x\\\"},{\\\"point\\\":\\\"The infection cleared\\\",\\\"status\\\":\\\"confirmed\\\",\\\"source\\\":\\\"https://www.nature.com/articles/x\\\"}],\\\"sources\\\":[{\\\"n\\\":1,\\\"tier\\\":\\\"reliable\\\",\\\"relevant\\\":true},{\\\"n\\\":2,\\\"tier\\\":\\\"other\\\",\\\"relevant\\\":false}]}</output>\\n</example>\" }, { role: 'user', content: $json.writer_input }] } }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "fu-addconv",
+      "name": "Add Update To Conversation",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        2920,
+        700
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- The update becomes one exchange of the story conversation that asked for it, and its Telegram message is linked to it.\nWITH nxt AS (\n  SELECT NULLIF($1, '')::int AS conversation_id, coalesce((SELECT max(exchange_no) FROM claim_checks.conversation_exchanges WHERE conversation_id = NULLIF($1, '')::int), 0) + 1 AS exchange_no\n  WHERE NULLIF($1, '') IS NOT NULL),\nex AS (\n  INSERT INTO claim_checks.conversation_exchanges (conversation_id, exchange_no, question, answer)\n  SELECT conversation_id, exchange_no, $2, $3 FROM nxt RETURNING conversation_id, exchange_no),\nln AS (\n  INSERT INTO claim_checks.conversation_messages (chat_id, telegram_message_id, conversation_id, exchange_no)\n  SELECT $4, NULLIF($5, '')::bigint, conversation_id, exchange_no FROM ex WHERE NULLIF($5, '') IS NOT NULL\n  ON CONFLICT (chat_id, telegram_message_id) DO NOTHING RETURNING 1)\nUPDATE claim_checks.story_conversations SET last_message_at = now()\nWHERE conversation_id IN (SELECT conversation_id FROM ex) RETURNING conversation_id;",
+        "options": {
+          "queryReplacement": "={{ [String($('Store Settings').first().json.conversation_id || ''), 'update' + ($('Build Update Reply').first().json.question ? ': ' + $('Build Update Reply').first().json.question : ' (news since the story)'), $('Build Update Reply').first().json.result, $('Build Update Reply').first().json.chat_id, String(($json.result || {}).message_id || '')] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When Called By Bot": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Read Story From Archive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Story From Archive": {
+      "main": [
+        [
+          {
+            "node": "Search Google Since Story (Serper)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Google Since Story (Serper)": {
+      "main": [
+        [
+          {
+            "node": "Search Web Since Story (Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Web Since Story (Venice)": {
+      "main": [
+        [
+          {
+            "node": "Build Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Candidates": {
+      "main": [
+        [
+          {
+            "node": "Read Pages (Bright Data)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Pages (Bright Data)": {
+      "main": [
+        [
+          {
+            "node": "Build Writer Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Update Reply": {
+      "main": [
+        [
+          {
+            "node": "Save Update To Archive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Update To Archive": {
+      "main": [
+        [
+          {
+            "node": "Send Update To Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Writer Input": {
+      "main": [
+        [
+          {
+            "node": "Write Update (via Ask Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Update (via Ask Venice)": {
+      "main": [
+        [
+          {
+            "node": "Build Update Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Update To Chat": {
+      "main": [
+        [
+          {
+            "node": "Add Update To Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "timezone": "Europe/Rome",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "3B9Il26esYH8IJEP"
+  },
+  "active": false
+}

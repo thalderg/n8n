@@ -1,0 +1,2021 @@
+{
+  "id": "ccResearchPipe01",
+  "name": "Claim Checks | WF3 — Research Pipeline",
+  "nodes": [
+    {
+      "id": "b35a57ba-0a11-549b-83b7-ab1d859fd561",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Claim Checks | WF3 — Research Pipeline\n\nOne run of Claim Checks: keywords → search angles → posts from Reddit, Hacker News and X (searches widened by Google Trends) → for a question, the answer looked up on the web → posts grouped into claims → each claim checked and explained → one flagged briefing → PDF in Drive, every story archived with a permanent number, a summary in Telegram, and the PDF by email for weekly runs.\n\n**Called by:** \"WF1 — Scheduled Entry\" (daily and Monday runs) and \"WF2 — Telegram Bot\" (search). Locked to \"WF1\" and \"WF2\".\n**Calls:** \"Collect Findings\" (Google Trends once per keyword, then once per angle and source), \"Answer Question\" (once, question runs only), \"Verify Story\" (once per claim), \"Report Run Problems\" (once, at the end).\n**Sections, left to right:** Start And Plan Angles → Collect Posts → Read Posts And Answer The Question → Group Into Claims → Check Claims → Write And Deliver. \"The Flow\" (far right) traces a whole run.\n**Alerts, all in the main chat:** if WF3 itself stops, the central error handler alerts with the failed node. Failures the run survives (a source, a claim) are listed together in ONE alert at the end.\n**Services called:** Airtable (Runs, Findings, Clusters) · Postgres (story archive, claim_checks.stories) · Venice (Kimi K2.6: planner and writer) · Google Drive · Gmail (weekly runs) · Telegram · \"Collect Findings\", \"Answer Question\", \"Verify Story\", \"Report Run Problems\" · \"Ask Venice\" (every model step; backup model GPT-6 Luna).",
+        "width": 10520,
+        "height": 300,
+        "color": 5
+      }
+    },
+    {
+      "id": "f9d866b9-e337-5444-99db-313f6470e532",
+      "name": "Start Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        380
+      ],
+      "parameters": {
+        "content": "## Start And Plan Angles\n\nTriggered by: \"WF1\" or \"WF2\" (When Called By Entry).\n\nWhat it does, step by step:\n1. Store Settings holds the run (id, keywords, mode, recipient, chat) and the settings (caps, Drive folder, workflow ids).\n2. Create Run Row (Airtable Runs) writes the run to Airtable Runs.\n3. Plan Angles (via Ask Venice, planner model), gives EVERY keyword its own 6 search angles (the cap is per keyword, so one keyword never takes searches from another; a question keyword gets angles aimed at its answer): the first one per keyword is its wide angle (\"All news on <keyword>\"). Each angle has 2-3 word groups (one idea each, in all the ways people write it: e.g. hack, hacked, exploit, drained...), a short Trends term of 1-2 common words (Google Trends has no data for long phrases), and a phrase used only as a fallback.",
+        "width": 1120,
+        "height": 800,
+        "color": 4
+      }
+    },
+    {
+      "id": "2c8fa790-cbd0-5f69-bc67-79acf7fabfd0",
+      "name": "Collect Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1180,
+        380
+      ],
+      "parameters": {
+        "content": "## Collect Posts\n\nTriggered by: runs inline after Start And Plan Angles.\n\nWhat it does, step by step:\n1. Collect Google Trends (via Collect Findings) runs \"Collect Findings\" once per keyword, with its wide angle's short term: up to 2 rising search terms, used by all its angles.\n2. Build Source Calls makes one call per angle for Reddit, Hacker News and X, with its keyword's Trends terms. Each call carries the query built from the angle's word groups: X and Reddit find posts with one word of every group, (a OR b) (c OR d); Hacker News, which has no OR, gets all the words as optional words.\n3. Collect From Sources (via Collect Findings) runs \"Collect Findings\" once per call: filter, drop repeats, save to Findings.\n4. Summarise Collection notes empty sources and failed ones (failures go to the run's problem alert).",
+        "width": 900,
+        "height": 800,
+        "color": 6
+      }
+    },
+    {
+      "id": "cc6c5821-3f9b-58c2-9fc3-609c227e0a94",
+      "name": "Group Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3140,
+        380
+      ],
+      "parameters": {
+        "content": "## Group Into Claims\n\nTriggered by: runs inline after Collect Posts.\n\nWhat it does, step by step:\n1. Read Recent Claims (Airtable Clusters) reads the stories reported in the last 7 days (used on scheduled runs only).\n2. Group Findings (via Ask Venice, planner model), groups the posts into claims; Build Cluster Rows keeps, per keyword, the 5 with the most independent sources.\n3. Any Claims? no → No Claims To Check goes straight to the report (\"nothing checkable\"). Yes → the claims are saved to Clusters and their posts get the claim id.",
+        "width": 2000,
+        "height": 800,
+        "color": 3
+      }
+    },
+    {
+      "id": "438791b1-e5ea-598c-bc82-d9989d753728",
+      "name": "Verify Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        5200,
+        380
+      ],
+      "parameters": {
+        "content": "## Check Claims\n\nTriggered by: runs inline after Group Into Claims.\n\nWhat it does, step by step:\n1. Split Claims lists the saved claims.\n2. Check Each Claim (via Verify Story) runs \"Verify Story\" once per claim. A claim whose check fails is shown as \"Not checked\" and listed in the run's problem alert.",
+        "width": 760,
+        "height": 800,
+        "color": 2
+      }
+    },
+    {
+      "id": "cbc45293-e557-5c07-bc0a-03109c507f3b",
+      "name": "Deliver Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        6020,
+        380
+      ],
+      "parameters": {
+        "content": "## Write And Deliver\n\nTriggered by: runs inline after Check Claims (or from No Claims To Check).\n\nWhat it does, step by step:\n1. Build Writer Input collects every claim with its label, its evidence and its original posts, each with its publication date; Write Briefing (via Ask Venice, writer model), writes one briefing by topic.\n2. Check Briefing Flags puts each label on its paragraph (flags come from the labels, never from the writer) and lists the stories to archive, each with its original posts.\n3. Save Or Update Stories In Archive (Postgres, claim_checks.stories) saves each story with its original posts. A story that shares a post or a linked article with a story archived by an earlier run is the same story: it keeps its number, gets the new label and a dated \"checked again\" entry (story_updates); every other checked story gets a new permanent number. Save Claim Summaries (Airtable Clusters) writes the gist and the story number.\n4. Build Report HTML (for a question, the Answer first, each item with its status and dated links; the briefing; one explainer per story, its original posts first; every link with its date, older pages marked background; and the Telegram summary) → Google Doc → PDF in Drive \"Claim Checks Reports\" → Add PDF Link To Archive (Postgres) → Weekly Run? sends Email Report only for \"7days\" runs → Mark Run Delivered (Airtable Runs).\n5. List Run Problems → Send Problem Alert (via Report Run Problems) sends ONE alert if anything failed → Chat Known? → Send Summary To Chat (Telegram): the Answer (question runs), In short, one line per story with its number, the PDF link.",
+        "width": 4500,
+        "height": 800,
+        "color": 7
+      }
+    },
+    {
+      "id": "5f970775-96df-5a35-bda7-adab1e155f05",
+      "name": "The Flow",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        10580,
+        0
+      ],
+      "parameters": {
+        "content": "## The Flow\n\n1. A run starts in \"WF1 — Scheduled Entry\" (07:00 daily for \"today\" keywords, Mondays also \"7days\") or in \"WF2 — Telegram Bot\" with search <topic> (# in front is optional).\n2. Start: the run goes to Airtable Runs; the planner gives every keyword its own 6 angles. Every model step in the run goes through \"Ask Venice\": the main model, then GPT-6 Luna if it gives no complete answer.\n3. Collect: per keyword, \"Collect Findings\" gets Google Trends terms; per angle, it searches Reddit, Hacker News and X (engagement minimums), drops trash and repeats, saves to Findings.\n4. Question runs: \"Answer Question\" looks the answer up on the web (Google, then the pages), each item confirmed, claimed or unverified; it opens the report and the Telegram summary.\n5. Group: the kept posts become claims; per keyword, the top 5 by independent sources go to Clusters.\n6. Check: \"Verify Story\" checks each claim against the web and gives the label: Corroborated, Single source, Disputed, Unverified or Opinion.\n7. Deliver: one flagged briefing → every checked story saved to the archive (Postgres) with its permanent number and its original posts (a story found again through the same post or linked article keeps its number and gets a \"checked again\" entry) → PDF in Drive (every link with its date) → email for weekly (\"7days\") runs only → Runs \"delivered\" → a Telegram summary with the story numbers and the PDF link, to the bot chat that asked or to the chat paired with the recipient's email.\n8. Alerts in the main chat: a crash of WF3 alerts at once; failures the run survives come together in one \"Report Run Problems\" alert at the end.\n9. In the bot afterwards: dig or update on a story opens a conversation in \"Story Chat\": a reasoning model (Kimi K2.6, backup GPT-6 Luna) with web search answers follow-up questions; update runs \"Follow Up Story\" and adds its result to the conversation. save / close keeps a summary that dig and update use later; forget drops it; replying to any old message saves, forgets or continues that conversation.",
+        "width": 1300,
+        "height": 700,
+        "color": 3
+      }
+    },
+    {
+      "id": "35b85b0a-8c5a-54e3-910f-e728e75a884d",
+      "name": "When Called By Entry",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        760
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "bdd7ef92-8ebf-5233-92ab-63615aa386c7",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        280,
+        760
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "267aff71-cb48-5df3-b4cd-779f213232bb",
+              "name": "collect_id",
+              "type": "string",
+              "value": "ccCollectFind001"
+            },
+            {
+              "id": "c5a1f05b-6aaf-5bcf-b299-248aa76797b4",
+              "name": "verify_id",
+              "type": "string",
+              "value": "ccVerifyStory001"
+            },
+            {
+              "id": "897be2d1-e0da-513a-aabb-4fe340516de4",
+              "name": "max_angles",
+              "type": "number",
+              "value": 6
+            },
+            {
+              "id": "06890f27-e162-5f3c-a79b-0303e821579d",
+              "name": "max_verify",
+              "type": "number",
+              "value": 5
+            },
+            {
+              "id": "844d72af-c734-5824-a819-a109e1018b65",
+              "name": "window_days",
+              "type": "number",
+              "value": "={{ $json.mode === 'today' ? 1 : 7 }}"
+            },
+            {
+              "id": "30c9b6b9-e786-5e4d-9964-77088584ce1a",
+              "name": "reports_folder_id",
+              "type": "string",
+              "value": "YOUR_DRIVE_REPORTS_FOLDER_ID"
+            },
+            {
+              "id": "8c798edc-945e-538b-9955-8e9bddae50c3",
+              "name": "check_duplicates",
+              "type": "boolean",
+              "value": "={{ $json.check_duplicates === true || $json.check_duplicates === 'true' }}"
+            },
+            {
+              "id": "63b229cb-a8e0-5650-832b-3ec555b591f5",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $json.chat_id || '' }}"
+            },
+            {
+              "id": "5e265744-58f6-57d7-8391-f9f0c85c1e19",
+              "name": "problems_id",
+              "type": "string",
+              "value": "lghXfI9eF1NOXLko"
+            },
+            {
+              "id": "b7c41e2a-5d3f-4c8e-9a61-0f2e8d4c7b19",
+              "name": "recipient_chats",
+              "type": "object",
+              "value": "{\"you@example.com\": \"YOUR_TELEGRAM_CHAT_ID\"}"
+            },
+            {
+              "id": "368db99a-901b-48cf-88d4-d7da7030298f",
+              "name": "answer_id",
+              "type": "string",
+              "value": "6tQ5vBxixkQqpDKO"
+            },
+            {
+              "id": "d1932475-a067-4762-9c25-d2ab100934e1",
+              "name": "questions",
+              "type": "array",
+              "value": "={{ [].concat($json.keywords || []).filter(k => /^\\s*(what|why|how|which|who|whom|whose|when|where|is|are|was|were|does|do|did|can|could|should|will|would)\\b/i.test(String(k)) || /\\?\\s*$/.test(String(k))) }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "4c1aa928-d9cc-50a8-bbe1-9462ba525a84",
+      "name": "Create Run Row (Airtable Runs)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        500,
+        760
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_RUNS_TABLE_ID",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ typecast: true, records: [{ fields: { run_id: $json.run_id, started_at: $now.toISO(), status: 'started', keywords: [].concat($json.keywords || []).join('\\n'), mode: $json.mode, recipient: $json.recipient } }] }) }}"
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "90ac49b5-aa03-5f9c-b766-8bfa77771b28",
+      "name": "Split Angles",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "onError": "stopWorkflow",
+      "position": [
+        940,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const s = $('Store Settings').first().json;\nconst kws = [].concat(s.keywords || []);\nconst all = (($input.first().json.output || {}).angles || []).filter(a => a && a.search_phrase);\n// The angle cap is per keyword: each keyword keeps up to max_angles of its own angles.\nconst byKw = new Map();\nfor (const a of all) {\n  const k = kws.find(x => x.toLowerCase() === String(a.keyword || '').toLowerCase()) || a.keyword || kws[0];\n  if (!byKw.has(k)) byKw.set(k, []);\n  if (byKw.get(k).length < s.max_angles) byKw.get(k).push(a);\n}\nif (!byKw.size) throw new Error('The planner returned no angles');\n// One item per keyword: Google Trends is asked once per keyword, with its wide angle's short term (the first angle).\nreturn [...byKw.entries()].map(([keyword, angles]) => ({ json: { run_id: s.run_id, keywords: kws, keyword, angle: keyword,\n  search_phrase: angles[0].search_phrase, trends_term: angles[0].trends_term || '',\n  angles: angles.map(a => ({ angle: a.angle, search_phrase: a.search_phrase, word_groups: a.word_groups || [] })),\n  source: 'google_trends', mode: s.mode, window_days: s.window_days, trend_terms: [], check_duplicates: s.check_duplicates } }));"
+      }
+    },
+    {
+      "id": "d1353d05-5b42-5e14-b5ef-8e9986c025eb",
+      "name": "Collect Google Trends (via Collect Findings)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1240,
+        760
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ccCollectFind001",
+          "cachedResultName": "Claim Checks | Collect Findings"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "e993622f-0325-52b1-8c4f-e1deedd7eae0",
+      "name": "Summarise Collection",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1900,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const errText = (e) => String(typeof e === 'string' ? e : (e && (e.message || e.description || JSON.stringify(e))) || 'unknown error').replace(/\\s+/g, ' ').slice(0, 160);\nconst at = (it, idx) => (it.pairedItem && typeof it.pairedItem.item === 'number') ? it.pairedItem.item : idx;\nconst label = { google_trends: 'Google Trends', reddit: 'Reddit', hacker_news: 'Hacker News', x: 'X' };\nconst angles = $('Split Angles').all().map(i => i.json);\nconst calls = $('Build Source Calls').all().map(i => i.json);\nconst empty = [], failed = [], problems = [];\n$('Collect Google Trends (via Collect Findings)').all().forEach((it, idx) => {\n  if (!it.json.error) return;\n  const a = angles[at(it, idx)] || {};\n  failed.push(`Google Trends for \"${a.keyword}\"`); problems.push(`Google Trends failed for \"${a.keyword}\": ${errText(it.json.error)}`);\n});\n$input.all().forEach((it, idx) => {\n  const c = calls[at(it, idx)] || {};\n  const name = `${label[c.source] || c.source} for \"${c.angle}\"`;\n  if (it.json.error) { failed.push(name); problems.push(`${name} failed: ${errText(it.json.error)}`); }\n  else if (it.json.status === 'empty') empty.push(name);\n});\nconst byAngle = {};\nfor (const c of calls) byAngle[c.angle] = { angle: c.angle, search_phrase: c.search_phrase, trend_terms: c.trend_terms || [] };\nconst list = Object.values(byAngle);\nreturn [{ json: { angles: list, empty_sources: empty, failed_sources: failed, problems,\n  search_terms: [...new Set(list.flatMap(a => [a.search_phrase, ...a.trend_terms]).filter(Boolean))],\n  trend_terms: [...new Set(list.flatMap(a => a.trend_terms))] } }];"
+      }
+    },
+    {
+      "id": "c24403c7-3eb0-51ec-b023-c7d1700fd294",
+      "name": "Read Kept Findings (Airtable Findings)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        2200,
+        760
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_FINDINGS_TABLE_ID",
+        "options": {
+          "timeout": 30000,
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "offset",
+                    "value": "={{ $response.body.offset }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.offset }}",
+              "limitPagesFetched": true,
+              "maxRequests": 5
+            }
+          }
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "=AND({run_id}='{{ $('Store Settings').first().json.run_id }}', {kept})"
+            },
+            {
+              "name": "pageSize",
+              "value": "100"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "c90d7ab1-7c28-57e8-a6d0-8888e5c47f53",
+      "name": "Read Recent Claims (Airtable Clusters)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        3420,
+        760
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_CLUSTERS_TABLE_ID",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "=AND({run_id}!='{{ $('Store Settings').first().json.run_id }}', IS_AFTER(CREATED_TIME(), DATEADD(NOW(), -7, 'days')))"
+            },
+            {
+              "name": "pageSize",
+              "value": "50"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "fecca3c4-a0f7-52e5-9cbf-c83134e1e560",
+      "name": "Build Grouping Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3640,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const recs = $('Read Kept Findings (Airtable Findings)').all().flatMap(i => i.json.records || []) || [];\nconst findings = recs.map((r, i) => ({ id: 'f' + (i + 1), record_id: r.id, ...r.fields }));\n// Stories reported in the last 7 days are only used on scheduled runs (check_duplicates).\nconst s = $('Store Settings').first().json;\nconst recent = s.check_duplicates ? ($('Read Recent Claims (Airtable Clusters)').first().json.records || []).map(r => r.fields.title).filter(Boolean) : [];\nconst lines = findings.map(f => JSON.stringify({ id: f.id, title: f.title, summary: f.summary, source: f.source, angle: f.angle, links_to: f.linked_url || null })).join('\\n');\nreturn [{ json: { findings, lines, recent: recent.slice(0, 40), trend_terms: $('Summarise Collection').first().json.trend_terms } }];"
+      }
+    },
+    {
+      "id": "764f432e-df14-560a-b651-c14234fb0834",
+      "name": "Build Cluster Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4080,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const host = (u) => { const m = String(u || '').match(/^https?:\\/\\/([^\\/?#:]+)/i); return m ? m[1].replace(/^www\\./, '').toLowerCase() : ''; };\nconst s = $('Store Settings').first().json;\nconst gi = $('Build Grouping Input').first().json;\nconst byId = Object.fromEntries(gi.findings.map(f => [f.id, f]));\nconst used = new Set();\nconst groups = [];\nfor (const g of ($json.output.groups || [])) {\n  const ids = (g.finding_ids || []).filter(id => byId[id] && !used.has(id));\n  ids.forEach(id => used.add(id));\n  if (ids.length) groups.push({ title: g.title, ids, repeat: g.repeat_of_recent === true, trend_terms: g.trend_terms || [] });\n}\nfor (const f of gi.findings) if (!used.has(f.id)) groups.push({ title: f.title, ids: [f.id], repeat: false, trend_terms: [] });\nconst isPlatform = (h) => /(^|\\.)(reddit\\.com|redd\\.it|news\\.ycombinator\\.com|x\\.com|twitter\\.com)$/i.test(h);\nconst weigh = (g) => {\n  const doms = new Set();\n  for (const id of g.ids) { const h = host(byId[id].linked_url); if (h && !isPlatform(h)) doms.add(h); else doms.add('platform:' + byId[id].source); }\n  return doms.size;\n};\nconst fresh = groups.filter(g => !g.repeat).map(g => ({ ...g, weight: weigh(g) }));\nconst repeats = groups.length - fresh.length;\nfresh.sort((a, b) => b.weight - a.weight || b.ids.length - a.ids.length);\n// The check cap is per keyword: each keyword's claims with the most sources are checked, so one keyword never takes the checks of another.\nconst kwOf = {};\n$('Split Angles').all().forEach(i => (i.json.angles || []).forEach(a => { kwOf[a.angle] = i.json.keyword; }));\nconst kwOfGroup = (g) => { const n = {}; for (const id of g.ids) { const k = kwOf[byId[id].angle] || ''; n[k] = (n[k] || 0) + 1; } return Object.entries(n).sort((a, b) => b[1] - a[1])[0][0]; };\nconst perKw = {};\nconst keep = fresh.filter(g => { const k = kwOfGroup(g); perKw[k] = (perKw[k] || 0) + 1; return perKw[k] <= s.max_verify; }).map((g, i) => ({ ...g, cluster_id: 'c' + (i + 1) }));\nconst plan = { clusters: keep.map(g => ({ cluster_id: g.cluster_id, title: g.title, trend_terms: g.trend_terms,\n  finding_record_ids: g.ids.map(id => byId[id].record_id), sources: [...new Set(g.ids.map(id => byId[id].source))] })),\n  repeats, not_checked_small: Math.max(0, fresh.length - keep.length) };\nconst recs = keep.map(g => ({ fields: { title: g.title.slice(0, 200), run_id: s.run_id, cluster_id: g.cluster_id,\n  sources: [...new Set(g.ids.map(id => byId[id].source))], independent_domains: 0 } }));\nconst out = [];\nfor (let i = 0; i < recs.length; i += 10) out.push({ json: { records: recs.slice(i, i + 10), plan } });\nif (!out.length) out.push({ json: { records: [], plan } });\nreturn out;"
+      }
+    },
+    {
+      "id": "906b38ec-d115-5397-b460-87b80d80c005",
+      "name": "Any Claims?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4300,
+        760
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ed527ec9-903d-54ba-86c8-cf2d14e92049",
+              "leftValue": "={{ $json.records.length }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "rightValue": 0
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "09ee79d6-ce67-52b1-8f76-6931073e6dcb",
+      "name": "Save Claims (Airtable Clusters)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        4520,
+        760
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_CLUSTERS_TABLE_ID",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ records: $json.records, typecast: true }) }}"
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "6fd1dec6-435c-5710-91ff-8c81011e95a9",
+      "name": "Build Finding Updates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4740,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const plan = $('Build Cluster Rows').first().json.plan;\nconst ups = plan.clusters.flatMap(c => c.finding_record_ids.map(id => ({ id, fields: { cluster_id: c.cluster_id } })));\nconst out = [];\nfor (let i = 0; i < ups.length; i += 10) out.push({ json: { records: ups.slice(i, i + 10) } });\nreturn out;"
+      }
+    },
+    {
+      "id": "66df582f-0b04-587b-bfcc-89848035cfd1",
+      "name": "Link Posts To Claims (Airtable Findings)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        4960,
+        760
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_FINDINGS_TABLE_ID",
+        "options": {
+          "timeout": 30000,
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 250
+            }
+          }
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ records: $json.records, typecast: true }) }}"
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "49ccf7f4-b96a-5781-8dc6-01342c5166e2",
+      "name": "Split Claims",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5260,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const plan = $('Build Cluster Rows').first().json.plan;\nreturn plan.clusters.map(c => ({ json: { run_id: $('Store Settings').first().json.run_id, cluster_id: c.cluster_id, window_days: $('Store Settings').first().json.window_days } }));"
+      }
+    },
+    {
+      "id": "4cc9c34e-4b7a-5179-8717-26c725d11c69",
+      "name": "Check Each Claim (via Verify Story)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        5480,
+        760
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ccVerifyStory001",
+          "cachedResultName": "Claim Checks | Verify Story"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "1ce4b551-21d3-5170-b17f-affeab3e0ad4",
+      "name": "Read Checked Claims (Airtable Clusters)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "executeOnce": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        6080,
+        760
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_CLUSTERS_TABLE_ID",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "={run_id}='{{ $('Store Settings').first().json.run_id }}'"
+            },
+            {
+              "name": "pageSize",
+              "value": "50"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "e7ffa632-b3d4-5032-bb47-7b8306945c12",
+      "name": "Build Writer Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6300,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const s = $('Store Settings').first().json;\nconst plan = $('Build Cluster Rows').first().json.plan;\n// A claim whose check failed comes back from Verify Claim as an error item: it is shown as \"Not checked\".\nconst checks = $('Split Claims').all().map(i => i.json);\nconst notChecked = new Set($('Check Each Claim (via Verify Story)').all().map((it, idx) => it.json.error ? (checks[(it.pairedItem && typeof it.pairedItem.item === 'number') ? it.pairedItem.item : idx] || {}).cluster_id : null).filter(Boolean));\nconst findings = Object.fromEntries(($('Read Kept Findings (Airtable Findings)').all().flatMap(i => i.json.records || []) || []).map(r => [r.id, r.fields]));\nconst order = { 'Corroborated': 0, 'Disputed': 1, 'Single source': 2, 'Unverified': 3, 'Opinion': 4, 'Not checked': 5 };\nconst sources = []; const nOf = {};\nconst cite = (url, title, date, when) => { if (!nOf[url]) { sources.push({ n: sources.length + 1, url, title, date: date || '', when: when || '' }); nOf[url] = sources.length; } return nOf[url]; };\n// Who wrote a post, from its address: @name on X, r/name on Reddit, or Hacker News.\nconst whoOf = (u) => { let m = String(u).match(/(?:x|twitter)\\.com\\/([^\\/?#]+)\\/status/i); if (m) return '@' + m[1] + ' on X'; m = String(u).match(/reddit\\.com\\/r\\/([^\\/?#]+)/i); if (m) return 'r/' + m[1] + ' on Reddit'; return /ycombinator/.test(String(u)) ? 'Hacker News' : ''; };\nconst linkOf = (e) => ({ url: e.url, date: e.published || '', when: e.when || '' });\nconst claims = ($json.records || []).map(r => {\n  const f = r.fields; const p = plan.clusters.find(c => c.cluster_id === f.cluster_id) || {};\n  const label = notChecked.has(f.cluster_id) ? 'Not checked' : (f.label || 'Not checked');\n  let ev = []; try { ev = JSON.parse(f.evidence || '[]'); } catch (e) { ev = []; }\n  const used = ev.filter(e => e.read_status === 'read' && (e.stance === 'supports' || e.stance === 'contradicts')).slice(0, 5)\n    .map(e => ({ n: cite(e.url, e.domain, e.published, e.when), stance: e.stance, tier: e.tier, domain: e.domain, date: e.published || '', when: e.when || '', excerpt: e.excerpt }));\n  const posts = (p.finding_record_ids || []).map(id => findings[id]).filter(Boolean)\n    .sort((a, b) => String(a.published_at || '').localeCompare(String(b.published_at || '')))\n    .map(fd => ({ n: cite(fd.url, (({ reddit: 'Reddit: ', hacker_news: 'Hacker News: ', x: 'X: ' })[fd.source] || '') + fd.title, String(fd.published_at || '').slice(0, 10), 'post'), source: fd.source, date: String(fd.published_at || '').slice(0, 10), summary: fd.summary }));\n  return { record_id: r.id, cluster_id: f.cluster_id, title: f.title, label, reason: f.reason || '', independent_domains: f.independent_domains || 0,\n    evidence: used, posts, trend_terms: p.trend_terms || [],\n    origin_links: posts.map(x => ({ url: sources[x.n - 1].url, date: x.date, when: 'post', who: whoOf(sources[x.n - 1].url) })),\n    backing_links: ev.filter(e => e.stance === 'supports').map(linkOf),\n    contradicting_links: ev.filter(e => e.stance === 'contradicts').map(linkOf),\n    page_dates: Object.fromEntries(ev.map(e => [e.url, { date: e.published || '', when: e.when || '' }])),\n    single_source: label === 'Single source' ? ((ev.find(e => e.stance === 'supports' && (e.tier === 'official' || e.tier === 'reliable')) || {}).domain || '') : '' };\n}).sort((a, b) => order[a.label] - order[b.label]);\nconst xml = claims.map(c => [\n  `<claim id=\"${c.cluster_id}\" label=\"${c.label}\">`,\n  `<statement>${c.title}</statement>`,\n  ...c.evidence.map(e => `<evidence n=\"${e.n}\" stance=\"${e.stance}\" tier=\"${e.tier}\" domain=\"${e.domain}\" date=\"${e.date || 'unknown'}\" when=\"${e.when || 'unknown'}\">${e.excerpt}</evidence>`),\n  ...c.posts.map(x => `<post n=\"${x.n}\" source=\"${x.source}\" date=\"${x.date || 'unknown'}\">${x.summary}</post>`),\n  c.trend_terms.length ? `<search_interest>${c.trend_terms.join('; ')}</search_interest>` : '',\n  '</claim>'].filter(Boolean).join('\\n')).join('\\n');\nreturn [{ json: { claims, sources, claims_xml: xml, topic: [].concat(s.keywords || []).join(', '),\n  window: s.mode === 'today' ? 'last 24 hours' : 'last 7 days' } }];"
+      }
+    },
+    {
+      "id": "936c9cc2-d465-509a-b054-ec5884b637ac",
+      "name": "Check Briefing Flags",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        6740,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const s = $('Store Settings').first().json;\nconst wi = $('Build Writer Input').first().json;\nconst col = $('Summarise Collection').first().json;\nconst plan = $('Build Cluster Rows').first().json.plan;\nconst out = $json.output || {};\n// What Verify Story returned for each claim (explainer, links, search words), by cluster id.\nconst verified = Object.fromEntries($('Check Each Claim (via Verify Story)').all().map(i => i.json).filter(j => j && j.cluster_id && !j.error).map(j => [j.cluster_id, j]));\nconst byId = Object.fromEntries(wi.claims.map(c => [c.cluster_id, c]));\nconst maxN = wi.sources.length;\nconst doubt = ['Disputed', 'Unverified', 'Not checked', 'Opinion', 'Single source', 'Corroborated'];\nconst cleanCites = (t) => String(t || '').replace(/\\[(\\d+)\\]/g, (m, n) => (Number(n) >= 1 && Number(n) <= maxN) ? m : '');\nconst flagOf = (ids) => { const labels = ids.map(id => byId[id].label); return doubt.find(l => labels.includes(l)); };\nconst sections = (out.sections || []).map(sec => {\n  const paragraphs = (sec.paragraphs || []).map(p => {\n    const ids = (p.cluster_ids || []).filter(id => byId[id]);\n    if (!ids.length) return null;\n    const flag = flagOf(ids);\n    const src = flag === 'Single source' ? (ids.map(id => byId[id].single_source).find(Boolean) || '') : '';\n    return { text: cleanCites(p.text), flag, flag_source: src, cluster_ids: ids };\n  }).filter(Boolean);\n  const os = sec.other_side || {};\n  return { topic: sec.topic, paragraphs, search_interest: sec.search_interest || [],\n    other_side: { text: cleanCites(os.text) || 'No contradicting source found.' } };\n}).filter(sec => sec.paragraphs.length);\nconst gists = Object.fromEntries((out.gists || []).filter(g => byId[g.cluster_id]).map(g => [g.cluster_id, g.gist]));\nconst d = new Date();\nconst report = { run_id: s.run_id, title: wi.topic, date_text: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),\n  window_text: s.mode === 'today' ? 'last 24 hours (Hacker News: last 7 days)' : 'last 7 days', keywords: [].concat(s.keywords || []),\n  search_terms: col.search_terms, briefing: { in_short: cleanCites(out.in_short), sections },\n  claims: wi.claims.map(c => ({ cluster_id: c.cluster_id, title: c.title, label: c.label, independent_domains: c.independent_domains, gist: gists[c.cluster_id] || '',\n    explainer: (verified[c.cluster_id] || {}).explainer || null,\n    origin_links: c.origin_links, backing_links: c.backing_links, contradicting_links: c.contradicting_links, page_dates: c.page_dates })),\n  sources: wi.sources,\n  footer: { empty_sources: col.empty_sources, failed_sources: col.failed_sources,\n    not_checked: wi.claims.filter(c => c.label === 'Not checked').map(c => c.title), already_reported: plan.repeats, smaller_claims: plan.not_checked_small } };\nconst md = ['## In short', report.briefing.in_short, ''];\nfor (const sec of sections) {\n  md.push('## ' + sec.topic);\n  for (const p of sec.paragraphs) md.push('[' + p.flag + (p.flag_source ? ': ' + p.flag_source : '') + '] ' + p.text, '');\n  if (sec.search_interest.length) md.push('Search interest: ' + sec.search_interest.join(', '), '');\n  md.push('### The other side', sec.other_side.text, '');\n}\nmd.push('## Sources', ...wi.sources.map(x => x.n + '. ' + x.url));\n// One archive row per checked story (Not checked claims are not archived); Save Or Update Stories In Archive gives each its number.\nconst today = $now.setZone('Europe/Rome').toISODate();\n// The claim's original posts, oldest first: dig shows them, and a later run that finds one of them (or the article it links to) again has found the same story.\nconst kept = Object.fromEntries(($('Read Kept Findings (Airtable Findings)').all().flatMap(i => i.json.records || []) || []).map(r => [r.id, r.fields]));\nconst postsOf = (cid) => { const p = plan.clusters.find(x => x.cluster_id === cid) || {};\n  return (p.finding_record_ids || []).map(id => kept[id]).filter(f => f && f.url)\n    .map(f => ({ source: f.source || '', url: f.url, linked_url: f.linked_url || '', published_at: f.published_at || '', title: f.title || '' }))\n    .sort((a, b) => a.published_at.localeCompare(b.published_at)); };\nconst archive_rows = wi.claims.filter(c => c.label !== 'Not checked' && verified[c.cluster_id]).map(c => { const v = verified[c.cluster_id];\n  return { run_id: s.run_id, cluster_id: c.cluster_id, found_on: today, mode: s.mode, keywords: [].concat(s.keywords || []).join(', '),\n    title: c.title, label: c.label, claim: v.claim || c.title, gist: gists[c.cluster_id] || '', explainer: v.explainer || null,\n    official_links: v.official_links || '', supporting_links: v.supporting_links || '', contradicting_links: v.contradicting_links || '',\n    evidence: v.evidence || '[]', search_terms: v.search_terms || '', posts: postsOf(c.cluster_id) }; });\nreturn [{ json: { report, markdown: md.join('\\n'), archive_rows,\n  cluster_updates: wi.claims.map(c => ({ id: c.record_id, cluster_id: c.cluster_id, fields: gists[c.cluster_id] ? { gist: gists[c.cluster_id] } : {} })) } }];"
+      }
+    },
+    {
+      "id": "024045aa-cfb0-5c4d-b48f-9952ef0100e5",
+      "name": "Save Claim Summaries (Airtable Clusters)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "position": [
+        7180,
+        760
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_CLUSTERS_TABLE_ID",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ typecast: true, records: (() => { const saved = Object.fromEntries((($('Save Or Update Stories In Archive').isExecuted ? $('Save Or Update Stories In Archive').first().json.saved : null) || []).map(x => [x.cluster_id, x.story_number])); return $('Check Briefing Flags').first().json.cluster_updates.map(u => ({ id: u.id, fields: Object.assign({}, u.fields, saved[u.cluster_id] ? { story_number: saved[u.cluster_id] } : {}) })).filter(u => Object.keys(u.fields).length).slice(0, 10); })() }) }}"
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "dec8d642-7617-508f-85e7-c6db1fd5a2ee",
+      "name": "Build Empty Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7180,
+        960
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const s = $('Store Settings').first().json;\nconst col = $('Summarise Collection').first().json;\nconst plan = $('Build Cluster Rows').isExecuted ? $('Build Cluster Rows').first().json.plan : { repeats: 0, not_checked_small: 0 };\nconst d = new Date();\nconst msg = plan.repeats ? 'Every story found in this run was already reported in the last 7 days.' : 'No usable posts were found for these keywords in this window.';\nreturn [{ json: { markdown: '## In short\\n' + msg, report: { run_id: s.run_id, title: [].concat(s.keywords || []).join(', '),\n  date_text: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),\n  window_text: s.mode === 'today' ? 'last 24 hours (Hacker News: last 7 days)' : 'last 7 days', keywords: [].concat(s.keywords || []),\n  search_terms: col.search_terms, briefing: { in_short: msg, sections: [] }, claims: [], sources: [],\n  footer: { empty_sources: col.empty_sources, failed_sources: col.failed_sources, not_checked: [], already_reported: plan.repeats, smaller_claims: 0 } } } }];"
+      }
+    },
+    {
+      "id": "c28b91df-8fba-5f54-8efe-7669f47c0c44",
+      "name": "Build Report HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        7400,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Build Report HTML: turns the checked briefing + claims into one HTML page that Google Drive converts to a Doc.\nconst r = ($('Check Briefing Flags').isExecuted ? $('Check Briefing Flags') : $('Build Empty Report')).first().json.report;\nconst s = $('Store Settings').first().json;\n// Permanent story numbers from the archive (none for an empty run).\nconst nums = Object.fromEntries((($('Save Or Update Stories In Archive').isExecuted ? $('Save Or Update Stories In Archive').first().json.saved : null) || []).map(x => [x.cluster_id, x.story_number]));\n\n// The answer to a question keyword (from \"Answer Question\"), shown before In short.\nconst ans = $('Answer The Question (via Answer Question)').isExecuted ? ($('Answer The Question (via Answer Question)').first().json.answer || null) : null;\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst FLAG = {\n  'Corroborated':  { bg: '#E3F1E1', fg: '#1E5A1A', text: 'Corroborated' },\n  'Single source': { bg: '#E3ECF8', fg: '#1C3F73', text: 'Single source' },\n  'Disputed':      { bg: '#FBE3DF', fg: '#8A2416', text: 'Disputed' },\n  'Unverified':    { bg: '#F6EDD6', fg: '#6B4E0B', text: 'Unverified' },\n  'Opinion':       { bg: '#ECE9F5', fg: '#43376E', text: 'Opinion' },\n  'Not checked':   { bg: '#EEEEEE', fg: '#444444', text: 'Not checked' },\n};\nconst srcByN = Object.fromEntries((r.sources || []).map(s => [String(s.n), s]));\nconst badge = (label, extra) => {\n  const f = FLAG[label] || FLAG['Not checked'];\n  return `<span style=\"background-color:${f.bg};color:${f.fg};font-weight:bold;font-size:9pt;\">&nbsp;${esc(f.text)}${extra ? ': ' + esc(extra) : ''}&nbsp;</span>`;\n};\n// Escape the text, then turn [n] into a link to source n.\nconst cite = (text) => esc(text).replace(/\\[(\\d+)\\]/g, (m, n) => srcByN[n] ? `<a href=\"${esc(srcByN[n].url)}\">[${n}]</a>` : m);\nconst linkList = (arr) => (arr && arr.length)\n  ? arr.slice(0, 4).map(u => `<a href=\"${esc(u)}\">${esc((String(u).match(/^https?:\\/\\/(?:www\\.)?([^\\/?#:]+)/i) || [, u])[1])}</a>`).join('<br>') + (arr.length > 4 ? `<br>+${arr.length - 4} more` : '')\n  : '<span style=\"color:#888888;\">none</span>';\n\nconst h = [];\nh.push('<html><head><meta charset=\"utf-8\"></head><body style=\"font-family:Arial;font-size:11pt;color:#222222;\">');\n\n// Front page\nh.push(`<h1 style=\"font-size:22pt;\">Claim Checks: ${esc(r.title)}</h1>`);\nh.push(`<p style=\"color:#555555;\">${esc(r.date_text)} &middot; window: ${esc(r.window_text)} &middot; run ${esc(r.run_id)}</p>`);\nh.push(`<p><b>Keywords:</b> ${esc((r.keywords || []).join(', '))}<br><b>Search terms used:</b> ${esc((r.search_terms || []).join(', '))}</p>`);\nh.push('<h3>How to read the labels</h3><table style=\"border-collapse:collapse;width:100%;\" border=\"1\" cellpadding=\"6\">');\nconst legend = [\n  ['Corroborated', 'At least two independent sources back it, one of them official or a reliable outlet, and nothing trustworthy contradicts it. Backed, not proven.'],\n  ['Single source', 'One official source or reliable outlet has stated it so far. Typical for fresh news.'],\n  ['Disputed', 'An official source or reliable outlet says otherwise. Both sides are shown.'],\n  ['Unverified', 'Being discussed, but no trustworthy source confirms it.'],\n  ['Opinion', 'A view, not a checkable fact.'],\n];\nfor (const [l, d] of legend) h.push(`<tr><td style=\"width:24%;\">${badge(l)}</td><td>${esc(d)}</td></tr>`);\nh.push('</table>');\n\n// Answer (question runs only): code-built from the answer object, each item with its status and dated links.\nif (ans) {\n  const ASTATUS = { confirmed: ['Corroborated', 'Confirmed'], claimed: ['Single source', 'Claimed by its team'], unverified: ['Unverified', 'Unverified'] };\n  const abadge = (st) => { const [l, t] = ASTATUS[st] || ASTATUS.unverified; const f = FLAG[l]; return `<span style=\"background-color:${f.bg};color:${f.fg};font-weight:bold;font-size:9pt;\">&nbsp;${esc(t)}&nbsp;</span>`; };\n  const aday = (d) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : 'date unknown';\n  h.push('<h2 style=\"font-size:16pt;\">Answer</h2>');\n  h.push(`<p><i>${esc(ans.question)}</i></p>`);\n  h.push(`<p>${esc(ans.summary || 'No answer was found on the web.')}</p>`);\n  if ((ans.items || []).length) {\n    h.push('<table style=\"border-collapse:collapse;width:100%;\" border=\"1\" cellpadding=\"6\"><tr><th style=\"width:56%;\">Answer</th><th style=\"width:18%;\">Status</th><th>Sources</th></tr>');\n    for (const it of ans.items) h.push(`<tr><td><b>${esc(it.name)}</b><br>${esc(it.what)}</td><td>${abadge(it.status)}</td><td style=\"font-size:9pt;\">${(it.links || []).map(l => `<a href=\"${esc(l.url)}\">${esc(l.domain)}</a> (${esc(aday(l.date))})`).join('<br>') || 'none'}</td></tr>`);\n    h.push('</table>');\n  }\n  if (ans.gaps) h.push(`<p><b>Not found:</b> ${esc(ans.gaps)}</p>`);\n  h.push(`<p style=\"font-size:9pt;color:#555555;\">Looked up on the web: ${esc(ans.pages_read)} of ${esc(ans.pages_total)} pages read. Confirmed: the organiser, an official source or a news outlet states it. Claimed: only its own team says so. Unverified: blogs, forums or a search snippet only.</p>`);\n}\n\n// Briefing\nh.push('<h2 style=\"font-size:16pt;\">In short</h2>');\nh.push(`<p>${cite(r.briefing.in_short)}</p>`);\nfor (const s of r.briefing.sections || []) {\n  h.push(`<h2 style=\"font-size:16pt;\">${esc(s.topic)}</h2>`);\n  for (const p of s.paragraphs || []) {\n    h.push(`<p style=\"margin:0 0 10pt 0;\">${badge(p.flag, p.flag === 'Single source' ? p.flag_source : '')} ${cite(p.text)}</p>`);\n  }\n  if (s.search_interest && s.search_interest.length) {\n    h.push(`<p style=\"color:#555555;\"><i>Search interest (Google Trends, not evidence): people are searching for ${esc(s.search_interest.map(t => '\"' + t + '\"').join(', '))}.</i></p>`);\n  }\n  h.push('<h3 style=\"font-size:12pt;\">The other side</h3>');\n  h.push(`<p>${cite(s.other_side.text)}</p>`);\n}\n\n// Appendix: every story checked, with its number, its explainer and its links.\nconst STATUS = { confirmed: 'Confirmed', stated_only: 'Stated by the source only', not_disclosed: 'Not disclosed', contradicted: 'Contradicted' };\nconst domainOf = (u) => (String(u).match(/^https?:\\/\\/(?:www\\.)?([^\\/?#:]+)/i) || [, u])[1];\n// Every link shows its publication date; pages older than the run's recent window are marked background.\nconst day = (d) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : 'date unknown';\nconst dated = (l) => { l = typeof l === 'string' ? { url: l } : (l || {}); return `<a href=\"${esc(l.url)}\">${esc(l.who || domainOf(l.url))}</a> (${esc(day(l.date))}${l.when === 'background' ? ', background' : ''})`; };\nconst linkLine = (arr) => (arr && arr.length) ? arr.slice(0, 4).map(dated).join(', ') + (arr.length > 4 ? ` +${arr.length - 4} more` : '') : 'none';\nh.push('<h2 style=\"font-size:16pt;\">Stories checked</h2>');\nfor (const c of r.claims || []) {\n  const num = nums[c.cluster_id];\n  h.push(`<h3 style=\"font-size:12pt;margin:16pt 0 4pt 0;\">${num ? '#' + num + ' &middot; ' : ''}${esc(c.title)} ${badge(c.label)}</h3>`);\n  if ((c.origin_links || []).length) h.push(`<p style=\"font-size:9pt;\"><b>Where it came from:</b> ${(c.origin_links || []).map(dated).join(', ')}</p>`);\n  const x = c.explainer;\n  if (x) {\n    h.push(`<p><b>What happened.</b> ${esc(x.what_happened)}</p>`);\n    if ((x.status_points || []).length) h.push('<ul>' + x.status_points.map(p => `<li><b>${esc(STATUS[p.status] || p.status)}:</b> ${esc(p.point)}${p.source ? ` (${dated({ url: p.source, ...((c.page_dates || {})[p.source] || {}) })})` : ''}</li>`).join('') + '</ul>');\n    if (c.label === 'Disputed' && x.two_sides && (x.two_sides.side_a || x.two_sides.side_b)) h.push(`<p><b>One side.</b> ${esc(x.two_sides.side_a)}</p><p><b>The other side.</b> ${esc(x.two_sides.side_b)}</p>`);\n    h.push(`<p><b>Why it matters.</b> ${esc(x.why_it_matters)}</p><p><b>Open question.</b> ${esc(x.open_question)}</p>`);\n  } else h.push(`<p>${esc(c.gist)}</p>`);\n  h.push(`<p style=\"font-size:9pt;color:#555555;\"><b>Independent sources:</b> ${esc(c.independent_domains)} &middot; <b>What backs it:</b> ${linkLine(c.backing_links)} &middot; <b>What contradicts it:</b> ${linkLine(c.contradicting_links)}</p>`);\n}\n\n// Sources\nh.push('<h2 style=\"font-size:16pt;\">Sources</h2><p style=\"font-size:9pt;\">');\nh.push((r.sources || []).map(s => `[${esc(s.n)}] <a href=\"${esc(s.url)}\">${esc(s.title || s.url)}</a> (${esc(day(s.date))}${s.when === 'background' ? ', background' : ''})`).join('<br>'));\nh.push('</p>');\n\n// Footer\nconst f = r.footer || {};\nconst line = (label, arr) => `<b>${label}:</b> ${arr && arr.length ? esc(arr.join('; ')) : 'none'}`;\nh.push('<hr><p style=\"font-size:9pt;color:#555555;\">');\nh.push([line('Sources with nothing usable', f.empty_sources), line('Sources that failed', f.failed_sources), line('Claims not checked', f.not_checked), `<b>Claims skipped as already reported this week:</b> ${esc(f.already_reported || 0)}`, `<b>Smaller claims not checked (cap of ${esc(s.max_verify)} per keyword):</b> ${esc(f.smaller_claims || 0)}`].join('<br>'));\nh.push('<br>Claim Checks labels say how far a claim could be backed by independent sources at the time of the run. They do not prove a claim true or false.</p>');\nh.push('</body></html>');\n\nconst html = h.join('\\n');\nconst title = `Claim Checks - ${r.title} - ${r.date_text}`;\n// Upload body: Google Drive turns the HTML into a Google Doc in the reports folder.\nconst folder = $('Store Settings').first().json.reports_folder_id;\nconst meta = { name: title, mimeType: 'application/vnd.google-apps.document', parents: [folder] };\nconst b = 'cc_report_boundary';\nconst body = `--${b}\\r\\nContent-Type: application/json; charset=UTF-8\\r\\n\\r\\n${JSON.stringify(meta)}\\r\\n--${b}\\r\\nContent-Type: text/html; charset=UTF-8\\r\\n\\r\\n${html}\\r\\n--${b}--`;\n// Telegram summary (HTML, under Telegram's 4,096 characters): In short, then one line per story with its number.\nconst tEsc = (t) => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst short = (t, n) => { t = String(t || '').replace(/\\s*\\[\\d+\\]/g, '').replace(/\\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1).replace(/\\s+\\S*$/, '') + '…' : t; };\nconst EMOJI = { 'Corroborated': '✅', 'Single source': '🔹', 'Disputed': '⚠️', 'Unverified': '❔', 'Opinion': '💬', 'Not checked': '⏸️' };\nconst AEMOJI = { confirmed: '✅', claimed: '🔹', unverified: '❔' };\nconst ansLines = ans ? ['', '<b>Answer</b>', tEsc(short(ans.summary, 600)), ...(ans.items || []).slice(0, 6).map(it => `${AEMOJI[it.status] || '•'} ${(it.links || [])[0] ? '<a href=\"' + tEsc(it.links[0].url) + '\">' + tEsc(it.name) + '</a>' : tEsc(it.name)} <i>(${tEsc(it.status)})</i> ${tEsc(short(it.what, 130))}`)] : [];\nconst head = [`<b>Claim Checks · ${tEsc(r.title)}</b>`, `${tEsc(r.date_text)} · ${tEsc(r.window_text)}`, ...ansLines, '', '<b>In short</b>', tEsc(short(r.briefing.in_short, 900))];\nconst storyLines = (r.claims || []).map(c => { const num = nums[c.cluster_id];\n  return { top: `${EMOJI[c.label] || '•'} ${num ? '<b>#' + num + '</b> ' : ''}${tEsc(c.title)} <i>(${tEsc(c.label)})</i>`, gist: tEsc(short(c.explainer ? c.explainer.what_happened : c.gist, 220)) }; });\nconst tail = Object.keys(nums).length ? ['', 'Send <code>dig</code> and a number for the full story with its sources, then ask me anything about it here.'] : [];\nlet telegram_text = [...head, ...(storyLines.length ? ['', '<b>Stories</b>', ...storyLines.map(l => l.top + (l.gist ? '\\n' + l.gist : ''))] : []), ...tail].join('\\n');\nif (telegram_text.length > 3600) telegram_text = [...head, '', '<b>Stories</b>', ...storyLines.map(l => l.top), ...tail].join('\\n');\n// Chat for the summary: the bot chat that asked, or the chat paired with the recipient's email.\nconst telegram_chat_id = String(s.chat_id || (s.recipient_chats || {})[s.recipient] || '');\n// The briefing saved on the run (read by the bot): the answer goes at the top of In short.\nconst md0 = String(($('Check Briefing Flags').isExecuted ? $('Check Briefing Flags') : $('Build Empty Report')).first().json.markdown || '');\nconst ansMd = ans ? ['**Answer:** ' + (ans.summary || 'No answer was found on the web.'), ...(ans.items || []).map(it => `- ${it.name} (${it.status}): ${it.what}${(it.links || [])[0] ? ' ' + it.links[0].url : ''}`), ans.gaps ? 'Not found: ' + ans.gaps : ''].filter(Boolean).join('\\n') : '';\nconst briefing_markdown = !ansMd ? md0 : (md0.includes('## In short\\n') ? md0.replace('## In short\\n', '## In short\\n' + ansMd + '\\n\\n') : '## In short\\n' + ansMd + '\\n\\n' + md0);\nreturn [{ json: { html, title, body, boundary: b, folder_id: folder, telegram_text, telegram_chat_id, briefing_markdown } }];\n"
+      }
+    },
+    {
+      "id": "7ebc4e69-cbb1-532e-8210-6e50edf542b4",
+      "name": "Upload Report As Google Doc (Google Drive)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "onError": "stopWorkflow",
+      "position": [
+        7620,
+        760
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "=multipart/related; boundary={{ $json.boundary }}",
+        "body": "={{ $json.body }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "590c7984-206c-595e-9db0-5f1aa7345dcf",
+      "name": "Export Report PDF (Google Drive)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "onError": "stopWorkflow",
+      "position": [
+        7840,
+        760
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $json.id }}/export",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "data"
+            }
+          }
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "mimeType",
+              "value": "application/pdf"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "ca2c8cd9-2cbb-5773-92d1-eb89325153c5",
+      "name": "Save PDF",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "onError": "stopWorkflow",
+      "position": [
+        8060,
+        760
+      ],
+      "parameters": {
+        "operation": "upload",
+        "name": "={{ $('Build Report HTML').first().json.title }}.pdf",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive",
+          "cachedResultName": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Build Report HTML').first().json.folder_id }}",
+          "cachedResultName": "Claim Checks Reports"
+        },
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "4948deff-fa16-5950-a4a7-d54b9a84a0ce",
+      "name": "Trash Temporary Doc (Google Drive)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        8280,
+        760
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $('Upload Report As Google Doc (Google Drive)').first().json.id }}",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"trashed\": true}"
+      },
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "id": "4b8d334e-6818-5745-853c-a60179304e1e",
+      "name": "Attach PDF",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        8720,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const file = $('Save PDF').first().json;\nconst exp = $('Export Report PDF (Google Drive)').first();\nconst link = 'https://drive.google.com/file/d/' + file.id + '/view';\nreturn [{ json: { pdf_link: link, title: $('Build Report HTML').first().json.title }, binary: exp.binary }];"
+      }
+    },
+    {
+      "id": "22934838-a607-5601-9814-7259e94e269a",
+      "name": "Email Report",
+      "webhookId": "d8bb66a0-32c5-44a2-9e9b-43078bfb9baf",
+      "disabled": false,
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 3000,
+      "onError": "stopWorkflow",
+      "position": [
+        9160,
+        760
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Store Settings').first().json.recipient }}",
+        "subject": "={{ $json.title }}",
+        "emailType": "html",
+        "message": "={{ '<p>Your Claim Checks report is attached.</p><p><b>In short:</b> ' + ($('Check Briefing Flags').isExecuted ? $('Check Briefing Flags') : $('Build Empty Report')).first().json.report.briefing.in_short.replace(/</g, '&lt;') + '</p><p><a href=\"' + $json.pdf_link + '\">Open the PDF in Google Drive</a></p>' }}",
+        "options": {
+          "appendAttribution": false,
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "data"
+              }
+            ]
+          }
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "id": "98320849-0d43-5198-8d7b-6be821fedad6",
+      "name": "Mark Run Delivered (Airtable Runs)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        9380,
+        760
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_RUNS_TABLE_ID",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ records: [{ id: $('Create Run Row (Airtable Runs)').first().json.records[0].id, fields: { status: 'delivered', pdf_link: $('Attach PDF').first().json.pdf_link, briefing: $('Build Report HTML').first().json.briefing_markdown } }], typecast: true }) }}"
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "0d371a3d-5d77-50c2-b844-9d592be05ebe",
+      "name": "Chat Known?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        10040,
+        760
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "6fea286e-0716-55a7-b150-82b2e7e987af",
+              "leftValue": "={{ $('Build Report HTML').first().json.telegram_chat_id }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "46fec8d1-d58c-572e-a1c0-a6113c9b777e",
+      "name": "Send Summary To Chat",
+      "webhookId": "1425a0c9-3205-498a-aa28-9b963e9b2582",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        10260,
+        760
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Build Report HTML').first().json.telegram_chat_id }}",
+        "text": "={{ $('Build Report HTML').first().json.telegram_text + '\\n\\n📄 <a href=\"' + $('Attach PDF').first().json.pdf_link + '\">Open the PDF</a>' + ($('Store Settings').first().json.mode === '7days' ? ' (also sent by email)' : '') }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Claim Checks"
+        }
+      }
+    },
+    {
+      "id": "b83aebf5-39cb-51aa-bdd6-d8f99ca2996b",
+      "name": "Build Source Calls",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1460,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const errText = (e) => String(typeof e === 'string' ? e : (e && (e.message || e.description || JSON.stringify(e))) || 'unknown error').replace(/\\s+/g, ' ').slice(0, 160);\nconst at = (it, idx) => (it.pairedItem && typeof it.pairedItem.item === 'number') ? it.pairedItem.item : idx;\n// For every angle of every keyword: one call each for Reddit, Hacker News and X, with the keyword's Google Trends terms.\n// Each source's query comes from the angle's word groups (a post must match one item of every group):\n// X and Reddit take (a OR b) (c OR d); Hacker News has no OR, so it gets every item as an optional word (posts matching more rank first).\nconst queryFor = (a, source) => {\n  const groups = [].concat(a.word_groups || []).map(g => [].concat(g || []).map(w => String(w).replace(/[\"()#]/g, '').trim()).filter(Boolean).slice(0, 12)).filter(g => g.length).slice(0, 3);\n  if (!groups.length) return a.search_phrase;\n  if (source === 'hacker_news') return [...new Set(groups.flat())].join(' ');\n  return groups.map(g => '(' + g.map(w => /\\s/.test(w) ? '\"' + w + '\"' : w).join(' OR ') + ')').join(' ');\n};\nconst kwItems = $('Split Angles').all().map(i => i.json);\nconst out = [];\n$input.all().forEach((it, idx) => {\n  const k = kwItems[at(it, idx)] || kwItems[idx];\n  const terms = it.json.error ? [] : (it.json.trend_terms || []).slice(0, 2);\n  for (const a of k.angles || []) for (const source of ['reddit', 'hacker_news', 'x']) out.push({ json: { run_id: k.run_id, keywords: k.keywords, keyword: k.keyword, angle: a.angle,\n    search_phrase: a.search_phrase, query: queryFor(a, source), source, mode: k.mode, window_days: source === 'hacker_news' ? 7 : k.window_days,\n    trend_terms: terms, check_duplicates: k.check_duplicates } });\n});\nreturn out;"
+      }
+    },
+    {
+      "id": "626a1d76-30e5-538a-bd31-53db8606767c",
+      "name": "Collect From Sources (via Collect Findings)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1680,
+        760
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ccCollectFind001",
+          "cachedResultName": "Claim Checks | Collect Findings"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "1cc8a105-cd89-5f4c-8ab8-cf0ee5745ecd",
+      "name": "No Claims To Check",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        4520,
+        960
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "3f980b32-7346-5ec8-97ad-b260d8aa4062",
+      "name": "List Run Problems",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        9600,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const errText = (e) => String(typeof e === 'string' ? e : (e && (e.message || e.description || JSON.stringify(e))) || 'unknown error').replace(/\\s+/g, ' ').slice(0, 160);\nconst at = (it, idx) => (it.pairedItem && typeof it.pairedItem.item === 'number') ? it.pairedItem.item : idx;\n// Everything the run survived (failed sources, claims that could not be checked), for ONE alert.\nconst s = $('Store Settings').first().json;\nconst problems = [...($('Summarise Collection').first().json.problems || [])];\nif ($('Check Each Claim (via Verify Story)').isExecuted) {\n  const checks = $('Split Claims').all().map(i => i.json);\n  const plan = $('Build Cluster Rows').first().json.plan;\n  $('Check Each Claim (via Verify Story)').all().forEach((it, idx) => {\n    if (!it.json.error) return;\n    const c = checks[at(it, idx)] || {};\n    const cl = (plan.clusters || []).find(x => x.cluster_id === c.cluster_id) || {};\n    problems.push(`Claim not checked \"${String(cl.title || c.cluster_id).slice(0, 80)}\": ${errText(it.json.error)}`);\n  });\n}\nif ($('Answer The Question (via Answer Question)').isExecuted) {\n  const a = $('Answer The Question (via Answer Question)').first().json;\n  if (a.error || !a.answer) problems.push(`Question not answered \"${String((s.questions || [])[0] || '').slice(0, 80)}\": ${errText(a.error || 'no answer returned')}`);\n}\nreturn [{ json: { run_id: s.run_id, keywords: [].concat(s.keywords || []), problems } }];"
+      }
+    },
+    {
+      "id": "d4f80dda-bf95-5d56-82e8-d65c99f4a762",
+      "name": "Send Problem Alert (via Report Run Problems)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        9820,
+        760
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "lghXfI9eF1NOXLko",
+          "cachedResultName": "Claim Checks | Report Run Problems"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      }
+    },
+    {
+      "id": "152ec113-5c0d-438b-aab8-f3001296be01",
+      "name": "Save Or Update Stories In Archive",
+      "notesInFlow": true,
+      "notes": "Repeat (shares a post or linked article with an archived story): keeps its number and gets a \"checked again\" entry. New: gets a new number.",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        6960,
+        760
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- One archive row per checked story, with its original posts. A story that shares a post or a linked article with a story\n-- archived by an earlier run is the same story: it keeps that number, gets the new check and any new posts, and a dated \"checked again\" entry in story_updates.\nWITH r AS (\n  SELECT * FROM json_to_recordset($1::json) AS x(run_id text, cluster_id text, found_on date, mode text, keywords text, title text, label text, claim text, gist text, explainer jsonb, official_links text, supporting_links text, contradicting_links text, evidence text, search_terms text, posts jsonb)\n), m AS (\n  SELECT r.*, (SELECT min(s.story_number) FROM claim_checks.stories s, jsonb_array_elements(s.posts) op\n               WHERE s.run_id <> r.run_id\n                 AND EXISTS (SELECT 1 FROM jsonb_array_elements(coalesce(r.posts, '[]'::jsonb)) np, unnest(ARRAY[np->>'url', np->>'linked_url']) l(link)\n                             WHERE l.link <> '' AND l.link IN (op->>'url', op->>'linked_url'))) AS same_as\n  FROM r\n), old AS (\n  SELECT story_number, label AS old_label FROM claim_checks.stories WHERE story_number IN (SELECT same_as FROM m)\n), upd AS (\n  UPDATE claim_checks.stories s SET label = m.label, claim = m.claim, gist = m.gist, explainer = m.explainer,\n    official_links = m.official_links, supporting_links = m.supporting_links, contradicting_links = m.contradicting_links,\n    evidence = m.evidence, search_terms = m.search_terms,\n    posts = s.posts || coalesce((SELECT jsonb_agg(np) FROM jsonb_array_elements(coalesce(m.posts, '[]'::jsonb)) np\n                                 WHERE NOT s.posts @> jsonb_build_array(jsonb_build_object('url', np->>'url'))), '[]'::jsonb)\n  FROM m WHERE s.story_number = m.same_as\n  RETURNING s.story_number, m.cluster_id\n), noted AS (\n  INSERT INTO claim_checks.story_updates (story_number, question, result, found_new, links)\n  SELECT m.same_as, '',\n    'Checked again on ' || to_char(m.found_on, 'FMDD Mon YYYY') || ' in a run on \"' || m.keywords || '\": '\n      || CASE WHEN o.old_label = m.label THEN 'still ' || m.label ELSE o.old_label || ' → ' || m.label END\n      || '. ' || coalesce(nullif(m.gist, ''), m.claim, ''),\n    o.old_label IS DISTINCT FROM m.label,\n    concat_ws(E'\\n', nullif(m.official_links, ''), nullif(m.supporting_links, ''), nullif(m.contradicting_links, ''))\n  FROM m JOIN old o ON o.story_number = m.same_as\n  RETURNING 1\n), ins AS (\n  INSERT INTO claim_checks.stories (run_id, cluster_id, found_on, mode, keywords, title, label, claim, gist, explainer, official_links, supporting_links, contradicting_links, evidence, search_terms, posts)\n  SELECT run_id, cluster_id, found_on, mode, keywords, title, label, claim, gist, explainer, official_links, supporting_links, contradicting_links, evidence, search_terms, coalesce(posts, '[]'::jsonb) FROM m WHERE same_as IS NULL\n  ON CONFLICT (run_id, cluster_id) DO UPDATE SET label = EXCLUDED.label, claim = EXCLUDED.claim, gist = EXCLUDED.gist, explainer = EXCLUDED.explainer,\n    official_links = EXCLUDED.official_links, supporting_links = EXCLUDED.supporting_links, contradicting_links = EXCLUDED.contradicting_links,\n    evidence = EXCLUDED.evidence, search_terms = EXCLUDED.search_terms, posts = EXCLUDED.posts\n  RETURNING story_number, cluster_id\n)\nSELECT coalesce(json_agg(x ORDER BY x.story_number), '[]'::json) AS saved FROM (SELECT * FROM ins UNION ALL SELECT * FROM upd) x;",
+        "options": {
+          "queryReplacement": "={{ [JSON.stringify($('Check Briefing Flags').first().json.archive_rows)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "dd42711f-c7a5-4911-84ef-e07ef9f078cb",
+      "name": "Add PDF Link To Archive",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        8500,
+        760
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH u AS (UPDATE claim_checks.stories SET pdf_link = $1 WHERE run_id = $2 RETURNING 1) SELECT count(*)::int AS updated FROM u;",
+        "options": {
+          "queryReplacement": "={{ ['https://drive.google.com/file/d/' + $('Save PDF').first().json.id + '/view', $('Store Settings').first().json.run_id] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "1ff6b31d-1b8a-45e6-b5fb-4a107e5fd4d5",
+      "name": "Weekly Run?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        8940,
+        760
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "e4b1a9d2-7c3f-4a8e-b5d6-2f9c0a1e3b77",
+              "leftValue": "={{ $('Store Settings').first().json.mode }}",
+              "rightValue": "7days",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "av-planangles",
+      "name": "Plan Angles (via Ask Venice)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        760
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RzRuzMVi64lHyHwy",
+          "cachedResultName": "Claim Checks | Ask Venice"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "step": "Plan Angles",
+            "body": "={{ { model: 'kimi-k2-6', temperature: 0, max_tokens: 3500, venice_parameters: { disable_thinking: true }, response_format: { type: 'json_schema', json_schema: { name: 'angles', strict: true, schema: {\"type\": \"object\", \"properties\": {\"angles\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"keyword\": {\"type\": \"string\"}, \"angle\": {\"type\": \"string\"}, \"search_phrase\": {\"type\": \"string\"}, \"trends_term\": {\"type\": \"string\"}, \"word_groups\": {\"type\": \"array\", \"items\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} } } }, \"additionalProperties\": false, \"required\": [\"keyword\", \"angle\", \"search_phrase\", \"trends_term\", \"word_groups\"]} } }, \"additionalProperties\": false, \"required\": [\"angles\"]} } }, messages: [{ role: 'system', content: \"<role>You plan a research run for a claim-checking report. You split the keywords into a few search angles that together cover what people are discussing about them right now.</role>\\n\\n<rules>\\n1. The number in <max_angles> is PER KEYWORD: give EVERY keyword exactly that many angles, so one keyword never takes searches from another. Only a keyword too narrow for that many different angles gets fewer, never fewer than 3.\\n2. angle: a short name for the sub-topic, 3-6 words.\\n3. search_phrase: 2-5 plain words that would find posts about the angle on Reddit and Hacker News. No quotes, no operators.\\n4. keyword: the input keyword the angle belongs to, copied exactly.\\n5. Prefer concrete angles (a product, a release, a company, an event, a rule) over vague ones (\\\"the future of AI\\\").\\n6. trends_term: 1-2 everyday words that many people type into Google about this angle's topic (for example: drug discovery, LLM, crypto hack). Broader than search_phrase: Google Trends has data only for common searches, never for a long or rare phrase.\\n7. word_groups: 2 or 3 groups of 4-10 words or short phrases, written the way people write them in posts: verbs in every form, nouns, abbreviations, well-known names in the field. A post is found when it contains one item from EVERY group, so each group is ONE idea in many wordings, for example the subject (crypto, DeFi, exchange, protocol, bridge, wallet, token) and the event (hack, hacked, exploit, exploited, drained, stolen, breach, attacker). Never put the same idea in two groups. No operators, no quotes, no hashtags.\\n8. The first angle of every keyword is its wide angle: angle \\\"All news on <keyword>\\\", with word_groups that cover everything the keyword means, so a post the narrower angles miss is still found. Then add the narrower angles; the wide angle counts toward its keyword's <max_angles>.\\n9. A keyword listed in <questions> is a question, not a topic. Its angles look for the posts that hold the ANSWER: the wide angle covers the question's subject (the event, product, project or body it names); the other angles name the kinds of answer (for example: submitted projects, demos, launches, winners, finalists, the tracks or categories), each with word_groups in the words such posts use.\\n</rules>\\n\\n<example>\\n<input>\\n<keywords>[\\\"AI coding agents\\\"]</keywords>\\n<window>last 7 days</window>\\n<max_angles>3</max_angles>\\n<questions>[]</questions>\\n</input>\\n<output>{\\\"angles\\\":[{\\\"keyword\\\":\\\"AI coding agents\\\",\\\"angle\\\":\\\"All news on AI coding agents\\\",\\\"search_phrase\\\":\\\"AI coding agent\\\",\\\"trends_term\\\":\\\"coding agent\\\",\\\"word_groups\\\":[[\\\"AI\\\",\\\"LLM\\\",\\\"Claude\\\",\\\"GPT\\\",\\\"Codex\\\",\\\"Copilot\\\",\\\"Cursor\\\"],[\\\"coding agent\\\",\\\"coding assistant\\\",\\\"code agent\\\",\\\"agentic coding\\\",\\\"AI coding\\\",\\\"writes code\\\"]]},{\\\"keyword\\\":\\\"AI coding agents\\\",\\\"angle\\\":\\\"New coding agent releases\\\",\\\"search_phrase\\\":\\\"coding agent release\\\",\\\"trends_term\\\":\\\"coding agent\\\",\\\"word_groups\\\":[[\\\"coding agent\\\",\\\"coding assistant\\\",\\\"Copilot\\\",\\\"Cursor\\\",\\\"Codex\\\",\\\"Claude Code\\\"],[\\\"release\\\",\\\"released\\\",\\\"launch\\\",\\\"launched\\\",\\\"announces\\\",\\\"new version\\\",\\\"update\\\"]]},{\\\"keyword\\\":\\\"AI coding agents\\\",\\\"angle\\\":\\\"Agent pricing and usage limits\\\",\\\"search_phrase\\\":\\\"coding agent pricing limits\\\",\\\"trends_term\\\":\\\"AI pricing\\\",\\\"word_groups\\\":[[\\\"coding agent\\\",\\\"Copilot\\\",\\\"Cursor\\\",\\\"Codex\\\",\\\"Claude Code\\\"],[\\\"price\\\",\\\"pricing\\\",\\\"cost\\\",\\\"subscription\\\",\\\"rate limit\\\",\\\"usage limit\\\",\\\"quota\\\"]]}]}</output>\\n</example>\" }, { role: 'user', content: '<keywords>' + JSON.stringify([].concat($('Store Settings').first().json.keywords || [])) + '</keywords>\\n<window>' + ($('Store Settings').first().json.mode === 'today' ? 'last 24 hours' : 'last 7 days') + '</window>\\n<max_angles>' + $('Store Settings').first().json.max_angles + '</max_angles>\\n<questions>' + JSON.stringify([].concat($('Store Settings').first().json.questions || [])) + '</questions>' }] } }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "av-groupfindings",
+      "name": "Group Findings (via Ask Venice)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        3860,
+        760
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RzRuzMVi64lHyHwy",
+          "cachedResultName": "Claim Checks | Ask Venice"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "step": "Group Findings",
+            "body": "={{ { model: 'kimi-k2-6', temperature: 0, max_tokens: 3000, venice_parameters: { disable_thinking: true }, response_format: { type: 'json_schema', json_schema: { name: 'groups', strict: true, schema: {\"type\": \"object\", \"properties\": {\"groups\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"title\": {\"type\": \"string\"}, \"finding_ids\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} }, \"repeat_of_recent\": {\"type\": \"boolean\"}, \"trend_terms\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} } }, \"additionalProperties\": false, \"required\": [\"title\", \"finding_ids\", \"repeat_of_recent\", \"trend_terms\"]} } }, \"additionalProperties\": false, \"required\": [\"groups\"]} } }, messages: [{ role: 'system', content: \"<role>You group social posts that make the same claim, so that each claim is checked only once.</role>\\n\\n<rules>\\n1. Put posts in one group only when they are about the same specific claim or event: the same release, announcement, incident, number or decision. The same broad topic is not enough.\\n2. Every finding id appears in exactly one group. A post with its own claim is a group of one.\\n3. title: a neutral headline of the claim, at most 12 words, no opinion words.\\n4. repeat_of_recent: true only if the group is the same story as one in <recent_stories>; otherwise false.\\n5. trend_terms: copy the terms from <trend_terms> that people would search for this exact story; [] if none fits.\\n</rules>\\n\\n<example>\\n<input>\\n<findings>\\n{\\\"id\\\":\\\"f1\\\",\\\"title\\\":\\\"Example Corp ships agent v5\\\",\\\"summary\\\":\\\"Example Corp released version 5 of its coding agent.\\\",\\\"source\\\":\\\"hacker_news\\\",\\\"angle\\\":\\\"New coding agent releases\\\",\\\"links_to\\\":\\\"https://example.com/blog/v5\\\"}\\n{\\\"id\\\":\\\"f2\\\",\\\"title\\\":\\\"Agent v5 is out, first impressions\\\",\\\"summary\\\":\\\"The author says Example Corp's agent v5 is now available and faster.\\\",\\\"source\\\":\\\"reddit\\\",\\\"angle\\\":\\\"New coding agent releases\\\",\\\"links_to\\\":null}\\n{\\\"id\\\":\\\"f3\\\",\\\"title\\\":\\\"Agents will replace junior devs\\\",\\\"summary\\\":\\\"The author believes coding agents will replace junior developers within two years.\\\",\\\"source\\\":\\\"reddit\\\",\\\"angle\\\":\\\"Agents and developer jobs\\\",\\\"links_to\\\":null}\\n</findings>\\n<recent_stories>[\\\"Example Corp raises prices for its Pro plan\\\"]</recent_stories>\\n<trend_terms>[\\\"example agent v5\\\", \\\"junior developer jobs\\\"]</trend_terms>\\n</input>\\n<output>{\\\"groups\\\":[{\\\"title\\\":\\\"Example Corp releases version 5 of its coding agent\\\",\\\"finding_ids\\\":[\\\"f1\\\",\\\"f2\\\"],\\\"repeat_of_recent\\\":false,\\\"trend_terms\\\":[\\\"example agent v5\\\"]},{\\\"title\\\":\\\"Coding agents will replace junior developers\\\",\\\"finding_ids\\\":[\\\"f3\\\"],\\\"repeat_of_recent\\\":false,\\\"trend_terms\\\":[\\\"junior developer jobs\\\"]}]}</output>\\n</example>\" }, { role: 'user', content: '<findings>\\n' + $json.lines + '\\n</findings>\\n<recent_stories>' + JSON.stringify($json.recent) + '</recent_stories>\\n<trend_terms>' + JSON.stringify($json.trend_terms) + '</trend_terms>' }] } }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "av-writebriefing",
+      "name": "Write Briefing (via Ask Venice)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        6520,
+        760
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RzRuzMVi64lHyHwy",
+          "cachedResultName": "Claim Checks | Ask Venice"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "step": "Write Briefing",
+            "body": "={{ { model: 'kimi-k2-6', temperature: 0, max_tokens: 6000, venice_parameters: { disable_thinking: true }, response_format: { type: 'json_schema', json_schema: { name: 'briefing', strict: true, schema: {\"type\": \"object\", \"properties\": {\"in_short\": {\"type\": \"string\"}, \"sections\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"topic\": {\"type\": \"string\"}, \"paragraphs\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"text\": {\"type\": \"string\"}, \"cluster_ids\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} } }, \"additionalProperties\": false, \"required\": [\"text\", \"cluster_ids\"]} }, \"other_side\": {\"type\": \"object\", \"properties\": {\"text\": {\"type\": \"string\"}, \"cluster_ids\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} } }, \"additionalProperties\": false, \"required\": [\"text\", \"cluster_ids\"]}, \"search_interest\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} } }, \"additionalProperties\": false, \"required\": [\"topic\", \"paragraphs\", \"other_side\", \"search_interest\"]} }, \"gists\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"cluster_id\": {\"type\": \"string\"}, \"gist\": {\"type\": \"string\"} }, \"additionalProperties\": false, \"required\": [\"cluster_id\", \"gist\"]} } }, \"additionalProperties\": false, \"required\": [\"in_short\", \"sections\", \"gists\"]} } }, messages: [{ role: 'system', content: \"<role>You write the briefing of a claim-checking report: one coherent text on the research topic, like a good search-engine answer, where every statement stays tied to the checked claim it comes from.</role>\\n\\n<material>\\nEach <claim> has an id, a label set by the checking step, a statement, numbered evidence excerpts (with stance and source tier) and numbered posts it came from. Numbers [n] are the only citations you may use.\\n</material>\\n\\n<rules>\\n1. Use only the material. Never add facts, numbers, dates or names that are not in it.\\n2. Group related claims into 2-5 sections by topic, not by source and not one claim per section. Unrelated keywords become separate sections.\\n3. Write each paragraph from one or more claims and list their ids in cluster_ids. Only claims with the same label share a paragraph.\\n4. State each label this way: Corroborated as a fact, citing its backing evidence. Single source as stated by that one source (\\\"According to ...\\\"). Disputed with the claim and the contradicting source in the same paragraph. Unverified only as being discussed, not confirmed. Opinion as a view some posters hold. Not checked as could not be checked in this run.\\n5. Cite with [n] after the sentence it supports. Never use a number that is not in the material.\\n6. other_side: per section, the contradicting evidence or opposing views found in the material, cited, with their cluster_ids. If there is none, write exactly \\\"No contradicting source found.\\\" with cluster_ids [].\\n7. search_interest: copy the <search_interest> terms of the section's claims; [] if none. They show what people search for, not evidence.\\n8. in_short: 3-5 sentences: what is happening, what is confirmed, what is disputed.\\n9. gists: one per claim id: 2-3 neutral sentences with the claim and its label.\\n10. Style: plain, direct English for a busy reader; paragraphs of 2-4 sentences; no hype, no filler, no closing summary line.\\n11. Evidence and posts carry their publication date. Evidence whose when is background was published before this event: use it only as earlier context, say that it is from earlier (for example: an article from May 2026), and never report it as news of this window.\\n</rules>\\n\\n<example>\\n<input>\\n<topic>AI coding agents</topic>\\n<window>last 7 days</window>\\n<claims>\\n<claim id=\\\"c1\\\" label=\\\"Corroborated\\\">\\n<statement>Example Corp releases version 5 of its coding agent</statement>\\n<evidence n=\\\"1\\\" stance=\\\"supports\\\" tier=\\\"official\\\" domain=\\\"example.com\\\">Today we are releasing Agent v5 with background tasks.</evidence>\\n<evidence n=\\\"2\\\" stance=\\\"supports\\\" tier=\\\"reliable\\\" domain=\\\"theverge.com\\\">Example Corp shipped v5 of its agent on Tuesday.</evidence>\\n<post n=\\\"3\\\" source=\\\"hacker_news\\\">Example Corp released version 5 of its coding agent.</post>\\n<search_interest>example agent v5</search_interest>\\n</claim>\\n<claim id=\\\"c2\\\" label=\\\"Disputed\\\">\\n<statement>Agent v5 scores 92% on a public coding benchmark</statement>\\n<evidence n=\\\"4\\\" stance=\\\"contradicts\\\" tier=\\\"official\\\" domain=\\\"benchmark.org\\\">The 92% run used a non-standard setup and is not on the leaderboard.</evidence>\\n<post n=\\\"5\\\" source=\\\"reddit\\\">The author says agent v5 scored 92% on a coding benchmark.</post>\\n</claim>\\n</claims>\\n</input>\\n<output>{\\\"in_short\\\":\\\"Example Corp released version 5 of its coding agent this week, confirmed by the company and independent press [1][2]. A viral 92% benchmark score is disputed by the benchmark's maintainers [4].\\\",\\\"sections\\\":[{\\\"topic\\\":\\\"Example Corp's agent v5\\\",\\\"paragraphs\\\":[{\\\"text\\\":\\\"Example Corp released version 5 of its coding agent, adding background tasks [1]. The Verge reported the launch the same day [2].\\\",\\\"cluster_ids\\\":[\\\"c1\\\"]},{\\\"text\\\":\\\"Posts claim v5 scored 92% on a public coding benchmark [5], but the benchmark's maintainers say that run used a non-standard setup and is not on the leaderboard [4].\\\",\\\"cluster_ids\\\":[\\\"c2\\\"]}],\\\"other_side\\\":{\\\"text\\\":\\\"The benchmark's maintainers reject the 92% figure as unofficial [4].\\\",\\\"cluster_ids\\\":[\\\"c2\\\"]},\\\"search_interest\\\":[\\\"example agent v5\\\"]}],\\\"gists\\\":[{\\\"cluster_id\\\":\\\"c1\\\",\\\"gist\\\":\\\"Example Corp released version 5 of its coding agent with background tasks. The company and The Verge confirm it: Corroborated.\\\"},{\\\"cluster_id\\\":\\\"c2\\\",\\\"gist\\\":\\\"Posts claim agent v5 scored 92% on a coding benchmark. The benchmark's maintainers say the run is unofficial: Disputed.\\\"}]}</output>\\n</example>\" }, { role: 'user', content: '<topic>' + $json.topic + '</topic>\\n<window>' + $json.window + '</window>\\n<claims>\\n' + $json.claims_xml + '\\n</claims>' }] } }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "cda05ea3-1614-46e1-aa09-23ec62285b64",
+      "name": "Has Question?",
+      "notesInFlow": true,
+      "notes": "A question: its answer is looked up on the web. A topic: goes straight on.",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2420,
+        760
+      ],
+      "parameters": {
+        "looseTypeValidation": true,
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "68a77a54-8ba9-476c-80a9-8a5a0eba6623",
+              "leftValue": "={{ [].concat($('Store Settings').first().json.questions || []).length }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "rightValue": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "90bebd00-1e14-4ec9-b148-5ea689fb061e",
+      "name": "Answer The Question (via Answer Question)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        2860,
+        960
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "6tQ5vBxixkQqpDKO",
+          "cachedResultName": "Claim Checks | Answer Question"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "run_id": "={{ $json.run_id }}",
+            "question": "={{ $json.question }}",
+            "mode": "={{ $json.mode }}",
+            "window_days": "={{ $json.window_days }}",
+            "posts": "={{ $json.posts }}"
+          },
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "schema": [
+            {
+              "id": "run_id",
+              "displayName": "run_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "question",
+              "displayName": "question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "mode",
+              "displayName": "mode",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "window_days",
+              "displayName": "window_days",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "number"
+            },
+            {
+              "id": "posts",
+              "displayName": "posts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "8ce715fe-03c1-4905-a680-d6f826ba47ce",
+      "name": "Answer Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2140,
+        380
+      ],
+      "parameters": {
+        "width": 940,
+        "height": 800,
+        "color": 2,
+        "content": "## Read Posts And Answer The Question\n\nTriggered by: runs inline after Collect Posts.\n\nWhat it does:\n1. Read Kept Findings (Airtable Findings) reads the run's kept posts (all pages).\n2. Has Question? A keyword that starts with a question word (what, why, how, which, who, is, does...) or ends with \"?\" is a question; a topic goes straight on.\n3. Build Question Input takes the posts of the question's own angles; Answer The Question (via Answer Question) reads their links and Google's pages and returns the answer, each item confirmed, claimed or unverified. If it fails, the run goes on and lists it in the problem alert."
+      }
+    },
+    {
+      "id": "5f31b08c-8375-42a2-aac7-1bd20231962a",
+      "name": "Build Question Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2640,
+        960
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: picks the posts of the question's own angles from all kept posts, for \"Answer Question\".\nconst s = $('Store Settings').first().json;\nconst q = [].concat(s.questions || [])[0];\nconst k = $('Split Angles').all().map(i => i.json).find(x => x.keyword === q) || { angles: [] };\nconst mine = new Set((k.angles || []).map(a => a.angle));\nconst posts = $('Read Kept Findings (Airtable Findings)').all().flatMap(i => i.json.records || []).map(r => r.fields || {})\n  .filter(f => mine.has(f.angle)).slice(0, 12)\n  .map(f => ({ source: f.source || '', url: f.url || '', title: String(f.title || '').slice(0, 300), summary: String(f.summary || '').slice(0, 500), linked_url: f.linked_url || '', published_at: f.published_at || '' }));\nreturn [{ json: { run_id: s.run_id, question: q, mode: s.mode, window_days: s.window_days, posts } }];"
+      }
+    }
+  ],
+  "connections": {
+    "When Called By Entry": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Create Run Row (Airtable Runs)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Recent Claims (Airtable Clusters)": {
+      "main": [
+        [
+          {
+            "node": "Build Grouping Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Cluster Rows": {
+      "main": [
+        [
+          {
+            "node": "Any Claims?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Claims?": {
+      "main": [
+        [
+          {
+            "node": "Save Claims (Airtable Clusters)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Claims To Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Claims (Airtable Clusters)": {
+      "main": [
+        [
+          {
+            "node": "Build Finding Updates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Finding Updates": {
+      "main": [
+        [
+          {
+            "node": "Link Posts To Claims (Airtable Findings)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Checked Claims (Airtable Clusters)": {
+      "main": [
+        [
+          {
+            "node": "Build Writer Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Claim Summaries (Airtable Clusters)": {
+      "main": [
+        [
+          {
+            "node": "Build Report HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Empty Report": {
+      "main": [
+        [
+          {
+            "node": "Build Report HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Report As Google Doc (Google Drive)": {
+      "main": [
+        [
+          {
+            "node": "Export Report PDF (Google Drive)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Export Report PDF (Google Drive)": {
+      "main": [
+        [
+          {
+            "node": "Save PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save PDF": {
+      "main": [
+        [
+          {
+            "node": "Trash Temporary Doc (Google Drive)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Report": {
+      "main": [
+        [
+          {
+            "node": "Mark Run Delivered (Airtable Runs)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Known?": {
+      "main": [
+        [
+          {
+            "node": "Send Summary To Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Angles": {
+      "main": [
+        [
+          {
+            "node": "Collect Google Trends (via Collect Findings)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Google Trends (via Collect Findings)": {
+      "main": [
+        [
+          {
+            "node": "Build Source Calls",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Source Calls": {
+      "main": [
+        [
+          {
+            "node": "Collect From Sources (via Collect Findings)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect From Sources (via Collect Findings)": {
+      "main": [
+        [
+          {
+            "node": "Summarise Collection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "No Claims To Check": {
+      "main": [
+        [
+          {
+            "node": "Build Empty Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Link Posts To Claims (Airtable Findings)": {
+      "main": [
+        [
+          {
+            "node": "Split Claims",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Claims": {
+      "main": [
+        [
+          {
+            "node": "Check Each Claim (via Verify Story)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Each Claim (via Verify Story)": {
+      "main": [
+        [
+          {
+            "node": "Read Checked Claims (Airtable Clusters)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Report HTML": {
+      "main": [
+        [
+          {
+            "node": "Upload Report As Google Doc (Google Drive)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Run Delivered (Airtable Runs)": {
+      "main": [
+        [
+          {
+            "node": "List Run Problems",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Run Problems": {
+      "main": [
+        [
+          {
+            "node": "Send Problem Alert (via Report Run Problems)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Problem Alert (via Report Run Problems)": {
+      "main": [
+        [
+          {
+            "node": "Chat Known?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Or Update Stories In Archive": {
+      "main": [
+        [
+          {
+            "node": "Save Claim Summaries (Airtable Clusters)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trash Temporary Doc (Google Drive)": {
+      "main": [
+        [
+          {
+            "node": "Add PDF Link To Archive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add PDF Link To Archive": {
+      "main": [
+        [
+          {
+            "node": "Attach PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach PDF": {
+      "main": [
+        [
+          {
+            "node": "Weekly Run?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly Run?": {
+      "main": [
+        [
+          {
+            "node": "Email Report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Run Delivered (Airtable Runs)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Run Row (Airtable Runs)": {
+      "main": [
+        [
+          {
+            "node": "Plan Angles (via Ask Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Angles (via Ask Venice)": {
+      "main": [
+        [
+          {
+            "node": "Split Angles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Grouping Input": {
+      "main": [
+        [
+          {
+            "node": "Group Findings (via Ask Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group Findings (via Ask Venice)": {
+      "main": [
+        [
+          {
+            "node": "Build Cluster Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Writer Input": {
+      "main": [
+        [
+          {
+            "node": "Write Briefing (via Ask Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Briefing (via Ask Venice)": {
+      "main": [
+        [
+          {
+            "node": "Check Briefing Flags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Briefing Flags": {
+      "main": [
+        [
+          {
+            "node": "Save Or Update Stories In Archive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarise Collection": {
+      "main": [
+        [
+          {
+            "node": "Read Kept Findings (Airtable Findings)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Kept Findings (Airtable Findings)": {
+      "main": [
+        [
+          {
+            "node": "Has Question?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Question?": {
+      "main": [
+        [
+          {
+            "node": "Build Question Input",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read Recent Claims (Airtable Clusters)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Question Input": {
+      "main": [
+        [
+          {
+            "node": "Answer The Question (via Answer Question)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer The Question (via Answer Question)": {
+      "main": [
+        [
+          {
+            "node": "Read Recent Claims (Airtable Clusters)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "ccScheduledEnt01,ccTelegramBot001"
+  },
+  "active": false
+}

@@ -1,0 +1,1212 @@
+{
+  "id": "3B9Il26esYH8IJEP",
+  "name": "Claim Checks | Story Chat",
+  "nodes": [
+    {
+      "id": "sc-trig",
+      "name": "When Called By Bot",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        660
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "sc-set",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        280,
+        660
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "sc-set-0",
+              "name": "follow_up_story_id",
+              "type": "string",
+              "value": "ccFollowUpStor01"
+            },
+            {
+              "id": "sc-set-1",
+              "name": "history_exchanges",
+              "type": "number",
+              "value": 20
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "sc-route",
+      "name": "Pick Function",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        500,
+        660
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "sc-r-open",
+                    "leftValue": "={{ $json.function }}",
+                    "rightValue": "open",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "open"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "sc-r-ask",
+                    "leftValue": "={{ $json.function }}",
+                    "rightValue": "ask",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ask"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "sc-r-save",
+                    "leftValue": "={{ $json.function }}",
+                    "rightValue": "save",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "save"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "sc-r-forget",
+                    "leftValue": "={{ $json.function }}",
+                    "rightValue": "forget",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "forget"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "sc-open",
+      "name": "Open Conversation",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        880,
+        660
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- dig / update on one story: reuse the chat's current conversation if it is about the same story, otherwise start a new one.\nWITH cur AS (\n  SELECT conversation_id FROM claim_checks.story_conversations\n  WHERE chat_id = $1 AND active AND story_number = $2::int ORDER BY last_message_at DESC LIMIT 1),\nothers AS (\n  UPDATE claim_checks.story_conversations SET active = false\n  WHERE chat_id = $1 AND active AND conversation_id NOT IN (SELECT conversation_id FROM cur) RETURNING 1),\ncreated AS (\n  INSERT INTO claim_checks.story_conversations (chat_id, story_number)\n  SELECT $1, $2::int WHERE NOT EXISTS (SELECT 1 FROM cur) RETURNING conversation_id),\ntarget AS (SELECT conversation_id FROM cur UNION ALL SELECT conversation_id FROM created),\ntouched AS (\n  UPDATE claim_checks.story_conversations SET last_message_at = now()\n  WHERE conversation_id IN (SELECT conversation_id FROM cur) RETURNING 1),\nlinked AS (\n  INSERT INTO claim_checks.conversation_messages (chat_id, telegram_message_id, conversation_id, exchange_no)\n  SELECT $1, NULLIF($3, '')::bigint, conversation_id, 0 FROM target WHERE NULLIF($3, '') IS NOT NULL\n  ON CONFLICT (chat_id, telegram_message_id) DO NOTHING RETURNING 1)\nSELECT conversation_id, $1 AS chat_id, $2::int AS story_number, $4 AS question, ($5 = 'true') AS follow_up FROM target;",
+        "options": {
+          "queryReplacement": "={{ [String($json.chat_id), String($json.story_number), String($json.message_id || ''), String($json.question || ''), String($json.follow_up === true)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "sc-fuq",
+      "name": "Follow-Up Asked?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        660
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "sc-fuq-c",
+              "leftValue": "={{ $json.follow_up === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "sc-fu",
+      "name": "Start Follow Up (via Follow Up Story)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1320,
+        860
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ccFollowUpStor01",
+          "cachedResultName": "Claim Checks | Follow Up Story"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": false
+        }
+      }
+    },
+    {
+      "id": "sc-card",
+      "name": "Return Card",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1540,
+        660
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "sc-card-0",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Store Settings').first().json.chat_id }}"
+            },
+            {
+              "id": "sc-card-1",
+              "name": "text",
+              "type": "string",
+              "value": "={{ $('Store Settings').first().json.text }}"
+            },
+            {
+              "id": "sc-card-2",
+              "name": "conversation_id",
+              "type": "string",
+              "value": "={{ String($('Open Conversation').first().json.conversation_id) }}"
+            },
+            {
+              "id": "sc-card-3",
+              "name": "exchange_no",
+              "type": "string",
+              "value": "0"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "sc-start",
+      "name": "Start Exchange",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        880,
+        1440
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- The conversation this question belongs to: the one of the message it replies to, else the chat's current one, else a new general one.\nWITH linked AS (\n  SELECT m.conversation_id, m.exchange_no FROM claim_checks.conversation_messages m\n  WHERE m.chat_id = $1 AND m.telegram_message_id = NULLIF($2, '')::bigint),\ntarget AS (\n  SELECT conversation_id, exchange_no AS at_no FROM linked\n  UNION ALL\n  SELECT a.conversation_id, NULL FROM (SELECT conversation_id FROM claim_checks.story_conversations\n    WHERE chat_id = $1 AND active ORDER BY last_message_at DESC LIMIT 1) a\n  WHERE NOT EXISTS (SELECT 1 FROM linked)),\ncreated AS (\n  INSERT INTO claim_checks.story_conversations (chat_id) SELECT $1 WHERE NOT EXISTS (SELECT 1 FROM target)\n  RETURNING conversation_id, story_number),\nchosen AS (\n  SELECT c.conversation_id, c.story_number FROM claim_checks.story_conversations c JOIN target t USING (conversation_id)\n  UNION ALL SELECT conversation_id, story_number FROM created),\nothers AS (\n  UPDATE claim_checks.story_conversations SET active = false\n  WHERE chat_id = $1 AND active AND conversation_id NOT IN (SELECT conversation_id FROM chosen) RETURNING 1),\ntouched AS (\n  UPDATE claim_checks.story_conversations SET active = true, last_message_at = now(), forgotten_at = NULL\n  WHERE conversation_id IN (SELECT conversation_id FROM target) RETURNING 1),\nnxt AS (\n  SELECT ch.conversation_id, ch.story_number,\n    coalesce((SELECT max(e.exchange_no) FROM claim_checks.conversation_exchanges e WHERE e.conversation_id = ch.conversation_id), 0) + 1 AS exchange_no\n  FROM chosen ch),\nex AS (\n  INSERT INTO claim_checks.conversation_exchanges (conversation_id, exchange_no, question)\n  SELECT conversation_id, exchange_no, $4 FROM nxt RETURNING 1),\nlinkq AS (\n  INSERT INTO claim_checks.conversation_messages (chat_id, telegram_message_id, conversation_id, exchange_no)\n  SELECT $1, NULLIF($3, '')::bigint, conversation_id, exchange_no FROM nxt WHERE NULLIF($3, '') IS NOT NULL\n  ON CONFLICT (chat_id, telegram_message_id) DO NOTHING RETURNING 1)\nSELECT conversation_id, story_number, exchange_no, $1 AS chat_id FROM nxt;",
+        "options": {
+          "queryReplacement": "={{ [String($json.chat_id), String($json.reply_to_id || ''), String($json.message_id || ''), String($json.text)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "sc-ctx",
+      "name": "Read Story And History",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1100,
+        1440
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- What the agent needs: the story, its updates, the saved summaries of earlier conversations on it, and this conversation so far (last 20 exchanges).\nSELECT c.conversation_id, c.story_number,\n  (SELECT row_to_json(x) FROM (SELECT s.story_number, s.run_id, s.cluster_id, s.found_on::text AS found_on, s.posts, s.title, s.label, s.claim, s.gist, s.explainer,\n     s.official_links, s.supporting_links, s.contradicting_links, left(s.evidence, 6000) AS evidence, s.pdf_link\n     FROM claim_checks.stories s WHERE s.story_number = c.story_number) x) AS story,\n  (SELECT coalesce(json_agg(json_build_object('asked_on', to_char(u.asked_on AT TIME ZONE 'Europe/Rome', 'YYYY-MM-DD'), 'question', u.question,\n     'result', u.result, 'links', u.links) ORDER BY u.asked_on), '[]'::json)\n     FROM claim_checks.story_updates u WHERE u.story_number = c.story_number) AS updates,\n  (SELECT coalesce(json_agg(json_build_object('saved_on', to_char(o.saved_at AT TIME ZONE 'Europe/Rome', 'YYYY-MM-DD'), 'summary', o.summary) ORDER BY o.saved_at), '[]'::json)\n     FROM claim_checks.story_conversations o WHERE o.story_number = c.story_number AND o.summary IS NOT NULL) AS saved_conversations,\n  (SELECT coalesce(json_agg(json_build_object('question', h.question, 'answer', h.answer) ORDER BY h.exchange_no), '[]'::json)\n     FROM (SELECT exchange_no, question, answer FROM claim_checks.conversation_exchanges e\n           WHERE e.conversation_id = c.conversation_id AND e.exchange_no < $2::int AND e.answer IS NOT NULL\n           ORDER BY e.exchange_no DESC LIMIT 20) h) AS history\nFROM claim_checks.story_conversations c WHERE c.conversation_id = $1::int;",
+        "options": {
+          "queryReplacement": "={{ [String($json.conversation_id), String($json.exchange_no)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "sc-agent",
+      "name": "Answer In Story Chat",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1320,
+        1440
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Store Settings').first().json.text }}",
+        "needsFallback": true,
+        "options": {
+          "systemMessage": "=<role>\nYou are the Claim Checks research companion in Telegram. The user is reading a story that Claim Checks found and checked, and wants to understand it properly: how it was found, what it really means, who it affects, what happened since. Think it through, check with your tools, then answer like a careful science and news explainer.\n</role>\n\n<context>\nNow: {{ $now.setZone('Europe/Rome').toFormat('cccc yyyy-LL-dd HH:mm') }} (Europe/Rome).\n{{ $('Read Story And History').first().json.story ? 'This conversation is about story #' + $('Read Story And History').first().json.story.story_number + '.' : 'No story is open: this is a general conversation about the archive.' }}\n</context>\n\n<tools>\n- Search Story Archive: one read-only SQL SELECT on the archive (stories, story_updates, story_conversations, conversation_exchanges). Use it for other or earlier stories.\n- Search Claim Checks Records (Airtable): the working data of each run: the posts found (Findings), each claim's evidence (Clusters), the reports (Runs).\n- Search The Web (Serper): Google results. Use it to find the original study, the official statement, or news newer than the story.\n- Read Page (Web): the text of one page. Read the original source before explaining how something was found or what a study says.\n- Read Blocked Page (Bright Data): reads a page that Read Page could not open (blocked, 403, empty). Only after Read Page failed.\nYou never save, forget or start searches yourself: the user sends save, close, forget, search or update for that.\n</tools>\n\n<story>\n{{ JSON.stringify($('Read Story And History').first().json.story || null) }}\n</story>\n\n<updates>\n{{ JSON.stringify($('Read Story And History').first().json.updates || []) }}\n</updates>\n\n<saved_conversations>\nSummaries of the user's earlier conversations about this story, oldest first:\n{{ JSON.stringify($('Read Story And History').first().json.saved_conversations || []) }}\n</saved_conversations>\n\n<conversation_so_far>\n{{ ($('Read Story And History').first().json.history || []).map(h => 'User: ' + h.question + '\\nYou: ' + h.answer).join('\\n\\n') || 'This is the first question.' }}\n</conversation_so_far>\n\n<rules>\n1. Ground every fact in the story, its updates, the saved conversations, or a page you read in this conversation. Never invent studies, numbers, names, dates or links; if you could not check something, say so.\n2. \"How did they find out / how do they know\": explain the method step by step (who measured or analysed what, with which instrument or data, compared with what, how other explanations were ruled out). Search for the original study or official source and read it first, and say what it adds that the story missed.\n3. Keep apart what is confirmed (with its source), what only the authors or the company state, and what is not known yet. Say when the evidence does not settle a question.\n4. Correct misleading wording in headlines or posts when the sources show it, and say plainly what the event does NOT mean.\n5. \"What does it mean for me / who is affected\": a short list of who is affected (for example people on the ground, specific groups, systems), how much and why, then one line starting \"Bottom line:\".\n6. Explain each technical term once, in plain words, the first time it matters.\n7. Order of trust: the checked story and its updates first, then the saved conversations, then fresh web results. When a fresh source contradicts the story, say so openly and cite both.\n8. End with \"## Sources\" and the links you used, at most 6, one per line, each with its publication date: \"- what it is, 4 Nov 2026: link\" (write \"date unknown\" when you could not find it).\n9. Telegram format: \"## \" headings, \"- \" list items, short paragraphs, no tables, no ** markers. About 15 to 35 lines unless the user asks for more.\n10. Answer in the language of the user's message.\n11. With no story open, find the stories the user means with Search Story Archive and suggest \"dig <number>\".\n12. The original posts of the story are in story.posts (link, date, the article it links to), oldest first. When the user asks for the original post or where the story came from, give these. Never present another post or page as the original. If story.posts is empty, look the posts up with Search Claim Checks Records (Findings with the story's run_id and cluster_id); if you still cannot find them, say so. Never search the web for the original post.\n13. story.evidence gives each page's publication date (published) and whether it is recent or background (older than the story). Never present a background page as news of this story: say it is earlier context and give its date.\n</rules>\n\n<example>\n<input>Does this battery breakthrough mean my next phone will last a week?</input>\n<output>Not yet. The lab cells store 40% more energy, but they were only tested for 300 charge cycles, and a phone battery needs about 800.\n\n## What was actually shown\n- Confirmed by the paper: 40% more energy in coin-sized lab cells.\n- Stated by the company only: production \"within two years\".\n- Not known yet: how the cells age after 300 cycles, and what they cost.\n\n## Who is affected\n- Phone and laptop users: no change for at least a few years.\n- Electric-car makers: the most interested, because weight matters most for them.\n\nBottom line: a real lab result, still far from a product in your pocket.\n\n## Sources\n- The study in the journal: https://example.org/paper\n- The company's announcement: https://example.com/news</output>\n</example>\nThe example only shows the shape of an answer: never reuse its content.",
+          "maxIterations": 12
+        }
+      }
+    },
+    {
+      "id": "sc-model",
+      "name": "Story Chat Model (Venice)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1100,
+        1640
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "kimi-k2-6"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "temperature": 0.3,
+          "maxTokens": 6000,
+          "timeout": 90000,
+          "maxRetries": 2
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "venice api"
+        }
+      }
+    },
+    {
+      "id": "sc-backup",
+      "name": "Backup Chat Model (Venice)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1320,
+        1640
+      ],
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "openai-gpt-6-luna"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "maxTokens": 6000,
+          "timeout": 90000,
+          "maxRetries": 2
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "venice api"
+        }
+      }
+    },
+    {
+      "id": "sc-tsql",
+      "name": "Search Story Archive",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.5,
+      "position": [
+        1540,
+        1640
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "descriptionType": "manual",
+        "toolDescription": "Runs ONE read-only SQL SELECT on the Claim Checks archive (Postgres, schema claim_checks) and returns the rows. Tables: stories(story_number, found_on date, mode, keywords, title, label, claim, gist, explainer jsonb, official_links, supporting_links, contradicting_links, evidence, pdf_link, search_terms, search tsvector); story_updates(story_number, asked_on, question, result, found_new, links); story_conversations(conversation_id, chat_id, story_number, saved_at, summary); conversation_exchanges(conversation_id, exchange_no, question, answer). Find by words with: WHERE search @@ websearch_to_tsquery('english', 'virus or bacteria'). Always add LIMIT 10 or less. No semicolons, no backticks. On an error, fix the SQL and try once more.",
+        "query": "={{ $fromAI('sql_query', 'One read-only PostgreSQL SELECT on schema claim_checks, with LIMIT 10 or less', 'string') }}",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres Claim Checks Reader"
+        }
+      }
+    },
+    {
+      "id": "sc-tweb",
+      "name": "Search The Web (Serper)",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1980,
+        1640
+      ],
+      "parameters": {
+        "toolDescription": "Google search. Input: a search query. Returns titles, links and snippets of the top results. Use it to find the original study, an official statement, or news newer than the story.",
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ q: $fromAI('query', 'The Google search query', 'string'), num: 8 }) }}",
+        "optimizeResponse": true,
+        "responseType": "json",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Serper"
+        }
+      }
+    },
+    {
+      "id": "sc-tpage",
+      "name": "Read Page (Web)",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2200,
+        1640
+      ],
+      "parameters": {
+        "toolDescription": "Reads the main text of one web page. Input: the full https URL. Returns up to 12,000 characters of text. If it returns an error or no real text, use Read Blocked Page (Bright Data).",
+        "method": "GET",
+        "url": "={{ $fromAI('url', 'The full https URL of the page', 'string') }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+            }
+          ]
+        },
+        "optimizeResponse": true,
+        "responseType": "html",
+        "onlyContent": true,
+        "elementsToOmit": "nav, footer, header, script, style, iframe, aside, form",
+        "truncateResponse": true,
+        "maxLength": 12000,
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "sc-tblock",
+      "name": "Read Blocked Page (Bright Data)",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        2420,
+        1640
+      ],
+      "parameters": {
+        "toolDescription": "Reads a page that Read Page (Web) could not open, through a page unlocker. Input: the full https URL. Returns up to 12,000 characters of the page as markdown. Use only after Read Page failed.",
+        "method": "POST",
+        "url": "https://api.brightdata.com/request",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ zone: 'mcp_unlocker', url: $fromAI('url', 'The full https URL of the page', 'string'), format: 'raw', data_format: 'markdown' }) }}",
+        "optimizeResponse": true,
+        "responseType": "text",
+        "truncateResponse": true,
+        "maxLength": 12000,
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Bright Data Unlocker"
+        }
+      }
+    },
+    {
+      "id": "sc-ans",
+      "name": "Save Answer",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1760,
+        1440
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE claim_checks.conversation_exchanges SET answer = $3\nWHERE conversation_id = $1::int AND exchange_no = $2::int\nRETURNING conversation_id, exchange_no, $4 AS chat_id, answer AS text;",
+        "options": {
+          "queryReplacement": "={{ [String($('Start Exchange').first().json.conversation_id), String($('Start Exchange').first().json.exchange_no), String($json.output || '').replace(/<think>[\\s\\S]*?<\\/think>/g, '').trim(), String($('Store Settings').first().json.chat_id)] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "sc-find",
+      "name": "Find Exchanges To Save",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "alwaysOutputData": true,
+      "position": [
+        880,
+        2200
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- The exchanges to save: the whole conversation, or the last N up to the message the user replied to.\nWITH linked AS (\n  SELECT m.conversation_id, m.exchange_no FROM claim_checks.conversation_messages m\n  WHERE m.chat_id = $1 AND m.telegram_message_id = NULLIF($2, '')::bigint),\ntarget AS (\n  SELECT conversation_id, exchange_no AS at_no FROM linked\n  UNION ALL\n  SELECT a.conversation_id, NULL FROM (SELECT conversation_id FROM claim_checks.story_conversations\n    WHERE chat_id = $1 AND active ORDER BY last_message_at DESC LIMIT 1) a\n  WHERE NOT EXISTS (SELECT 1 FROM linked)),\nbounds AS (\n  SELECT t.conversation_id,\n    CASE WHEN NULLIF($3, '') IS NOT NULL AND t.at_no > 0 THEN t.at_no\n         ELSE (SELECT max(e.exchange_no) FROM claim_checks.conversation_exchanges e WHERE e.conversation_id = t.conversation_id AND e.answer IS NOT NULL) END AS end_no\n  FROM target t),\nrng AS (\n  SELECT b.conversation_id, b.end_no, CASE WHEN NULLIF($3, '') IS NULL THEN 1 ELSE greatest(1, b.end_no - NULLIF($3, '')::int + 1) END AS start_no FROM bounds b)\nSELECT r.conversation_id, c.story_number, s.title, r.start_no, r.end_no, (NULLIF($3, '') IS NULL) AS whole, $1 AS chat_id,\n  (SELECT coalesce(json_agg(json_build_object('n', e.exchange_no, 'question', e.question, 'answer', e.answer) ORDER BY e.exchange_no), '[]'::json)\n     FROM claim_checks.conversation_exchanges e\n     WHERE e.conversation_id = r.conversation_id AND e.answer IS NOT NULL AND e.exchange_no BETWEEN r.start_no AND r.end_no) AS exchanges\nFROM rng r JOIN claim_checks.story_conversations c USING (conversation_id)\nLEFT JOIN claim_checks.stories s ON s.story_number = c.story_number;",
+        "options": {
+          "queryReplacement": "={{ [String($json.chat_id), String($json.reply_to_id || ''), String($json.count || '')] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "sc-any",
+      "name": "Anything To Save?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        2200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "sc-any-c",
+              "leftValue": "={{ ($json.exchanges || []).length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "sc-none",
+      "name": "Nothing To Save",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1320,
+        2400
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "sc-none-0",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Store Settings').first().json.chat_id }}"
+            },
+            {
+              "id": "sc-none-1",
+              "name": "text",
+              "type": "string",
+              "value": "There is nothing to save there yet: ask something first, or reply to a message of the conversation you want to save."
+            },
+            {
+              "id": "sc-none-2",
+              "name": "conversation_id",
+              "type": "string",
+              "value": ""
+            },
+            {
+              "id": "sc-none-3",
+              "name": "exchange_no",
+              "type": "string",
+              "value": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "sc-sum",
+      "name": "Write Conversation Summary (via Ask Venice)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1320,
+        2200
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RzRuzMVi64lHyHwy",
+          "cachedResultName": "Claim Checks | Ask Venice"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "step": "Write Conversation Summary",
+            "body": "={{ { model: 'kimi-k2-6', temperature: 0.2, max_tokens: 1500, venice_parameters: { disable_thinking: true }, response_format: { type: 'json_schema', json_schema: { name: 'conversation_summary', strict: true, schema: {\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"summary\", \"points\", \"sources\", \"open_question\"], \"properties\": {\"summary\": {\"type\": \"string\"}, \"points\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} }, \"sources\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} }, \"open_question\": {\"type\": \"string\"} } } } }, messages: [{ role: 'system', content: \"<role>You write the memory note of a Telegram conversation about a checked news story, so a later conversation or update can pick up where it left off.</role>\\n\\n<rules>\\n1. Use only the exchanges given. Add no facts.\\n2. summary: 2-4 sentences: what the user wanted to know and what was found.\\n3. points: the key findings, at most 6, each marking whether it is confirmed (with source), stated only by the authors or company, or not known.\\n4. sources: the links used in the answers, copied exactly, at most 8.\\n5. open_question: what the user still wanted to know, or an empty string.\\n6. Write in English.\\n</rules>\\n\\n<example>\\n<input>User: how did they find out?\\nYou: The Arase satellite measured electrons above 3 MeV ... Source: https://example.org/study</input>\\n<output>{\\\"summary\\\": \\\"The user asked how the radiation-belt finding was made. The answer explained the Arase satellite measurements and the chorus-wave explanation from the original study.\\\", \\\"points\\\": [\\\"Confirmed: Arase measured electrons above 3 MeV inside the inner zone (study)\\\", \\\"Stated by the authors: chorus waves likely accelerated them\\\"], \\\"sources\\\": [\\\"https://example.org/study\\\"], \\\"open_question\\\": \\\"\\\"}</output>\\n</example>\" }, { role: 'user', content: '<story>' + ($json.title ? '#' + $json.story_number + ' ' + $json.title : 'general conversation, no story') + '</story>\\n<exchanges>\\n' + $json.exchanges.map(e => 'User: ' + e.question + '\\nYou: ' + e.answer).join('\\n\\n') + '\\n</exchanges>' }] } }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "sc-savesum",
+      "name": "Save Summary",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        1540,
+        2200
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE claim_checks.story_conversations\nSET summary = $2, saved_part = $3, saved_at = now(), forgotten_at = NULL, active = CASE WHEN $4 = 'true' THEN false ELSE active END\nWHERE conversation_id = $1::int\nRETURNING conversation_id, story_number, saved_part, NOT active AS closed;",
+        "options": {
+          "queryReplacement": "={{ (() => { const f = $('Find Exchanges To Save').first().json; const o = $json.output; const text = o.summary + (o.points.length ? '\\nPoints:\\n' + o.points.map(p => '- ' + p).join('\\n') : '') + (o.sources.length ? '\\nSources:\\n' + o.sources.map(s => '- ' + s).join('\\n') : '') + (o.open_question ? '\\nOpen question: ' + o.open_question : ''); const part = f.whole ? 'whole conversation' : (f.start_no === f.end_no ? 'exchange ' + f.end_no : 'exchanges ' + f.start_no + '-' + f.end_no); return [String(f.conversation_id), text, part, String($('Store Settings').first().json.end_conversation === true && !$('Store Settings').first().json.reply_to_id)]; })() }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "sc-ok",
+      "name": "Confirm Saved",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1760,
+        2200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "sc-ok-0",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Store Settings').first().json.chat_id }}"
+            },
+            {
+              "id": "sc-ok-1",
+              "name": "text",
+              "type": "string",
+              "value": "={{ (() => { const f = $('Find Exchanges To Save').first().json; const o = $('Write Conversation Summary (via Ask Venice)').first().json.output; return 'Saved (' + $json.saved_part + ')' + (f.story_number ? ' for #' + f.story_number + ' · ' + f.title : '') + ':\\n' + o.summary + (f.story_number ? '\\n\\ndig ' + f.story_number + ' shows it, and update ' + f.story_number + ' will use it.' : '') + ($json.closed ? '\\nConversation closed. Reply to any of its messages to pick it up again.' : ''); })() }}"
+            },
+            {
+              "id": "sc-ok-2",
+              "name": "conversation_id",
+              "type": "string",
+              "value": ""
+            },
+            {
+              "id": "sc-ok-3",
+              "name": "exchange_no",
+              "type": "string",
+              "value": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "sc-forget",
+      "name": "Forget Exchanges",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        880,
+        2920
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- forget: the whole conversation (nothing kept, saved summary removed) or the last N exchanges up to the replied message.\nWITH linked AS (\n  SELECT m.conversation_id, m.exchange_no FROM claim_checks.conversation_messages m\n  WHERE m.chat_id = $1 AND m.telegram_message_id = NULLIF($2, '')::bigint),\ntarget AS (\n  SELECT conversation_id, exchange_no AS at_no FROM linked\n  UNION ALL\n  SELECT a.conversation_id, NULL FROM (SELECT conversation_id FROM claim_checks.story_conversations\n    WHERE chat_id = $1 AND active ORDER BY last_message_at DESC LIMIT 1) a\n  WHERE NOT EXISTS (SELECT 1 FROM linked)),\nbounds AS (\n  SELECT t.conversation_id,\n    CASE WHEN t.at_no > 0 THEN t.at_no ELSE (SELECT max(e.exchange_no) FROM claim_checks.conversation_exchanges e WHERE e.conversation_id = t.conversation_id) END AS end_no\n  FROM target t),\ngone AS (\n  DELETE FROM claim_checks.conversation_exchanges e USING bounds b\n  WHERE e.conversation_id = b.conversation_id\n    AND (NULLIF($3, '') IS NULL OR (e.exchange_no <= b.end_no AND e.exchange_no > b.end_no - NULLIF($3, '')::int))\n  RETURNING e.conversation_id, e.exchange_no),\nunlinked AS (\n  DELETE FROM claim_checks.conversation_messages m USING gone g\n  WHERE m.conversation_id = g.conversation_id AND m.exchange_no = g.exchange_no RETURNING 1),\nwhole AS (\n  UPDATE claim_checks.story_conversations c SET summary = NULL, saved_part = NULL, saved_at = NULL, forgotten_at = now(), active = false\n  FROM bounds b WHERE c.conversation_id = b.conversation_id AND NULLIF($3, '') IS NULL RETURNING 1),\nsaved AS (\n  SELECT c.summary IS NOT NULL AS has_summary FROM claim_checks.story_conversations c JOIN bounds b USING (conversation_id))\nSELECT $1 AS chat_id, '' AS conversation_id, '' AS exchange_no,\n  CASE WHEN NOT EXISTS (SELECT 1 FROM bounds) THEN 'There is no conversation to forget here.'\n       WHEN NULLIF($3, '') IS NULL THEN 'Forgotten: the whole conversation (' || (SELECT count(*) FROM gone) || ' exchanges). Nothing of it is kept.'\n       WHEN (SELECT count(*) FROM gone) = 0 THEN 'There was nothing to forget there.'\n       ELSE 'Forgotten: the last ' || (SELECT count(*) FROM gone) || CASE WHEN (SELECT count(*) FROM gone) = 1 THEN ' exchange' ELSE ' exchanges' END\n            || ' (your question and my answer). They will not be saved.'\n            || CASE WHEN coalesce((SELECT bool_or(has_summary) FROM saved), false) THEN ' You saved this conversation before: send save again (replying to one of its messages) so the summary leaves them out.' ELSE '' END\n  END AS text;",
+        "options": {
+          "queryReplacement": "={{ [String($json.chat_id), String($json.reply_to_id || ''), String($json.count || '')] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "id": "sc-note0",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Claim Checks | Story Chat\n\nThe bot's conversations. After dig or update the chat stays on that story: every message goes to a reasoning model with web search, which explains how the story was found, what it means and who it affects. Conversations are kept only when the user says so (save, close, wrap up); forget drops them. Replying to any old message saves, forgets or continues that conversation.\n\n**Called by:** \"WF2 — Telegram Bot\": open (dig, update), ask (any other text), save, forget. Locked to \"WF2\".\n**Calls:** \"Follow Up Story\" (update, without waiting), \"Ask Venice\" (the save summary).\n**Returns:** chat_id, text, conversation_id and exchange_no, so \"WF2\" links the sent reply to the conversation.\n**Alerts:** central error handler; \"WF2\" then answers \"something went wrong, try again\".\n**Services called:** Postgres (claim_checks: story_conversations, conversation_exchanges, conversation_messages, stories, story_updates) · Venice (Kimi K2.6 agent; backup GPT-6 Luna) · Serper (Google) · the web (page reads) · Bright Data (blocked pages) · Airtable (Runs, Clusters, Findings) · \"Follow Up Story\", \"Ask Venice\".",
+        "color": 6,
+        "width": 2600,
+        "height": 300
+      }
+    },
+    {
+      "id": "sc-note1",
+      "name": "Entry Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        380
+      ],
+      "parameters": {
+        "content": "## Entry\n\nTriggered by: \"WF2\" (When Called By Bot).\n\nWhat it does, step by step:\n1. Store Settings keeps the message (function, chat, message and reply ids, text, how many exchanges) and holds the settings.\n2. Pick Function sends it to Open, Ask, Save or Forget.",
+        "color": 7,
+        "width": 760,
+        "height": 2760
+      }
+    },
+    {
+      "id": "sc-note2",
+      "name": "Open Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        820,
+        380
+      ],
+      "parameters": {
+        "content": "## Open (dig, update)\n\nTriggered by: Pick Function for open.\n\nWhat it does, step by step:\n1. Open Conversation (Postgres): keeps the current conversation if it is about the same story, otherwise starts a new one; links the command message to it.\n2. Follow-Up Asked? → Start Follow Up (via Follow Up Story) for update, without waiting.\n3. Return Card returns the story card (or \"looking for news\") to \"WF2\".",
+        "color": 4,
+        "width": 1780,
+        "height": 700
+      }
+    },
+    {
+      "id": "sc-note3",
+      "name": "Ask Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        820,
+        1140
+      ],
+      "parameters": {
+        "content": "## Ask (any other message)\n\nTriggered by: Pick Function for ask.\n\nWhat it does, step by step:\n1. Start Exchange (Postgres) finds the conversation (the replied message's, else the current one, else a new general one) and stores the question.\n2. Read Story And History (Postgres): the story (with its original posts and the date of every source), its updates, saved conversations and this conversation so far.\n3. Answer In Story Chat: Kimi K2.6 on Venice (backup GPT-6 Luna) with Search Story Archive (Postgres), Search Claim Checks Records (Airtable), Search The Web (Serper), Read Page (Web) and Read Blocked Page (Bright Data).\n4. Save Answer (Postgres) stores the answer and returns it.",
+        "color": 5,
+        "width": 1780,
+        "height": 720
+      }
+    },
+    {
+      "id": "sc-note4",
+      "name": "Save Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        820,
+        1920
+      ],
+      "parameters": {
+        "content": "## Save (save, close, wrap up)\n\nTriggered by: Pick Function for save.\n\nWhat it does, step by step:\n1. Find Exchanges To Save (Postgres): the whole conversation, or the last N up to the replied message.\n2. Anything To Save? no → Nothing To Save.\n3. Write Conversation Summary (via Ask Venice, Kimi K2.6) → Save Summary (Postgres; close also ends the conversation) → Confirm Saved.",
+        "color": 3,
+        "width": 1780,
+        "height": 700
+      }
+    },
+    {
+      "id": "sc-note5",
+      "name": "Forget Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        820,
+        2680
+      ],
+      "parameters": {
+        "content": "## Forget\n\nTriggered by: Pick Function for forget.\n\nWhat it does, step by step:\n1. Forget Exchanges (Postgres) deletes the last N exchanges up to the replied message, or the whole conversation and its saved summary, and returns the confirmation.",
+        "color": 2,
+        "width": 1780,
+        "height": 460
+      }
+    },
+    {
+      "id": "sc-tair",
+      "name": "Search Claim Checks Records (Airtable)",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        1640
+      ],
+      "parameters": {
+        "toolDescription": "Reads rows of one Claim Checks table in Airtable with a filter you write. table: Runs, Clusters or Findings. filter: an Airtable formula on any column (see <data_model>), or '' for the newest rows. Returns up to 20 rows with their fields.",
+        "method": "GET",
+        "url": "=https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/{{ $fromAI('table', 'Runs, Clusters or Findings', 'string') }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "={{ $fromAI('filter', 'Airtable formula, or empty for all rows', 'string') }}"
+            },
+            {
+              "name": "pageSize",
+              "value": "20"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When Called By Bot": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Pick Function",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Function": {
+      "main": [
+        [
+          {
+            "node": "Open Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Start Exchange",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Exchanges To Save",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Forget Exchanges",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Open Conversation": {
+      "main": [
+        [
+          {
+            "node": "Follow-Up Asked?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-Up Asked?": {
+      "main": [
+        [
+          {
+            "node": "Start Follow Up (via Follow Up Story)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Return Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Follow Up (via Follow Up Story)": {
+      "main": [
+        [
+          {
+            "node": "Return Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Exchange": {
+      "main": [
+        [
+          {
+            "node": "Read Story And History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Story And History": {
+      "main": [
+        [
+          {
+            "node": "Answer In Story Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer In Story Chat": {
+      "main": [
+        [
+          {
+            "node": "Save Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Story Chat Model (Venice)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Answer In Story Chat",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Backup Chat Model (Venice)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Answer In Story Chat",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Find Exchanges To Save": {
+      "main": [
+        [
+          {
+            "node": "Anything To Save?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anything To Save?": {
+      "main": [
+        [
+          {
+            "node": "Write Conversation Summary (via Ask Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Nothing To Save",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Conversation Summary (via Ask Venice)": {
+      "main": [
+        [
+          {
+            "node": "Save Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Summary": {
+      "main": [
+        [
+          {
+            "node": "Confirm Saved",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Story Archive": {
+      "ai_tool": [
+        [
+          {
+            "node": "Answer In Story Chat",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search The Web (Serper)": {
+      "ai_tool": [
+        [
+          {
+            "node": "Answer In Story Chat",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Page (Web)": {
+      "ai_tool": [
+        [
+          {
+            "node": "Answer In Story Chat",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Blocked Page (Bright Data)": {
+      "ai_tool": [
+        [
+          {
+            "node": "Answer In Story Chat",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Claim Checks Records (Airtable)": {
+      "ai_tool": [
+        [
+          {
+            "node": "Answer In Story Chat",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "timezone": "Europe/Rome",
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "ccTelegramBot001"
+  },
+  "active": false
+}

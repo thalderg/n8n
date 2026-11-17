@@ -1,0 +1,545 @@
+{
+  "id": "pKQ5GRVqkVr5OiLF",
+  "name": "Claim Checks | Read Web Pages",
+  "nodes": [
+    {
+      "id": "301aefc9-4003-43be-8fea-3528eff7b1b5",
+      "name": "When Called By Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        760
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "68f4e4fc-3660-4c14-9ba1-9b447c4da9c0",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        280,
+        760
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b6c168bc-c8fe-45a3-b596-46f473c14f1f",
+              "name": "unlocker_zone",
+              "type": "string",
+              "value": "mcp_unlocker"
+            },
+            {
+              "id": "dd92d551-f3f0-4d75-8d82-50c049af00fd",
+              "name": "no_render_domains",
+              "type": "array",
+              "value": "[\"youtube.com\", \"youtu.be\", \"lnkd.in\", \"linkedin.com\"]"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "bdf92fd8-5b26-4414-a8da-9deb357e4751",
+      "name": "Split Candidates",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "alwaysOutputData": true,
+      "position": [
+        500,
+        760
+      ],
+      "parameters": {
+        "fieldToSplitOut": "candidates",
+        "include": "noOtherFields",
+        "options": {}
+      }
+    },
+    {
+      "id": "0e61109c-d581-4278-8545-dc608e7ad8b5",
+      "name": "Read Page (Web)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        720,
+        760
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $json.url }}",
+        "options": {
+          "timeout": 20000,
+          "redirect": {
+            "redirect": {
+              "maxRedirects": 5
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "text",
+              "outputPropertyName": "body"
+            }
+          },
+          "batching": {
+            "batch": {
+              "batchSize": 4,
+              "batchInterval": 300
+            }
+          }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+            },
+            {
+              "name": "Accept",
+              "value": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+            },
+            {
+              "name": "Accept-Language",
+              "value": "en-US,en;q=0.9"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "b7ccdb69-33ad-4d93-a5ea-88cfc561dca5",
+      "name": "Check Read Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Publication date of a page: its metadata, then its address, then Google's date. No date found = unknown (never a guess from the text).\nconst MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };\nconst iso = (y, m, d) => { const t = new Date(Date.UTC(+y, +m - 1, +d)); return +y > 1990 && t.getUTCMonth() === +m - 1 && t.getUTCDate() === +d && t.getTime() < Date.now() + 2 * 864e5 ? t.toISOString().slice(0, 10) : ''; };\nconst dateIn = (s, rel) => { s = String(s || ''); let m;\n  if ((m = s.match(/\\b(20\\d\\d)[-\\/.](\\d{1,2})[-\\/.](\\d{1,2})/))) return iso(m[1], m[2], m[3]);\n  if ((m = s.match(/\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?,?\\s+(20\\d\\d)\\b/i))) return iso(m[3], MON[m[2].toLowerCase()], m[1]);\n  if ((m = s.match(/\\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(20\\d\\d)\\b/i))) return iso(m[3], MON[m[1].toLowerCase()], m[2]);\n  if (rel && (m = s.match(/\\b(\\d+)\\s+(minute|hour|day|week|month)s?\\s+ago\\b/i))) return new Date(Date.now() - m[1] * { minute: 6e4, hour: 36e5, day: 864e5, week: 6048e5, month: 2592e6 }[m[2].toLowerCase()]).toISOString().slice(0, 10);\n  return ''; };\nconst META = /(?:article:published_time|og:published_time|datePublished|date_published|publish[-_]?date|citation_publication_date|citation_date|dc\\.date(?:\\.issued)?|parsely-pub-date|sailthru\\.date|pubdate)[\"']?\\s*(?:content\\s*=|:|=)\\s*[\"']?\\s*([^\"'<>]{6,40})/i;\nconst pageDate = (url, html, gdate) => {\n  const h = String(html || '').slice(0, 400000);\n  const meta = h.match(META) || h.match(/<time[^>]+datetime=[\"']([^\"']+)/i);\n  const um = String(url || '').match(/\\/(20\\d\\d)[\\/-](\\d{1,2})[\\/-](\\d{1,2})(?:[\\/-]|$)/);\n  const hit = [[meta ? dateIn(meta[1]) : '', 'page'], [um ? iso(um[1], um[2], um[3]) : '', 'address'], [dateIn(gdate, true), 'google']].find(t => t[0]);\n  return hit ? { published: hit[0], date_from: hit[1] } : { published: '', date_from: '' };\n};\nconst toText = (html) => String(html || '')\n  .replace(/<script[\\s\\S]*?<\\/script>/gi, ' ').replace(/<style[\\s\\S]*?<\\/style>/gi, ' ').replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, ' ')\n  .replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '\"').replace(/&#39;/g, \"'\")\n  .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\\s+/g, ' ').trim();\nconst cands = $('Split Candidates').all();\nreturn $input.all().map((it, i) => {\n  const c = cands[i] ? cands[i].json : {};\n  if (!c.url) return { json: { url: null, read_status: 'none', text: '' } };\n  const code = Number(it.json.statusCode || 0);\n  const ctype = String(((it.json.headers || {})['content-type']) || '').toLowerCase();\n  const raw = String(it.json.body || '');\n  const d = pageDate(c.url, raw, c.gdate);\n  if (/pdf|octet-stream|image\\/|video\\/|audio\\/|zip/.test(ctype) || raw.startsWith('%PDF')) return { json: { url: c.url, domain: c.domain, found_by: c.found_by, gdate: c.gdate, ...d, http_status: code, read_status: 'skipped', text: '' } };\n  const text = toText(raw).replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F�]/g, ' ');\n  let read_status = 'blocked';\n  if (code === 404 || code === 410) read_status = 'dead';\n  else if (code >= 200 && code < 300 && text.length > 400) read_status = 'read';\n  return { json: { url: c.url, domain: c.domain, found_by: c.found_by, gdate: c.gdate, ...d, http_status: code, read_status, text: read_status === 'read' ? text.slice(0, 60000) : '' } };\n});"
+      }
+    },
+    {
+      "id": "5a20167c-eb9b-49fa-9d6a-2dd2fcad5de3",
+      "name": "Needs Unlocker?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1160,
+        760
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3157555d-a667-527f-914b-653563c31bb6",
+              "leftValue": "={{ $json.read_status }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "blocked"
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "871c2264-6bb3-46cc-8087-8746ad09c0a7",
+      "name": "Read Blocked Page (Bright Data)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1460,
+        960
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brightdata.com/request",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "text",
+              "outputPropertyName": "body"
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ zone: $('Store Settings').first().json.unlocker_zone, url: $json.url, format: 'raw' }) }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Bright Data Unlocker"
+        }
+      }
+    },
+    {
+      "id": "e0e0a5f6-c6ec-49a2-a9b3-196a41465e65",
+      "name": "Check Unlocker Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        960
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Publication date of a page: its metadata, then its address, then Google's date. No date found = unknown (never a guess from the text).\nconst MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };\nconst iso = (y, m, d) => { const t = new Date(Date.UTC(+y, +m - 1, +d)); return +y > 1990 && t.getUTCMonth() === +m - 1 && t.getUTCDate() === +d && t.getTime() < Date.now() + 2 * 864e5 ? t.toISOString().slice(0, 10) : ''; };\nconst dateIn = (s, rel) => { s = String(s || ''); let m;\n  if ((m = s.match(/\\b(20\\d\\d)[-\\/.](\\d{1,2})[-\\/.](\\d{1,2})/))) return iso(m[1], m[2], m[3]);\n  if ((m = s.match(/\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?,?\\s+(20\\d\\d)\\b/i))) return iso(m[3], MON[m[2].toLowerCase()], m[1]);\n  if ((m = s.match(/\\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(20\\d\\d)\\b/i))) return iso(m[3], MON[m[1].toLowerCase()], m[2]);\n  if (rel && (m = s.match(/\\b(\\d+)\\s+(minute|hour|day|week|month)s?\\s+ago\\b/i))) return new Date(Date.now() - m[1] * { minute: 6e4, hour: 36e5, day: 864e5, week: 6048e5, month: 2592e6 }[m[2].toLowerCase()]).toISOString().slice(0, 10);\n  return ''; };\nconst META = /(?:article:published_time|og:published_time|datePublished|date_published|publish[-_]?date|citation_publication_date|citation_date|dc\\.date(?:\\.issued)?|parsely-pub-date|sailthru\\.date|pubdate)[\"']?\\s*(?:content\\s*=|:|=)\\s*[\"']?\\s*([^\"'<>]{6,40})/i;\nconst pageDate = (url, html, gdate) => {\n  const h = String(html || '').slice(0, 400000);\n  const meta = h.match(META) || h.match(/<time[^>]+datetime=[\"']([^\"']+)/i);\n  const um = String(url || '').match(/\\/(20\\d\\d)[\\/-](\\d{1,2})[\\/-](\\d{1,2})(?:[\\/-]|$)/);\n  const hit = [[meta ? dateIn(meta[1]) : '', 'page'], [um ? iso(um[1], um[2], um[3]) : '', 'address'], [dateIn(gdate, true), 'google']].find(t => t[0]);\n  return hit ? { published: hit[0], date_from: hit[1] } : { published: '', date_from: '' };\n};\nconst toText = (html) => String(html || '')\n  .replace(/<script[\\s\\S]*?<\\/script>/gi, ' ').replace(/<style[\\s\\S]*?<\\/style>/gi, ' ').replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, ' ')\n  .replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '\"').replace(/&#39;/g, \"'\")\n  .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\\s+/g, ' ').trim();\nconst prev = $('Needs Unlocker?').all();\nreturn $input.all().map((it, i) => {\n  const p = prev[i] ? prev[i].json : {};\n  const code = Number(it.json.statusCode || 0);\n  const raw = String(it.json.body || '');\n  const d = p.published ? { published: p.published, date_from: p.date_from } : {};\n  const found = pageDate(p.url, raw, p.gdate);\n  if (found.date_from === 'page' || !d.published) Object.assign(d, found);\n  const text = toText(raw).replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F�]/g, ' ').replace(/\\s+/g, ' ').trim();\n  const ok = code >= 200 && code < 300 && text.length > 400;\n  return { json: { ...p, ...d, read_status: ok ? 'read' : 'blocked', via_unlocker: true, unlocker_status: code, text: ok ? text.slice(0, 60000) : '' } };\n});"
+      }
+    },
+    {
+      "id": "eb2f0890-e023-4d27-b99d-dd9e770516b6",
+      "name": "Needs Rendering?",
+      "notesInFlow": true,
+      "notes": "Still blocked and not a video or LinkedIn page: one more try with the page's scripts run. Else: kept as it is.",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1900,
+        960
+      ],
+      "parameters": {
+        "looseTypeValidation": true,
+        "options": {},
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "2986be86-7097-4d48-a1ab-b44371dd5a9f",
+              "leftValue": "={{ $json.read_status }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "blocked"
+            },
+            {
+              "id": "16cd28e3-3339-4f49-b45e-8cab02dc78e6",
+              "leftValue": "={{ $('Store Settings').first().json.no_render_domains.some(d => String($json.domain || '') === d || String($json.domain || '').endsWith('.' + d)) }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "42599723-e132-48fa-981d-683c403e7d41",
+      "name": "Read Page With Scripts (Bright Data)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        2200,
+        1160
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.brightdata.com/request",
+        "options": {
+          "timeout": 90000,
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "text",
+              "outputPropertyName": "body"
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ zone: $('Store Settings').first().json.unlocker_zone, url: $json.url, format: 'raw', render: 'true' }) }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Bright Data Unlocker"
+        }
+      }
+    },
+    {
+      "id": "4b87e39c-10c6-4639-83d6-d8650a212af2",
+      "name": "Check Rendered Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        1160
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Publication date of a page: its metadata, then its address, then Google's date. No date found = unknown (never a guess from the text).\nconst MON = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };\nconst iso = (y, m, d) => { const t = new Date(Date.UTC(+y, +m - 1, +d)); return +y > 1990 && t.getUTCMonth() === +m - 1 && t.getUTCDate() === +d && t.getTime() < Date.now() + 2 * 864e5 ? t.toISOString().slice(0, 10) : ''; };\nconst dateIn = (s, rel) => { s = String(s || ''); let m;\n  if ((m = s.match(/\\b(20\\d\\d)[-\\/.](\\d{1,2})[-\\/.](\\d{1,2})/))) return iso(m[1], m[2], m[3]);\n  if ((m = s.match(/\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?,?\\s+(20\\d\\d)\\b/i))) return iso(m[3], MON[m[2].toLowerCase()], m[1]);\n  if ((m = s.match(/\\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(20\\d\\d)\\b/i))) return iso(m[3], MON[m[1].toLowerCase()], m[2]);\n  if (rel && (m = s.match(/\\b(\\d+)\\s+(minute|hour|day|week|month)s?\\s+ago\\b/i))) return new Date(Date.now() - m[1] * { minute: 6e4, hour: 36e5, day: 864e5, week: 6048e5, month: 2592e6 }[m[2].toLowerCase()]).toISOString().slice(0, 10);\n  return ''; };\nconst META = /(?:article:published_time|og:published_time|datePublished|date_published|publish[-_]?date|citation_publication_date|citation_date|dc\\.date(?:\\.issued)?|parsely-pub-date|sailthru\\.date|pubdate)[\"']?\\s*(?:content\\s*=|:|=)\\s*[\"']?\\s*([^\"'<>]{6,40})/i;\nconst pageDate = (url, html, gdate) => {\n  const h = String(html || '').slice(0, 400000);\n  const meta = h.match(META) || h.match(/<time[^>]+datetime=[\"']([^\"']+)/i);\n  const um = String(url || '').match(/\\/(20\\d\\d)[\\/-](\\d{1,2})[\\/-](\\d{1,2})(?:[\\/-]|$)/);\n  const hit = [[meta ? dateIn(meta[1]) : '', 'page'], [um ? iso(um[1], um[2], um[3]) : '', 'address'], [dateIn(gdate, true), 'google']].find(t => t[0]);\n  return hit ? { published: hit[0], date_from: hit[1] } : { published: '', date_from: '' };\n};\nconst toText = (html) => String(html || '')\n  .replace(/<script[\\s\\S]*?<\\/script>/gi, ' ').replace(/<style[\\s\\S]*?<\\/style>/gi, ' ').replace(/<noscript[\\s\\S]*?<\\/noscript>/gi, ' ')\n  .replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '\"').replace(/&#39;/g, \"'\")\n  .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\\s+/g, ' ').trim();\nconst prev = $('Needs Rendering?').all();\nreturn $input.all().map((it, i) => {\n  const p = prev[i] ? prev[i].json : {};\n  const code = Number(it.json.statusCode || 0);\n  const raw = String(it.json.body || '');\n  const d = p.published ? { published: p.published, date_from: p.date_from } : {};\n  const found = pageDate(p.url, raw, p.gdate);\n  if (found.date_from === 'page' || !d.published) Object.assign(d, found);\n  const text = toText(raw).replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F�]/g, ' ').replace(/\\s+/g, ' ').trim();\n  const ok = code >= 200 && code < 300 && text.length > 400;\n  return { json: { ...p, ...d, read_status: ok ? 'read' : 'blocked', via_unlocker: true, rendered: true, unlocker_status: code, text: ok ? text.slice(0, 60000) : '' } };\n});"
+      }
+    },
+    {
+      "id": "d0628c42-e631-4f0d-b2ab-463ecdcb8730",
+      "name": "Collect Pages",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2720,
+        760
+      ],
+      "parameters": {
+        "mode": "append",
+        "numberInputs": 3
+      }
+    },
+    {
+      "id": "5ca73621-ad3a-452e-9a59-a2ff6aba223c",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Claim Checks | Read Web Pages\n\nReads a list of web pages and returns each one's text, publication date and read status (read, dead, blocked, skipped). Used wherever the system needs the content of pages found on Google.\n\n**Called by:** \"Verify Story\" (the candidate pages of one claim) and \"Answer Question\" (the pages that may answer a question). The caller waits and sends one item with a list `candidates` (url, domain, found_by, gdate). Locked to those two workflows.\n**Sections:** Read Pages Directly → Unlock Blocked Pages → Return Pages.\n**Alerts:** none here: a page that cannot be read comes back as blocked; the caller decides what that means.\nstructure-ok: no error workflow on purpose, like the other run steps: the caller's run sends ONE problem alert.\n**Services called:** the web (page reads) · Bright Data Web Unlocker (blocked pages; a second try runs the page's scripts).",
+        "width": 2960,
+        "height": 320,
+        "color": 5
+      }
+    },
+    {
+      "id": "4033d85d-db31-49dd-a230-7ca9e3665e19",
+      "name": "Direct Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        400
+      ],
+      "parameters": {
+        "content": "## Read Pages Directly\n\nTriggered by: the caller (When Called By Workflow), once per list of pages.\n\nWhat it does, step by step:\n1. Store Settings: the Bright Data zone and the sites never retried with scripts (videos, LinkedIn).\n2. Split Candidates: one item per page (one empty item when the list is empty).\n3. Read Page (Web) opens every page (20 s, browser-like request).\n4. Check Read Result: real text = read; 404 or 410 = dead; refused, rate-limited or empty = blocked; files = skipped. It also finds the publication date: page metadata, else the address, else Google's date.\n5. Needs Unlocker? sends blocked pages on; the others go to Return Pages.",
+        "width": 1340,
+        "height": 820,
+        "color": 4
+      }
+    },
+    {
+      "id": "cfd4e9b2-0fcc-431b-8c45-65edd89b5b20",
+      "name": "Unlock Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        400
+      ],
+      "parameters": {
+        "content": "## Unlock Blocked Pages\n\nTriggered by: runs inline after Read Pages Directly, for blocked pages only.\n\nWhat it does, step by step:\n1. Read Blocked Page (Bright Data) reads it again through the Web Unlocker, as HTML (60 s).\n2. Check Unlocker Result: same rules and date as above.\n3. Needs Rendering? A page still blocked (empty answer, no text, timeout) gets ONE more try, unless it is a video or LinkedIn page.\n4. Read Page With Scripts (Bright Data) asks the Web Unlocker to run the page's scripts first (render), for pages that load their text with scripts (90 s). Bright Data advises render only when needed: it is slower.\n5. Check Rendered Result: same rules; still no text = blocked.",
+        "width": 1200,
+        "height": 1000,
+        "color": 6
+      }
+    },
+    {
+      "id": "2b765ae8-fc69-48a3-9455-d2f37a622e67",
+      "name": "Return Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2660,
+        400
+      ],
+      "parameters": {
+        "content": "## Return Pages\n\nTriggered by: runs inline after the two sections.\n\nCollect Pages joins the three paths and returns one item per page to the caller.",
+        "width": 300,
+        "height": 820,
+        "color": 3
+      }
+    }
+  ],
+  "connections": {
+    "When Called By Workflow": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Split Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Candidates": {
+      "main": [
+        [
+          {
+            "node": "Read Page (Web)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Page (Web)": {
+      "main": [
+        [
+          {
+            "node": "Check Read Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Read Result": {
+      "main": [
+        [
+          {
+            "node": "Needs Unlocker?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs Unlocker?": {
+      "main": [
+        [
+          {
+            "node": "Read Blocked Page (Bright Data)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Collect Pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Blocked Page (Bright Data)": {
+      "main": [
+        [
+          {
+            "node": "Check Unlocker Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Unlocker Result": {
+      "main": [
+        [
+          {
+            "node": "Needs Rendering?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs Rendering?": {
+      "main": [
+        [
+          {
+            "node": "Read Page With Scripts (Bright Data)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Collect Pages",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Read Page With Scripts (Bright Data)": {
+      "main": [
+        [
+          {
+            "node": "Check Rendered Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Rendered Result": {
+      "main": [
+        [
+          {
+            "node": "Collect Pages",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "",
+    "timezone": "Europe/Rome",
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "ccVerifyStory001,6tQ5vBxixkQqpDKO"
+  },
+  "active": false
+}

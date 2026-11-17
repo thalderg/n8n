@@ -1,0 +1,775 @@
+{
+  "id": "ccVerifyStory001",
+  "name": "Claim Checks | Verify Story",
+  "nodes": [
+    {
+      "id": "d2864c85-01e6-537e-b275-50e2a7329fff",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Claim Checks | Verify Story\n\nChecks ONE claim (a cluster of posts about the same thing) against the web and gives it a label: Corroborated, Single source, Disputed, Unverified or Opinion. The model only reads pages and marks each one (supports / contradicts / mentions, and official / reliable / other); the label itself comes from fixed rules in Assign Label, so a model cannot promote a claim.\n\n**Called by:** \"WF3 — Research Pipeline\", once per claim (up to 5 per keyword per run). Locked to \"WF3\".\n**Standalone-capable:** no (tests use a temporary test caller).\n**Sections:** Entry → Claim And Search → Read Pages → Judge, Label, Explain And Save. Results go to the claim's row in Airtable table Clusters; \"WF3\" gets cluster_id, label, independent_domains, status, plus the claim, explainer, search words and links for the story archive.\n**Alerts:** a failed step stops this check and goes back to \"WF3\", which marks the claim \"Not checked\", carries on, and lists it in the run's ONE problem alert (\"Report Run Problems\").\nstructure-ok: no error workflow on purpose, so a run with several failures sends one alert, not one per failure.\n**Services called:** Airtable (Clusters, Findings) · Venice (Kimi K2.6: planner, judge and explainer writer; GLM-5.3 Flash: web search) · Serper (Google results) · \"Read Web Pages\" (the web and Bright Data: page text and dates) · \"Ask Venice\" (every model step; backup model GPT-6 Luna).",
+        "width": 4320,
+        "height": 320,
+        "color": 5
+      }
+    },
+    {
+      "id": "f379baba-7713-59fb-8e48-c526409f413a",
+      "name": "Entry Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        400
+      ],
+      "parameters": {
+        "content": "## Entry\n\nTriggered by: \"WF3\" (When Called By Pipeline), once per claim.\n\nWhat it does, step by step:\n1. Store Settings holds the Airtable ids, the editable list of reliable outlets, the platform domains that never count as evidence (Reddit, Hacker News, X, Facebook, Instagram), the cap of 8 candidate pages, and how far back a source counts as recent (7 days for a daily run, 30 for a weekly run).\n2. Read Claim (Airtable Clusters) reads the claim's row from Clusters.\n3. Read Claim Posts (Airtable Findings) reads the kept posts of that claim from Findings (their summaries and the articles they link to).",
+        "width": 1120,
+        "height": 740,
+        "color": 4
+      }
+    },
+    {
+      "id": "6287747c-6534-5f24-8f1a-2718b6177791",
+      "name": "Claim Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1180,
+        400
+      ],
+      "parameters": {
+        "content": "## Claim And Search\n\nTriggered by: runs inline after Entry.\n\nWhat it does, step by step:\n1. State The Claim (via Ask Venice, planner model): the claim in one sentence, whether it is checkable, who it is about, and two Google queries.\n2. Search Google (Serper) runs both queries twice in one call: first only recent pages, then without a date limit; Search Web (Venice) asks Venice web search for cited pages. Either may fail without stopping the other.\n3. Build Candidates puts the articles the posts link to first (often the official source itself), then the recent Google results, then the other Serper and Venice results in turn, each with Google's date; platform pages are dropped; at most 8.",
+        "width": 900,
+        "height": 740,
+        "color": 6
+      }
+    },
+    {
+      "id": "69dacf24-7261-5f7d-9b69-7c38a7b6c68f",
+      "name": "Read Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2140,
+        400
+      ],
+      "parameters": {
+        "content": "## Read Pages\n\nTriggered by: runs inline after Claim And Search.\n\nRead Pages (via Read Web Pages) reads every candidate and returns its text, publication date and status: read, dead (404/410), blocked or skipped. Blocked pages go through Bright Data, and once more with the page's scripts run when needed. Blocked and dead pages never count, but they are listed in the evidence.",
+        "width": 500,
+        "height": 740,
+        "color": 3
+      }
+    },
+    {
+      "id": "50ff88c8-7c49-5086-bb0f-eb8c08ca5f16",
+      "name": "Judge Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2700,
+        400
+      ],
+      "parameters": {
+        "content": "## Judge, Label, Explain And Save\n\nTriggered by: runs inline after Read Pages.\n\nWhat it does, step by step:\n1. Build Judge Input keeps the part of each readable page that is about the claim.\n2. Judge Stance And Tier (via Ask Venice, judge model, one call): each page supports / contradicts / mentions the claim, and is official / reliable / other, with a short excerpt.\n3. Assign Label applies the fixed rules: not checkable = Opinion; a trustworthy page contradicts = Disputed; 2+ supporting domains incl. a trustworthy one = Corroborated; one trustworthy supporting domain = Single source; otherwise Unverified. Every source gets its date and is marked recent or background (older than the recent window). It also gathers what the explainer writer reads.\n4. Write Explainer (via Ask Venice, Kimi K2.6, one call): what happened, confirmed / not confirmed, both sides (Disputed), why it matters, open question, and 5-8 search words. Facts only from the pages read; background pages only as earlier context.\n5. Prepare Verify Save joins label and explainer; Save Verify Result (Airtable Clusters) writes label, evidence, reason and explainer; Build Verify Result returns everything to \"WF3\" for the story archive.",
+        "width": 1620,
+        "height": 740,
+        "color": 7
+      }
+    },
+    {
+      "id": "9f6701b2-2a77-5b5e-a051-c111495dafce",
+      "name": "When Called By Pipeline",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        720
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "7109ff6a-9e2e-5ef7-9646-4ca14b4ef68a",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        280,
+        720
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0c792d05-5a04-5ae7-847e-8a16fe4358fe",
+              "name": "reliable_outlets",
+              "type": "array",
+              "value": "[\"reuters.com\", \"apnews.com\", \"bbc.com\", \"bbc.co.uk\", \"theguardian.com\", \"nytimes.com\", \"wsj.com\", \"ft.com\", \"bloomberg.com\", \"economist.com\", \"washingtonpost.com\", \"cnbc.com\", \"cnn.com\", \"npr.org\", \"axios.com\", \"theverge.com\", \"techcrunch.com\", \"arstechnica.com\", \"wired.com\", \"engadget.com\", \"zdnet.com\", \"venturebeat.com\", \"technologyreview.com\", \"theinformation.com\", \"404media.co\", \"nature.com\", \"science.org\", \"spectrum.ieee.org\", \"lemonde.fr\", \"elpais.com\", \"spiegel.de\"]"
+            },
+            {
+              "id": "d0f5c76c-efd4-5ab1-80b1-d5faa6f528b1",
+              "name": "platform_domains",
+              "type": "array",
+              "value": "[\"reddit.com\", \"redd.it\", \"news.ycombinator.com\", \"x.com\", \"twitter.com\", \"facebook.com\", \"fb.com\", \"instagram.com\"]"
+            },
+            {
+              "id": "3b08e1ad-4991-570e-884b-b72a8d61d0c3",
+              "name": "max_candidates",
+              "type": "number",
+              "value": 8
+            },
+            {
+              "id": "b7e1c2d4-5f60-4a71-8b92-c3d4e5f60718",
+              "name": "recent_days",
+              "type": "number",
+              "value": "={{ Number($('When Called By Pipeline').first().json.window_days) > 1 ? 30 : 7 }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "dc767f91-cc74-5b72-bc43-7ddc573d8bee",
+      "name": "Read Claim (Airtable Clusters)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        500,
+        720
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_CLUSTERS_TABLE_ID",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "=AND({cluster_id}='{{ $json.cluster_id }}', {run_id}='{{ $json.run_id }}')"
+            },
+            {
+              "name": "maxRecords",
+              "value": "1"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "6461ebaf-a5aa-5204-be04-a488fa2901ee",
+      "name": "Read Claim Posts (Airtable Findings)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        720,
+        720
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_FINDINGS_TABLE_ID",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "=AND({cluster_id}='{{ $('Store Settings').first().json.cluster_id }}', {run_id}='{{ $('Store Settings').first().json.run_id }}', {kept})"
+            },
+            {
+              "name": "pageSize",
+              "value": "50"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "69cf0ae6-89ff-5082-808d-080f8a21e45b",
+      "name": "Build Claim Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        720
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const cl = ($('Read Claim (Airtable Clusters)').first().json.records || [])[0];\nif (!cl) throw new Error('Cluster not found: ' + $('Store Settings').first().json.cluster_id);\nconst posts = ($input.first().json.records || []).map(r => r.fields);\nconst lines = posts.map(p => JSON.stringify({ title: p.title, summary: p.summary, source: p.source, links_to: p.linked_url || null, posted: String(p.published_at || '').slice(0, 10) || null })).join('\\n');\nreturn [{ json: { record_id: cl.id, title: cl.fields.title || '', posts_text: lines,\n  linked_urls: [...new Set(posts.map(p => p.linked_url).filter(Boolean))],\n  post_urls: posts.map(p => p.url).filter(Boolean) } }];"
+      }
+    },
+    {
+      "id": "73d51f3a-825e-5103-bd6c-2e5b020e8dec",
+      "name": "Search Google (Serper)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1460,
+        720
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify((qs => [...qs.map(q => ({ q, num: 10, tbs: $('Store Settings').first().json.recent_days > 7 ? 'qdr:m' : 'qdr:w' })), ...qs.map(q => ({ q, num: 10 }))])([$json.output.search_query, $json.output.alt_query].filter(q => q && String(q).trim()))) }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Serper"
+        }
+      }
+    },
+    {
+      "id": "e438a1bd-6944-5b11-ba47-d7efbb35ce80",
+      "name": "Search Web (Venice)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "executeOnce": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        1680,
+        720
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.venice.ai/api/v1/chat/completions",
+        "options": {
+          "timeout": 90000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'z-ai-glm-5-3-flash', temperature: 0, max_tokens: 700, messages: [{ role: 'system', content: 'Answer only from the web search results of this request. List official, primary and reliable sources about the claim: one line per source, the URL first, then what the page says about the claim in at most 20 words. Include pages that deny the claim. If the results contain nothing about it, answer exactly: NOT FOUND.' }, { role: 'user', content: $('State The Claim (via Ask Venice)').first().json.output.claim }], venice_parameters: { enable_web_search: 'on', enable_web_citations: true } }) }}"
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "venice api"
+        }
+      }
+    },
+    {
+      "id": "61321350-eaf1-5323-b1d2-096d0b43a204",
+      "name": "Build Candidates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1900,
+        720
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const s = $('Store Settings').first().json;\nconst ci = $('Build Claim Input').first().json;\nconst platforms = s.platform_domains;\nconst host = (u) => { const m = String(u || '').match(/^https?:\\/\\/([^\\/?#:]+)/i); return m ? m[1].replace(/^www\\./, '').toLowerCase() : ''; };\nconst isPlatform = (h) => !h || platforms.some(p => h === p || h.endsWith('.' + p));\nconst seen = new Map();\nconst add = (url, found_by, gdate) => {\n  if (!url || !/^https?:/i.test(url)) return;\n  const clean = url.split('#')[0];\n  const h = host(clean);\n  if (isPlatform(h)) return;\n  if (seen.has(clean)) { const c = seen.get(clean); if (c.found_by !== found_by && c.found_by !== 'post') c.found_by = 'both'; if (!c.gdate && gdate) c.gdate = gdate; return; }\n  seen.set(clean, { url: clean, domain: h, found_by, gdate: gdate || '' });\n};\nci.linked_urls.forEach(u => add(u, 'post'));\n// Serper answers all queries in one call, one item per query: first the recent ones (date limit), then the same without a limit.\nconst items = $('Search Google (Serper)').all().map(i => i.json);\nconst hits = (part) => part.flatMap(j => (j.organic || []).map(r => ({ link: r.link, date: r.date || '' })));\nhits(items.slice(0, items.length / 2)).forEach(r => add(r.link, 'serper', r.date));\nconst serper = hits(items.slice(items.length / 2));\nconst vjson = $('Search Web (Venice)').first().json || {};\nconst vcites = ((vjson.venice_parameters || {}).web_search_citations || []).map(c => c.url);\nconst vtext = (((vjson.choices || [])[0] || {}).message || {}).content || '';\nconst vurls = vcites.concat(vtext.match(/https?:\\/\\/[^\\s)\\]>\"']+/g) || []).map(u => u.replace(/[.,;]+$/, ''));\nfor (let i = 0; i < Math.max(serper.length, vurls.length); i++) { if (serper[i]) add(serper[i].link, 'serper', serper[i].date); add(vurls[i], 'venice'); }\nconst list = [...seen.values()].slice(0, s.max_candidates);\nreturn [{ json: { candidates: list, count: list.length } }];"
+      }
+    },
+    {
+      "id": "2235738d-1aa0-57df-9ba5-69eda8be3efe",
+      "name": "Build Judge Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2760,
+        720
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const claim = $('State The Claim (via Ask Venice)').first().json.output;\nconst pages = $input.all().map(i => i.json).filter(p => p && p.url);\nconst words = [...new Set((claim.claim + ' ' + claim.about).toLowerCase().match(/[a-z0-9][a-z0-9.\\-]{2,}/g) || [])];\nconst windowOf = (t) => {\n  if (t.length <= 2500) return t;\n  const low = t.toLowerCase(); let best = 0, bestScore = -1;\n  for (let s = 0; s < low.length - 2500; s += 500) {\n    const w = low.slice(s, s + 2500); const sc = words.reduce((a, k) => a + (w.includes(k) ? 1 : 0), 0);\n    if (sc > bestScore) { bestScore = sc; best = s; }\n  }\n  return t.slice(best, best + 2500);\n};\nconst readable = pages.filter(p => p.read_status === 'read').map((p, k) => ({ ...p, n: k + 1, excerpt_in: windowOf(p.text) }));\nconst esc = (s) => String(s).replace(/</g, '(').replace(/>/g, ')');\nconst pages_text = readable.map(p => `<page n=\"${p.n}\" url=\"${p.url}\">${esc(p.excerpt_in)}</page>`).join('\\n');\nreturn [{ json: { readable: readable.map(({ text, ...r }) => r), unreadable: pages.filter(p => p.read_status !== 'read').map(({ text, ...r }) => r),\n  pages_text, readable_count: readable.length } }];"
+      }
+    },
+    {
+      "id": "520a556a-0f9e-54bf-adc7-d9213926de97",
+      "name": "Assign Label",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "onError": "stopWorkflow",
+      "position": [
+        3200,
+        720
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const s = $('Store Settings').first().json;\nconst claim = $('State The Claim (via Ask Venice)').first().json.output;\nconst ji = $('Build Judge Input').first().json;\nconst verdicts = $('Judge Stance And Tier (via Ask Venice)').isExecuted ? (($('Judge Stance And Tier (via Ask Venice)').first().json.output || {}).verdicts || []) : [];\nif (ji.readable_count > 0 && verdicts.length === 0) throw new Error('Judge returned no verdicts for ' + ji.readable_count + ' readable pages');\nconst byN = Object.fromEntries(verdicts.map(v => [v.n, v]));\n// recent = published in the last recent_days (7 for a daily run, 30 for a weekly run); older pages are background.\nconst since = new Date(Date.now() - (Number(s.recent_days) || 7) * 864e5).toISOString().slice(0, 10);\nconst whenOf = (d) => !d ? 'unknown' : (d >= since ? 'recent' : 'background');\n// registrable domain: last two labels, or three for known second-level suffixes\nconst SL = ['co.uk', 'com.au', 'co.jp', 'com.br', 'co.in', 'org.uk', 'ac.uk', 'gov.uk', 'com.cn'];\nconst reg = (h) => { const p = h.split('.'); const last2 = p.slice(-2).join('.'); return SL.includes(last2) ? p.slice(-3).join('.') : last2; };\nconst evidence = [\n  ...ji.readable.map(p => { const v = byN[p.n] || { stance: 'mentions', tier: 'other', excerpt: '', reason: 'no verdict' };\n    return { url: p.url, domain: reg(p.domain), tier: v.tier, stance: v.stance, read_status: 'read', found_by: p.found_by, published: p.published || '', when: whenOf(p.published), excerpt: String(v.excerpt || '').slice(0, 400) }; }),\n  ...ji.unreadable.map(p => ({ url: p.url, domain: reg(p.domain || ''), tier: '', stance: '', read_status: p.read_status, found_by: p.found_by, published: p.published || '', when: whenOf(p.published), excerpt: '' })),\n];\nconst trusted = (e) => e.tier === 'official' || e.tier === 'reliable';\nconst sup = evidence.filter(e => e.stance === 'supports');\nconst supDomains = [...new Set(sup.map(e => e.domain))];\nconst trustedSupDomains = [...new Set(sup.filter(trusted).map(e => e.domain))];\nconst contra = evidence.filter(e => e.stance === 'contradicts' && trusted(e));\nlet label, reason;\nif (!claim.checkable) { label = 'Opinion'; reason = 'A view, not a checkable fact.'; }\nelse if (contra.length) { label = 'Disputed'; reason = `Contradicted by ${[...new Set(contra.map(e => e.domain))].join(', ')}.`; }\nelse if (supDomains.length >= 2 && trustedSupDomains.length >= 1) { label = 'Corroborated'; reason = `Supported by ${supDomains.length} independent domains: ${supDomains.join(', ')}.`; }\nelse if (trustedSupDomains.length === 1) { label = 'Single source'; reason = `Only ${trustedSupDomains[0]} has stated it so far.`; }\nelse { label = 'Unverified'; reason = sup.length ? 'Only low-tier sources support it.' : (ji.readable_count ? 'No readable source supports it.' : 'No source could be read.'); }\nconst blocked = evidence.filter(e => e.read_status === 'blocked').length;\nif (blocked) reason += ` ${blocked} page(s) could not be read.`;\n// What the explainer writer reads: the claim, its label, the posts and every judged page with its tier and stance.\nconst esc = (t) => String(t).replace(/</g, '(').replace(/>/g, ')');\nconst pagesForWriter = ji.readable.map(p => { const v = byN[p.n] || {};\n  return `<page n=\"${p.n}\" url=\"${p.url}\" tier=\"${v.tier || 'other'}\" stance=\"${v.stance || 'mentions'}\" date=\"${p.published || 'unknown'}\" when=\"${whenOf(p.published)}\">${esc(p.excerpt_in)}</page>`; }).join('\\n');\nconst writer_input = `<claim>${esc(claim.claim)}</claim>\\n<about>${esc(claim.about)}</about>\\n<label>${label}</label>\\n<label_reason>${esc(reason)}</label_reason>\\n<posts>\\n${$('Build Claim Input').first().json.posts_text}\\n</posts>\\n<pages>\\n${pagesForWriter || '(no readable page)'}\\n</pages>`;\nreturn [{ json: { writer_input, record_id: $('Build Claim Input').first().json.record_id, label, reason,\n  independent_domains: supDomains.length,\n  official_links: sup.filter(e => e.tier === 'official').map(e => e.url).join('\\n'),\n  supporting_links: sup.filter(e => e.tier !== 'official').map(e => e.url).join('\\n'),\n  evidence: JSON.stringify(evidence), claim: claim.claim } }];"
+      }
+    },
+    {
+      "id": "602cb7b3-e1ac-5a07-91eb-49accebe19e4",
+      "name": "Save Verify Result (Airtable Clusters)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        3860,
+        720
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_CLUSTERS_TABLE_ID",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ typecast: true, records: [{ id: $json.record_id, fields: { label: $json.label, reason: $json.reason, independent_domains: $json.independent_domains, official_links: $json.official_links, supporting_links: $json.supporting_links, evidence: $json.evidence, explainer: $json.explainer_text } }] }) }}"
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "1672ecaa-99f5-5e66-a315-bc415996c4f5",
+      "name": "Build Verify Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4080,
+        720
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const a = $('Prepare Verify Save').first().json;\n// label and status for WF3's loop; the rest is what WF3 saves to the story archive.\nreturn [{ json: { cluster_id: $('Store Settings').first().json.cluster_id, label: a.label, independent_domains: a.independent_domains, status: 'ok', reason: a.reason,\n  claim: a.claim, explainer: a.explainer, explainer_text: a.explainer_text, search_terms: a.search_terms,\n  official_links: a.official_links, supporting_links: a.supporting_links, contradicting_links: a.contradicting_links, evidence: a.evidence } }];"
+      }
+    },
+    {
+      "id": "e8d364d0-834f-4f89-8e7f-c8d2ffc8db12",
+      "name": "Prepare Verify Save",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3640,
+        720
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Joins the label result and the explainer, and writes the explainer as readable text for Airtable.\nconst a = $('Assign Label').first().json;\nconst x = $('Write Explainer (via Ask Venice)').first().json.output;\nconst ev = JSON.parse(a.evidence || '[]');\nconst STATUS = { confirmed: 'Confirmed', stated_only: 'Stated by the source only', not_disclosed: 'Not disclosed', contradicted: 'Contradicted' };\nconst lines = ['What happened: ' + x.what_happened];\nif ((x.status_points || []).length) {\n  lines.push('', 'Confirmed and not confirmed:');\n  for (const p of x.status_points) lines.push('- ' + (STATUS[p.status] || p.status) + ': ' + p.point + (p.source ? ' (' + p.source + ')' : ''));\n}\nif (a.label === 'Disputed' && (x.two_sides.side_a || x.two_sides.side_b)) lines.push('', 'One side: ' + x.two_sides.side_a, 'Other side: ' + x.two_sides.side_b);\nlines.push('', 'Why it matters: ' + x.why_it_matters, '', 'Open question: ' + x.open_question);\nreturn [{ json: { ...a,\n  contradicting_links: [...new Set(ev.filter(e => e.stance === 'contradicts').map(e => e.url))].join('\\n'),\n  explainer: x, explainer_text: lines.join('\\n'),\n  search_terms: (x.search_terms || []).map(t => String(t).trim()).filter(Boolean).slice(0, 8).join(', ') } }];"
+      }
+    },
+    {
+      "id": "av-statetheclaim",
+      "name": "State The Claim (via Ask Venice)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1240,
+        720
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RzRuzMVi64lHyHwy",
+          "cachedResultName": "Claim Checks | Ask Venice"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "step": "State The Claim",
+            "body": "={{ { model: 'kimi-k2-6', temperature: 0, max_tokens: 1500, venice_parameters: { disable_thinking: true }, response_format: { type: 'json_schema', json_schema: { name: 'claim', strict: true, schema: {\"type\": \"object\", \"properties\": {\"claim\": {\"type\": \"string\"}, \"checkable\": {\"type\": \"boolean\"}, \"about\": {\"type\": \"string\"}, \"search_query\": {\"type\": \"string\"}, \"alt_query\": {\"type\": \"string\"} }, \"required\": [\"claim\", \"checkable\", \"about\", \"search_query\", \"alt_query\"], \"additionalProperties\": false} } }, messages: [{ role: 'system', content: \"<role>You turn a group of social posts into one checkable claim and the web searches that could confirm or refute it.</role>\\n\\n<rules>\\n1. claim: the single most important factual statement the posts make, in one specific sentence (who, what, when, numbers). Use only what the posts say.\\n2. checkable: true if official records, documentation or reporting could confirm or deny the claim; false if the posts only express a view.\\n3. about: the official name of the company, person, project or body the claim is about; \\\"\\\" if none.\\n4. search_query: a Google query likely to find the official announcement or reliable reporting. Name the entity and the key fact. No quotes except exact product names.\\n5. alt_query: the same search in different words (synonyms, or the wording the entity itself would use).\\n6. If checkable is false, write the queries so they find solid background on the topic of the view.\\n7. A poster's own experience or feelings (I hit the limit, I feel anxious, it worked for me) is not checkable: set checkable to false. If the post also states a general fact (a price, a release, a rule), the claim is that general fact and checkable is true.\\n</rules>\\n\\n<example>\\n<input>\\n<title>Example Corp ships agent v5</title>\\n<posts>\\n{\\\"title\\\":\\\"Example Corp ships agent v5 with background tasks\\\",\\\"summary\\\":\\\"Example Corp released version 5 of its coding agent with background tasks.\\\",\\\"source\\\":\\\"hacker_news\\\",\\\"links_to\\\":\\\"https://example.com/blog/v5\\\"}\\n{\\\"title\\\":\\\"v5 is out and it tops the leaderboard\\\",\\\"summary\\\":\\\"The author says agent v5 scored 92% on a public coding benchmark.\\\",\\\"source\\\":\\\"reddit\\\",\\\"links_to\\\":null}\\n</posts>\\n</input>\\n<output>{\\\"claim\\\":\\\"Example Corp released version 5 of its coding agent with a background-task mode in October 2026.\\\",\\\"checkable\\\":true,\\\"about\\\":\\\"Example Corp\\\",\\\"search_query\\\":\\\"Example Corp coding agent v5 release background tasks\\\",\\\"alt_query\\\":\\\"Example Corp announces agent version 5\\\"}</output>\\n</example>\" }, { role: 'user', content: '<title>' + $('Build Claim Input').first().json.title + '</title>\\n<posts>\\n' + $('Build Claim Input').first().json.posts_text + '\\n</posts>' }] } }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "av-judgestanceandtier",
+      "name": "Judge Stance And Tier (via Ask Venice)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        2980,
+        720
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RzRuzMVi64lHyHwy",
+          "cachedResultName": "Claim Checks | Ask Venice"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "step": "Judge Stance And Tier",
+            "body": "={{ { model: 'kimi-k2-6', temperature: 0, max_tokens: 4000, venice_parameters: { disable_thinking: true }, response_format: { type: 'json_schema', json_schema: { name: 'verdicts', strict: true, schema: {\"type\": \"object\", \"properties\": {\"verdicts\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"n\": {\"type\": \"integer\"}, \"stance\": {\"type\": \"string\", \"enum\": [\"supports\", \"contradicts\", \"mentions\"]}, \"tier\": {\"type\": \"string\", \"enum\": [\"official\", \"reliable\", \"other\"]}, \"excerpt\": {\"type\": \"string\"}, \"reason\": {\"type\": \"string\"} }, \"required\": [\"n\", \"stance\", \"tier\", \"excerpt\", \"reason\"], \"additionalProperties\": false} } }, \"required\": [\"verdicts\"], \"additionalProperties\": false} } }, messages: [{ role: 'system', content: \"<role>You check sources for a claim-checking report. For each page you decide what it says about the claim and what kind of source it is. Your marks decide the claim's label, so be strict.</role>\\n\\n<definitions>\\nstance:\\n- supports: the page itself states the claim, or its core fact, as true (a company announcing its own release counts).\\n- contradicts: the page states the claim is false, denied or retracted, or gives facts that cannot be true at the same time.\\n- mentions: anything else: rumours, \\\"reportedly\\\", questions, opinion pieces repeating the claim, pages that cite the same social post, unrelated pages.\\ntier:\\n- official: published by the company, person or body named in <about>, official documentation, a government body, or the paper or filing itself.\\n- reliable: an established news or trade outlet. The domains in <reliable_outlets> are reliable; judge others by name and reputation.\\n- other: blogs, forums, social posts, content farms, copies of the original post.\\n</definitions>\\n\\n<rules>\\n1. Judge only from the page text given. Never use your own knowledge of the facts.\\n2. When unsure between supports and mentions, choose mentions.\\n3. excerpt: copy at most 300 characters from the page that show the stance; \\\"\\\" for mentions.\\n4. reason: at most 15 words.\\n5. Return exactly one verdict for every page number.\\n6. A page about a different thing that shares a name (another product, project, company or person) is mentions, never contradicts.\\n7. contradicts needs the page to say the claim is false or to give facts that cannot be true together with it. A page that argues for something, recommends a policy, adds context or offers a different view without denying the facts is mentions.\\n</rules>\\n\\n<example>\\n<input>\\n<claim>Example Corp released version 5 of its coding agent in October 2026.</claim>\\n<about>Example Corp</about>\\n<reliable_outlets>theverge.com, reuters.com</reliable_outlets>\\n<pages>\\n<page n=\\\"1\\\" url=\\\"https://example.com/blog/v5\\\">Today we are releasing Agent v5, our biggest update yet, with background tasks...</page>\\n<page n=\\\"2\\\" url=\\\"https://somedevblog.net/post\\\">Rumour: Example Corp may ship v5 soon, according to a Reddit thread...</page>\\n<page n=\\\"3\\\" url=\\\"https://www.theverge.com/example\\\">Example Corp denied reports that v5 had launched, saying the release is planned for next year.</page>\\n</pages>\\n</input>\\n<output>{\\\"verdicts\\\":[{\\\"n\\\":1,\\\"stance\\\":\\\"supports\\\",\\\"tier\\\":\\\"official\\\",\\\"excerpt\\\":\\\"Today we are releasing Agent v5, our biggest update yet\\\",\\\"reason\\\":\\\"The company announces the release on its own blog.\\\"},{\\\"n\\\":2,\\\"stance\\\":\\\"mentions\\\",\\\"tier\\\":\\\"other\\\",\\\"excerpt\\\":\\\"\\\",\\\"reason\\\":\\\"Repeats a rumour from a social post.\\\"},{\\\"n\\\":3,\\\"stance\\\":\\\"contradicts\\\",\\\"tier\\\":\\\"reliable\\\",\\\"excerpt\\\":\\\"Example Corp denied reports that v5 had launched\\\",\\\"reason\\\":\\\"Reliable outlet reports a denial.\\\"}]}</output>\\n</example>\" }, { role: 'user', content: '<claim>' + $('State The Claim (via Ask Venice)').first().json.output.claim + '</claim>\\n<about>' + $('State The Claim (via Ask Venice)').first().json.output.about + '</about>\\n<reliable_outlets>' + $('Store Settings').first().json.reliable_outlets.join(', ') + '</reliable_outlets>\\n<pages>\\n' + $('Build Judge Input').first().json.pages_text + '\\n</pages>' }] } }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "av-writeexplainer",
+      "name": "Write Explainer (via Ask Venice)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        3420,
+        720
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RzRuzMVi64lHyHwy",
+          "cachedResultName": "Claim Checks | Ask Venice"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "step": "Write Explainer",
+            "body": "={{ { model: 'kimi-k2-6', temperature: 0.2, max_tokens: 3000, venice_parameters: { disable_thinking: true }, response_format: { type: 'json_schema', json_schema: { name: 'explainer', strict: true, schema: {\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"search_terms\", \"what_happened\", \"status_points\", \"two_sides\", \"why_it_matters\", \"open_question\"], \"properties\": {\"search_terms\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} }, \"what_happened\": {\"type\": \"string\"}, \"status_points\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"point\", \"status\", \"source\"], \"properties\": {\"point\": {\"type\": \"string\"}, \"status\": {\"type\": \"string\", \"enum\": [\"confirmed\", \"stated_only\", \"not_disclosed\", \"contradicted\"]}, \"source\": {\"type\": \"string\"} } } }, \"two_sides\": {\"type\": \"object\", \"additionalProperties\": false, \"required\": [\"side_a\", \"side_b\"], \"properties\": {\"side_a\": {\"type\": \"string\"}, \"side_b\": {\"type\": \"string\"} } }, \"why_it_matters\": {\"type\": \"string\"}, \"open_question\": {\"type\": \"string\"} } } } }, messages: [{ role: 'system', content: \"<role>You write the explainer of ONE checked news claim for a morning briefing. The reader knows nothing about the story and wants to understand in one minute what happened, what is confirmed, what is not, and why it matters. You use only the posts and pages given.</role>\\n\\n<input>\\n<claim> the claim in one sentence; <about> who it is about; <label> the label the checks gave it (Corroborated, Single source, Disputed, Unverified, Opinion) and <label_reason> why; <posts> what people posted; <pages> the sources read, each with its tier (official, reliable, other), stance (supports, contradicts, mentions), date (when it was published, or unknown) and when (recent: published in the last days; background: older, written before this event; unknown).\\n</input>\\n\\n<rules>\\n1. Every fact about the event (who, what, when, numbers, results) must come from the pages, or from the posts when you say it is what posters claim. If no page says it, do not write it. Never use your own knowledge of this event.\\n2. what_happened: 2-4 plain sentences: who did what, when, and what was claimed.\\n3. status_points: 3-6 points a reader would want to know, each with a status: confirmed (a page states it as fact and the page is not only the party making the claim), stated_only (only the company, person or body behind the claim says it), not_disclosed (a page says it is not known or not released, or a key question no page answers), contradicted (a page says otherwise). source: the url of the page that shows it, or \\\"\\\" when no page mentions it. Put the most important unknowns here as not_disclosed; never fill them in.\\n4. two_sides: only when the label is Disputed: side_a = what the supporting side says, side_b = what the contradicting source says, 1-3 sentences each, naming the source. Otherwise both \\\"\\\".\\n5. why_it_matters: 2-3 sentences of background so the reader understands why the story is notable: what the technology, term or problem is, and what would change if the claim holds. General background only: no new facts about this event, no prediction written as fact.\\n6. open_question: the single most important thing still unknown, one sentence.\\n7. search_terms: 5-8 plain words or short phrases someone might use to find this story months later, including everyday words for technical terms (for example \\\"virus\\\" and \\\"bacteria\\\" for bacteriophage).\\n8. Unverified: what_happened says what is being claimed and that no trustworthy source confirms it yet. Opinion: what_happened gives the view and who holds it; status_points may be empty.\\n9. Plain English. No hype words (revolutionary, game-changing, breakthrough unless a source uses it, in quotes). No markdown.\\n10. A page whose when is background is older context, not news of this event. Use it only as background, say that it is earlier and give its month and year (for example: an article from May 2026), and never present it as what happened now.\\n</rules>\\n\\n<example>\\n<input>\\n<claim>Example Bio says it treated a patient with an antibiotic-resistant infection using bacteriophages designed by its AI model.</claim>\\n<about>Example Bio</about>\\n<label>Single source</label>\\n<label_reason>Only examplebio.com has stated it so far.</label_reason>\\n<posts>\\n{\\\"title\\\":\\\"First patient treated with AI-designed phages\\\",\\\"summary\\\":\\\"A startup says its AI designed viruses that kill a resistant E. coli strain and gave them to a patient.\\\",\\\"source\\\":\\\"reddit\\\",\\\"links_to\\\":\\\"https://examplebio.com/news/first-patient\\\"}\\n</posts>\\n<pages>\\n<page n=\\\"1\\\" url=\\\"https://examplebio.com/news/first-patient\\\" tier=\\\"official\\\" stance=\\\"supports\\\">Today we report that phages designed by our model Helix-1 were administered to a patient with a multidrug-resistant E. coli infection under compassionate use. In laboratory tests the phage cocktail eliminated the patient's bacterial isolate. We are not sharing the patient's clinical progress to protect their privacy. The results have not yet been peer reviewed.</page>\\n</pages>\\n</input>\\n<output>{\\\"search_terms\\\":[\\\"AI designed virus\\\",\\\"bacteriophage\\\",\\\"phage therapy\\\",\\\"antibiotic resistance\\\",\\\"E. coli infection\\\",\\\"bacteria\\\",\\\"Example Bio\\\"],\\\"what_happened\\\":\\\"Example Bio says its AI model Helix-1 designed bacteriophages, viruses that attack bacteria, and that they were given to a patient with a drug-resistant E. coli infection under compassionate use.\\\",\\\"status_points\\\":[{\\\"point\\\":\\\"The AI-designed phages killed the patient's bacteria in laboratory tests\\\",\\\"status\\\":\\\"stated_only\\\",\\\"source\\\":\\\"https://examplebio.com/news/first-patient\\\"},{\\\"point\\\":\\\"The phages were given to a patient\\\",\\\"status\\\":\\\"stated_only\\\",\\\"source\\\":\\\"https://examplebio.com/news/first-patient\\\"},{\\\"point\\\":\\\"Whether the infection cleared or the patient recovered\\\",\\\"status\\\":\\\"not_disclosed\\\",\\\"source\\\":\\\"https://examplebio.com/news/first-patient\\\"},{\\\"point\\\":\\\"Independent or peer-reviewed confirmation of the results\\\",\\\"status\\\":\\\"not_disclosed\\\",\\\"source\\\":\\\"https://examplebio.com/news/first-patient\\\"}],\\\"two_sides\\\":{\\\"side_a\\\":\\\"\\\",\\\"side_b\\\":\\\"\\\"},\\\"why_it_matters\\\":\\\"Phage therapy uses viruses that infect and kill specific bacteria, a possible option when antibiotics fail. Today a matching natural phage has to be found for each infection; if AI can design one on demand, patients with no working treatment could get one much faster.\\\",\\\"open_question\\\":\\\"Did the treatment clear the patient's infection?\\\"}</output>\\n</example>\" }, { role: 'user', content: $json.writer_input }] } }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "ccb72dd1-0f8c-4a95-b49f-43ef4a320125",
+      "name": "Read Pages (via Read Web Pages)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        2200,
+        720
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "pKQ5GRVqkVr5OiLF",
+          "cachedResultName": "Claim Checks | Read Web Pages"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When Called By Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Read Claim (Airtable Clusters)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Claim (Airtable Clusters)": {
+      "main": [
+        [
+          {
+            "node": "Read Claim Posts (Airtable Findings)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Claim Posts (Airtable Findings)": {
+      "main": [
+        [
+          {
+            "node": "Build Claim Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Google (Serper)": {
+      "main": [
+        [
+          {
+            "node": "Search Web (Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Web (Venice)": {
+      "main": [
+        [
+          {
+            "node": "Build Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Verify Result (Airtable Clusters)": {
+      "main": [
+        [
+          {
+            "node": "Build Verify Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Verify Save": {
+      "main": [
+        [
+          {
+            "node": "Save Verify Result (Airtable Clusters)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Claim Input": {
+      "main": [
+        [
+          {
+            "node": "State The Claim (via Ask Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "State The Claim (via Ask Venice)": {
+      "main": [
+        [
+          {
+            "node": "Search Google (Serper)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Judge Input": {
+      "main": [
+        [
+          {
+            "node": "Judge Stance And Tier (via Ask Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Judge Stance And Tier (via Ask Venice)": {
+      "main": [
+        [
+          {
+            "node": "Assign Label",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assign Label": {
+      "main": [
+        [
+          {
+            "node": "Write Explainer (via Ask Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Explainer (via Ask Venice)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Verify Save",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Candidates": {
+      "main": [
+        [
+          {
+            "node": "Read Pages (via Read Web Pages)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Pages (via Read Web Pages)": {
+      "main": [
+        [
+          {
+            "node": "Build Judge Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "ccResearchPipe01"
+  },
+  "active": false
+}

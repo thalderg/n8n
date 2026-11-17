@@ -1,0 +1,888 @@
+{
+  "id": "d3M6MGHnlxvPBk9j",
+  "name": "Claim Checks | Bot Commands",
+  "nodes": [
+    {
+      "id": "8033c95a-b276-5bf8-aab0-7468b2d6e280",
+      "name": "Reply Search Usage",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        880,
+        720
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4ccc3ede-ce28-5f1f-9a5f-2231f6ade286",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Store Settings').first().json.chat_id }}"
+            },
+            {
+              "id": "f755fa7b-2644-5b37-81fa-e0c636ced1e7",
+              "name": "text",
+              "type": "string",
+              "value": "Write the topic after search, for example: search AI coding agents (last 7 days) or search AI coding agents today (last 24 hours)."
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "98a0d844-9f0e-5b26-b96d-82e7abeb0a8b",
+      "name": "Find Recent Reports (Airtable Runs)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        920
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_RUNS_TABLE_ID",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "=AND({status}='delivered', IS_AFTER({started_at}, DATEADD(NOW(), -14, 'days')))"
+            },
+            {
+              "name": "sort[0][field]",
+              "value": "started_at"
+            },
+            {
+              "name": "sort[0][direction]",
+              "value": "desc"
+            },
+            {
+              "name": "pageSize",
+              "value": "20"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "c1c61bbe-3a52-5825-959f-efa80635614b",
+      "name": "Build Report List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        920
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const line = (r, i) => { const f = r.fields; const d = f.started_at ? DateTime.fromISO(f.started_at).setZone('Europe/Rome').toFormat('d LLL HH:mm') : '';\n  return (i + 1) + '. ' + d + ' · ' + String(f.keywords || '').split('\\n').join(', ') + ' · ' + (f.mode === 'today' ? '24 h' : '7 days'); };\nconst recs = $json.records || [];\nconst text = recs.length ? '## Reports of the last 14 days\\n' + recs.map(line).join('\\n') + '\\n\\nReply with a number for its summary.'\n  : 'No delivered reports in the last 14 days. Start one with search <topic>.';\nreturn [{ json: { chat_id: $('Store Settings').first().json.chat_id, text } }];"
+      }
+    },
+    {
+      "id": "1228bb2e-e0e2-552d-9db5-ceb1c02473ec",
+      "name": "Find Reports For Summary (Airtable Runs)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        1120
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_RUNS_TABLE_ID",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "=AND({status}='delivered', IS_AFTER({started_at}, DATEADD(NOW(), -14, 'days')))"
+            },
+            {
+              "name": "sort[0][field]",
+              "value": "started_at"
+            },
+            {
+              "name": "sort[0][direction]",
+              "value": "desc"
+            },
+            {
+              "name": "pageSize",
+              "value": "20"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "8fefa12b-e995-542a-9844-9b7b8e2a784a",
+      "name": "Pick Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        1120
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const c = $('Store Settings').first().json;\nconst recs = $json.records || [];\nconst idx = c.command === 'number' ? c.number - 1 : 0;\nconst r = recs[idx];\nreturn [{ json: r ? { found: true, record_id: r.id, run: r.fields } : { found: false,\n  message: recs.length ? 'There is no report number ' + c.number + '. Send list to see the numbers.' : 'No delivered reports in the last 14 days. Start one with search <topic>.' } }];"
+      }
+    },
+    {
+      "id": "cba49e46-55be-5114-83cb-56bf469ce3f1",
+      "name": "Found Report?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1320,
+        1120
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "868f1e54-7c7a-5fb4-83b3-481aaeaa5178",
+              "leftValue": "={{ $json.found }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "6c7e28c7-8cac-52d8-86fd-e488c9dfcbc9",
+      "name": "Mark Report Opened (Airtable Runs)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1540,
+        1120
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_RUNS_TABLE_ID",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ records: [{ id: $json.record_id, fields: { last_opened_at: $now.toISO() } }] }) }}"
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "c5f27a9c-7d57-5e40-bd20-90427e687753",
+      "name": "Read Report Claims (Airtable Clusters)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        1120
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_CLUSTERS_TABLE_ID",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "={run_id}='{{ $('Pick Report').first().json.run.run_id }}'"
+            },
+            {
+              "name": "pageSize",
+              "value": "50"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "e74dd73a-2970-5ab0-b472-eaea2a738986",
+      "name": "Build Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        1120
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const run = $('Pick Report').first().json.run;\nconst md = String(run.briefing || '');\nconst inShort = (md.split(/^## /m).find(s => s.startsWith('In short')) || '').replace(/^In short\\s*/, '').trim();\nconst topics = (md.match(/^## (.+)$/gm) || []).map(h => h.slice(3)).filter(t => t !== 'In short' && t !== 'Sources');\nconst counts = {};\nfor (const r of ($json.records || [])) { const l = r.fields.label || 'Not checked'; counts[l] = (counts[l] || 0) + 1; }\nconst text = ['## ' + String(run.keywords || '').split('\\n').join(', ') + ' (' + (run.mode === 'today' ? 'last 24 hours' : 'last 7 days') + ')',\n  inShort || 'This report has no briefing text.', '',\n  topics.length ? '## Topics\\n' + topics.map(t => '- ' + t).join('\\n') : '',\n  Object.keys(counts).length ? '## Claims checked\\n' + Object.entries(counts).map(([l, n]) => '[' + l + '] ' + n).join('\\n') : '',\n  run.pdf_link ? '\\nPDF: ' + run.pdf_link : '', '\\nSend provide-all for the full briefing.'].filter(Boolean).join('\\n');\nreturn [{ json: { chat_id: $('Store Settings').first().json.chat_id, text } }];"
+      }
+    },
+    {
+      "id": "afe60fcc-faf3-56c3-828a-3d5430b28773",
+      "name": "Reply No Report",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1540,
+        1320
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a2d7ac14-ca20-5308-985a-a4030bf9fff3",
+              "name": "chat_id",
+              "type": "string",
+              "value": "={{ $('Store Settings').first().json.chat_id }}"
+            },
+            {
+              "id": "ecacba03-b8f6-59cc-9e1f-aba180355fc1",
+              "name": "text",
+              "type": "string",
+              "value": "={{ $json.message }}"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "df5835de-a797-58a9-beef-f730b424a405",
+      "name": "Find Last Opened Report (Airtable Runs)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        1520
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_RUNS_TABLE_ID",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "={status}='delivered'"
+            },
+            {
+              "name": "sort[0][field]",
+              "value": "last_opened_at"
+            },
+            {
+              "name": "sort[0][direction]",
+              "value": "desc"
+            },
+            {
+              "name": "sort[1][field]",
+              "value": "started_at"
+            },
+            {
+              "name": "sort[1][direction]",
+              "value": "desc"
+            },
+            {
+              "name": "maxRecords",
+              "value": "1"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "3de94636-2cbd-55d6-9ea6-eb79133815f1",
+      "name": "Build Full Briefing",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        1520
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const r = ($json.records || [])[0];\nconst text = r ? '## ' + String(r.fields.keywords || '').split('\\n').join(', ') + '\\n' + (r.fields.briefing || 'This report has no briefing text.') + (r.fields.pdf_link ? '\\n\\nPDF: ' + r.fields.pdf_link : '')\n  : 'No delivered report yet. Start one with search <topic>.';\nreturn [{ json: { chat_id: $('Store Settings').first().json.chat_id, text } }];"
+      }
+    },
+    {
+      "id": "2966740b-4c39-4c39-abe6-58e6cd0d580b",
+      "name": "List Stories From Archive",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "alwaysOutputData": true,
+      "position": [
+        880,
+        1720
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT story_number, found_on::text AS found_on, label, title FROM claim_checks.stories WHERE found_on BETWEEN $1::date AND $2::date ORDER BY found_on DESC, story_number DESC LIMIT 300;",
+        "options": {
+          "queryReplacement": "={{ [$('Store Settings').first().json.from, $('Store Settings').first().json.to] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres Claim Checks Reader"
+        }
+      }
+    },
+    {
+      "id": "377d7b2b-863a-4fc2-abab-d0368fb4ea06",
+      "name": "Build Story List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        1720
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// The stories of the asked period, newest first: by day up to 14 days, by week for longer periods.\nconst rc = $('Store Settings').first().json;\nconst rows = $input.all().map(i => i.json).filter(r => r && r.story_number);\nlet text;\nif (rc.range_error) text = rc.range_error;\nelse if (!rows.length) text = '## Stories from ' + rc.range_label + '\\nNo stories were checked in this period.';\nelse {\n  const days = (new Date(rc.to) - new Date(rc.from)) / 864e5 + 1;\n  const name = (d) => new Date(d + 'T12:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });\n  const weekOf = (d) => { const x = new Date(d + 'T12:00:00Z'); x.setUTCDate(x.getUTCDate() - (x.getUTCDay() + 6) % 7); return 'Week of ' + x.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }); };\n  const groups = new Map();\n  for (const r of rows) { const k = days <= 14 ? name(r.found_on) : weekOf(r.found_on); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(r); }\n  const lines = ['## Stories from ' + rc.range_label, rows.length + (rows.length === 1 ? ' story' : ' stories') + (days > 14 ? ', titles only' : '')];\n  for (const [k, list] of groups) { lines.push('', '### ' + k); for (const r of list) lines.push('[' + r.label + '] #' + r.story_number + ' ' + r.title); }\n  lines.push('', 'Send dig and a number for the full story.');\n  text = lines.join('\\n');\n}\nreturn [{ json: { chat_id: rc.chat_id, text } }];\n"
+      }
+    },
+    {
+      "id": "58bd3a8a-5da0-481a-b5f2-c3ea305aea6d",
+      "name": "Find Story In Archive",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "alwaysOutputData": true,
+      "position": [
+        880,
+        1920
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH q AS (SELECT websearch_to_tsquery('english', $2::text) AS tq)\nSELECT s.story_number, s.found_on::text AS found_on, s.mode, s.title, s.label, s.claim, s.gist, s.explainer, s.official_links, s.supporting_links, s.contradicting_links, s.pdf_link, s.posts, s.evidence, ts_rank(s.search, q.tq) AS rank,\n  (SELECT coalesce(json_agg(json_build_object('asked_on', to_char(u.asked_on AT TIME ZONE 'Europe/Rome', 'YYYY-MM-DD HH24:MI'), 'question', u.question, 'result', u.result, 'found_new', u.found_new, 'links', u.links) ORDER BY u.asked_on), '[]'::json)\n   FROM claim_checks.story_updates u WHERE u.story_number = s.story_number) AS updates,\n  (SELECT coalesce(json_agg(json_build_object('saved_on', to_char(c.saved_at AT TIME ZONE 'Europe/Rome', 'YYYY-MM-DD'), 'saved_part', c.saved_part, 'summary', c.summary) ORDER BY c.saved_at), '[]'::json)\n   FROM claim_checks.story_conversations c WHERE c.story_number = s.story_number AND c.summary IS NOT NULL) AS conversations\nFROM claim_checks.stories s, q\nWHERE (NULLIF($1::text, '') IS NOT NULL AND s.story_number = NULLIF($1::text, '')::int) OR (NULLIF($1::text, '') IS NULL AND s.search @@ q.tq)\nORDER BY ts_rank(s.search, q.tq) DESC, s.story_number DESC LIMIT 5;",
+        "options": {
+          "queryReplacement": "={{ [$('Store Settings').first().json.dig_number, $('Store Settings').first().json.dig_query] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Postgres Claim Checks Reader"
+        }
+      }
+    },
+    {
+      "id": "4e6147d6-9ab4-4d1c-9d93-7caf5deb6062",
+      "name": "Build Story Card",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        1920
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// One story in full (explainer, sources, every update), or a short choice when several stories match.\nconst rc = $('Store Settings').first().json;\nconst rows = $input.all().map(i => i.json).filter(r => r && r.story_number);\nconst STATUS = { confirmed: 'Confirmed', stated_only: 'Stated by the source only', not_disclosed: 'Not disclosed', contradicted: 'Contradicted' };\nconst date = (d) => new Date(String(d).slice(0, 10) + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });\n// Every link with its publication date; pages older than the run's recent window are marked background.\nconst day = (d) => d ? date(d) : 'date unknown';\nlet pages = {};\nconst dated = (u) => { const e = pages[u] || {}; return day(e.published) + (e.when === 'background' ? ', background' : ''); };\nconst links = (label, t) => String(t || '').split('\\n').filter(Boolean).map(u => '- ' + label + ', ' + dated(u) + ': ' + u);\n// Who wrote a post, from its address: @name on X, r/name on Reddit, or Hacker News.\nconst whoOf = (u) => { let m = String(u).match(/(?:x|twitter)\\.com\\/([^\\/?#]+)\\/status/i); if (m) return '@' + m[1] + ' on X'; m = String(u).match(/reddit\\.com\\/r\\/([^\\/?#]+)/i); if (m) return 'r/' + m[1] + ' on Reddit'; return /ycombinator/.test(String(u)) ? 'Hacker News' : 'Post'; };\nlet text, follow = {};\nconst cmd = rc.command === 'update' ? 'update' : 'dig';\nif (!rows.length) text = rc.dig_number ? 'There is no story #' + rc.dig_number + '. Send list to see the numbers.' : 'No story matches \"' + rc.topic + '\". Try other words, or list to browse by date.';\n// Words: the best match is shown at once when it ranks at least twice as high as the next one.\nelse if (!rc.dig_number && rows.length > 1 && !(Number(rows[0].rank) >= 2 * Number(rows[1].rank))) text = ['## Several stories match', ...rows.map(r => '[' + r.label + '] #' + r.story_number + ' ' + r.title + ' (' + date(r.found_on) + ')'), '', 'Send ' + cmd + ' and the number of the one you mean.'].join('\\n');\nelse if (rc.command === 'update') {\n  // One clear story: the bot answers at once and Follow Up Story sends the update when it is done.\n  const r = rows[0]; const ups = r.updates || [];\n  text = 'Looking for news on #' + r.story_number + ' · ' + r.title + ' published since ' + date(ups.length ? ups[ups.length - 1].asked_on : r.found_on) + '. I will send what I find here in about a minute.';\n  follow = { function: 'open', follow_up: true, story_number: r.story_number, question: rc.question || '' };\n}\nelse {\n  const r = rows[0]; const x = r.explainer;\n  try { pages = Object.fromEntries(JSON.parse(r.evidence || '[]').map(e => [e.url, e])); } catch (e) { pages = {}; }\n  const l = ['## #' + r.story_number + ' · ' + r.title, '[' + r.label + '] found on ' + date(r.found_on) + (r.mode === 'today' ? ' (daily run)' : ' (weekly run)')];\n  // The original posts come first, oldest first.\n  const posts = [...(r.posts || [])].sort((a, b) => String(a.published_at || '').localeCompare(String(b.published_at || '')));\n  if (posts.length) l.push('', '### Where it came from', ...posts.map(p => '- ' + whoOf(p.url) + ', ' + day(p.published_at) + ': ' + p.url + (p.linked_url ? '\\n  linking to ' + p.linked_url : '')));\n  if (x) {\n    l.push('', '### What happened', x.what_happened);\n    if ((x.status_points || []).length) l.push('', '### Confirmed and not confirmed', ...x.status_points.map(p => '- ' + (STATUS[p.status] || p.status) + ': ' + p.point + (p.source ? ' (' + dated(p.source) + ') ' + p.source : '')));\n    if (r.label === 'Disputed' && x.two_sides && (x.two_sides.side_a || x.two_sides.side_b)) l.push('', '### Both sides', '- One side: ' + x.two_sides.side_a, '- Other side: ' + x.two_sides.side_b);\n    l.push('', '### Why it matters', x.why_it_matters, '', '### Open question', x.open_question);\n  } else l.push('', r.gist || r.claim || '');\n  const src = [...links('Official', r.official_links), ...links('Supporting', r.supporting_links), ...links('Contradicting', r.contradicting_links)];\n  if (src.length) l.push('', '### Sources', ...src);\n  if (r.pdf_link) l.push('', 'PDF of the report: ' + r.pdf_link);\n  const ups = r.updates || [];\n  l.push('', '### Updates');\n  if (!ups.length) l.push('No update asked yet. Send update ' + r.story_number + ' to look for news since ' + date(r.found_on) + '.');\n  for (const u of ups) { l.push('', '### ' + date(u.asked_on) + (u.question ? ' (you asked: ' + u.question + ')' : ''), u.result, ...String(u.links || '').split('\\n').filter(Boolean).map(x => '- ' + x)); }\n  const convs = r.conversations || [];\n  if (convs.length) { l.push('', '### Your saved conversations'); for (const c of convs) l.push('- ' + date(c.saved_on) + ': ' + String(c.summary || '').split('\\n')[0]); }\n  l.push('', 'Ask me anything about this story here. Send save or close to keep the conversation, forget to drop it.');\n  text = l.join('\\n');\n  follow = { function: 'open', follow_up: false, story_number: r.story_number, question: '' };\n}\nreturn [{ json: { chat_id: rc.chat_id, message_id: rc.message_id, text, ...follow } }];\n"
+      }
+    },
+    {
+      "id": "bc-trig",
+      "name": "When Called By Bot",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        720
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "bc-set",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        280,
+        720
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bc-s1",
+              "name": "list_days",
+              "type": "number",
+              "value": 14
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "bc-route",
+      "name": "Route Command",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        500,
+        720
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "bc-usage",
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "^search$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "usage"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "bc-reports",
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "^reports$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reports"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "bc-summary",
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "^(number|provide)$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "summary"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "bc-provide_all",
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "^provide_all$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "provide_all"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "bc-list",
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "^list$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "list"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "bc-story",
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "^(dig|update)$",
+                    "operator": {
+                      "type": "string",
+                      "operation": "regex"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "story"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "bc-note0",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Claim Checks | Bot Commands\n\nAnswers the bot's fixed commands and returns the reply text; \"WF2 — Telegram Bot\" sends it. It only reads.\n\n**Called by:** \"WF2 — Telegram Bot\", once per command message (reports, a number, provide, provide-all, list, dig, update, and search without a topic). Locked to \"WF2\".\n**Returns:** chat_id and text. For dig and update with one clear story also function \"open\", story_number (and follow_up, question for update), so \"WF2\" opens the story conversation in \"Story Chat\".\n**Alerts:** a failed read stops this call: the central error handler alerts in the main chat and the bot answers \"something went wrong, try again\".\n**Services called:** Airtable (Runs, Clusters) · Postgres (claim_checks.stories, story_updates, story_conversations; read-only login).",
+        "color": 6,
+        "width": 2160,
+        "height": 260
+      }
+    },
+    {
+      "id": "bc-note1",
+      "name": "Entry Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        340
+      ],
+      "parameters": {
+        "content": "## Entry\n\nTriggered by: \"WF2\" (When Called By Bot), with the command read from the message.\n\nWhat it does, step by step:\n1. Store Settings keeps the command and holds list_days (14).\n2. Route Command sends it to its row in Commands.",
+        "color": 7,
+        "width": 760,
+        "height": 1800
+      }
+    },
+    {
+      "id": "bc-note2",
+      "name": "Commands Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        820,
+        340
+      ],
+      "parameters": {
+        "content": "## Commands\n\nTriggered by: Route Command, one row per command.\n\nWhat it does, step by step:\n1. search without a topic: Reply Search Usage.\n2. reports: Find Recent Reports (Airtable Runs) → Build Report List, numbered, newest first.\n3. a number or provide: Find Reports For Summary (Airtable Runs) → Pick Report → Mark Report Opened (Airtable Runs) → Read Report Claims (Airtable Clusters) → Build Summary. No such report: Reply No Report.\n4. provide-all: Find Last Opened Report (Airtable Runs) → Build Full Briefing.\n5. list: List Stories From Archive (Postgres, read-only) → Build Story List, by day (by week beyond 14 days).\n6. dig and update: Find Story In Archive (Postgres, read-only) finds the story by number or words, with its updates and saved conversations; Build Story Card writes the full story, the \"looking for news\" reply, or a numbered choice when several match.",
+        "color": 4,
+        "width": 1340,
+        "height": 1800
+      }
+    }
+  ],
+  "connections": {
+    "When Called By Bot": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Route Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Command": {
+      "main": [
+        [
+          {
+            "node": "Reply Search Usage",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Recent Reports (Airtable Runs)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Reports For Summary (Airtable Runs)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Last Opened Report (Airtable Runs)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "List Stories From Archive",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Story In Archive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Recent Reports (Airtable Runs)": {
+      "main": [
+        [
+          {
+            "node": "Build Report List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Reports For Summary (Airtable Runs)": {
+      "main": [
+        [
+          {
+            "node": "Pick Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Report": {
+      "main": [
+        [
+          {
+            "node": "Found Report?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Found Report?": {
+      "main": [
+        [
+          {
+            "node": "Mark Report Opened (Airtable Runs)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reply No Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Report Opened (Airtable Runs)": {
+      "main": [
+        [
+          {
+            "node": "Read Report Claims (Airtable Clusters)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Report Claims (Airtable Clusters)": {
+      "main": [
+        [
+          {
+            "node": "Build Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Last Opened Report (Airtable Runs)": {
+      "main": [
+        [
+          {
+            "node": "Build Full Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Stories From Archive": {
+      "main": [
+        [
+          {
+            "node": "Build Story List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Story In Archive": {
+      "main": [
+        [
+          {
+            "node": "Build Story Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "timezone": "Europe/Rome",
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "ccTelegramBot001"
+  },
+  "active": false
+}

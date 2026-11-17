@@ -1,0 +1,437 @@
+{
+  "id": "6tQ5vBxixkQqpDKO",
+  "name": "Claim Checks | Answer Question",
+  "nodes": [
+    {
+      "id": "08aebea9-cec0-4542-9234-95a5d1abc961",
+      "name": "When Called By Pipeline",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        800
+      ],
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "run_id"
+            },
+            {
+              "name": "question"
+            },
+            {
+              "name": "mode"
+            },
+            {
+              "name": "window_days",
+              "type": "number"
+            },
+            {
+              "name": "posts",
+              "type": "array"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "f14a3ad6-a88a-4199-bb7d-d43e03b2e8b7",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        280,
+        800
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6e7a22d3-acc6-42bf-a51b-0e53766b73ae",
+              "name": "read_pages_id",
+              "type": "string",
+              "value": "pKQ5GRVqkVr5OiLF"
+            },
+            {
+              "id": "30a1a9eb-4d28-442a-9ce9-d6168bff7a8a",
+              "name": "max_pages",
+              "type": "number",
+              "value": 8
+            },
+            {
+              "id": "4eb28d22-d411-49db-abef-93e4e0ce6081",
+              "name": "platform_domains",
+              "type": "array",
+              "value": "[\"reddit.com\", \"redd.it\", \"news.ycombinator.com\", \"x.com\", \"twitter.com\", \"facebook.com\", \"fb.com\", \"instagram.com\", \"youtube.com\", \"youtu.be\"]"
+            },
+            {
+              "id": "d47ed68c-fefa-4daf-8f70-05e8475d340b",
+              "name": "today",
+              "type": "string",
+              "value": "={{ $now.toFormat('d LLLL yyyy') }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "987d7c6f-c60d-4577-be0a-3caed1abcc90",
+      "name": "Plan Answer Search (via Ask Venice)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        500,
+        800
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RzRuzMVi64lHyHwy",
+          "cachedResultName": "Claim Checks | Ask Venice"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "step": "Plan Answer Search",
+            "body": "={{ { model: 'kimi-k2-6', temperature: 0, max_tokens: 600, venice_parameters: { disable_thinking: true }, response_format: { type: 'json_schema', json_schema: { name: 'answer_search', strict: true, schema: {\"type\": \"object\", \"properties\": {\"subject\": {\"type\": \"string\"}, \"answer_type\": {\"type\": \"string\"}, \"queries\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} }, \"must_words\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} } }, \"required\": [\"subject\", \"answer_type\", \"queries\", \"must_words\"], \"additionalProperties\": false} } }, messages: [{ role: 'system', content: \"<role>You plan Google searches that find the answer to a user's question for a research report. The pages these searches find are read next, and the answer is taken only from them.</role>\\n\\n<rules>\\n1. subject: what the question is about, in a few words, with the edition, version or date when the question is about something recurring or recent (today is in <today>).\\n2. answer_type: what a good answer lists or explains, in a few words (for example: submitted projects and what they do; the reasons given; the winners).\\n3. queries: exactly 3 Google queries of 3-8 plain words, each a different route to the answer: (a) the official source that would hold the answer (the organiser's site, the official list or results page, the documentation); (b) the answer itself in the words people use (for example: projects built at, winners of, finalists, submissions); (c) news or blog coverage that would sum it up. Add the year or month when it separates this edition from older ones.\\n4. Write the subject's full, unambiguous name in every query, so a search engine cannot read it as a common word: \\\"NEAR Protocol hackathon\\\", not \\\"near hackathon\\\"; \\\"Apple Inc.\\\" when the fruit is possible.\\n5. <posts> are posts on the subject that the run already found. Use their exact names and words when they help (the event's full name, the organiser, the tracks, the site they link to).\\n6. must_words: 1-2 words that every page about this subject contains, written as such pages write them, with their usual capitals (for example [\\\"NEAR\\\"] for the NEAR Protocol hackathon, [\\\"Qwen\\\"] for Qwen models). Pages and posts without one of them are not used.\\n7. No quotes, no operators, no site: filters.\\n</rules>\\n\\n<example>\\n<input>\\n<question>which open-source projects got the Example Foundation grants this autumn?</question>\\n<today>20 November 2026</today>\\n<posts>[]</posts>\\n</input>\\n<output>{\\\"subject\\\":\\\"Example Foundation open-source grants, autumn 2026\\\",\\\"answer_type\\\":\\\"funded projects and what they build\\\",\\\"queries\\\":[\\\"Example Foundation grants autumn 2026 recipients\\\",\\\"projects funded Example Foundation open source grant 2026\\\",\\\"Example Foundation grant winners announced\\\",\\\"must_words\\\":[\\\"Example Foundation\\\"]}</output>\\n</example>\" }, { role: 'user', content: '<question>' + $('Store Settings').first().json.question + '</question>\\n<today>' + $('Store Settings').first().json.today + '</today>\\n<posts>' + JSON.stringify([].concat($('Store Settings').first().json.posts || []).slice(0, 8).map(x => x.title)) + '</posts>' }] } }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "6371a1f9-ec0a-4a04-8bc0-5f974e2c8ad2",
+      "name": "Search Google (Serper)",
+      "notesInFlow": true,
+      "notes": "Each query twice in one call: first pages of the last month, then without a date limit.",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        720,
+        800
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify((qs => [...qs.map(q => ({ q, num: 10, tbs: 'qdr:m' })), ...qs.map(q => ({ q, num: 10 }))])(([].concat(($json.output || {}).queries || [])).filter(q => q && String(q).trim()).slice(0, 3))) }}"
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Serper"
+        }
+      }
+    },
+    {
+      "id": "5b268156-79d4-46ca-82cf-6dc3053d03d3",
+      "name": "Build Page List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        800
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: merges and de-duplicates several Google result lists in a fixed order; no native node does that.\nconst s = $('Store Settings').first().json;\nconst host = (u) => { const m = String(u || '').match(/^https?:\\/\\/([^\\/?#:]+)/i); return m ? m[1].replace(/^www\\./, '').toLowerCase() : ''; };\nconst isPlatform = (h) => !h || s.platform_domains.some(p => h === p || h.endsWith('.' + p));\n// Serper answers all queries in one call, one item per query: first the last-month results, then the same queries without a limit.\nconst items = $input.all().map(i => i.json).filter(j => Array.isArray(j.organic));\nconst half = Math.ceil(items.length / 2);\nconst lists = [...items.slice(0, half), ...items.slice(half)].map(j => j.organic);\n// The subject's must-words (from the planner): a word with capitals must match exactly, a lower-case one in any case.\nconst must = [].concat((($('Plan Answer Search (via Ask Venice)').first().json.output || {}).must_words) || []).map(w => String(w).trim()).filter(Boolean);\nconst rx = must.map(w => new RegExp('(^|[^A-Za-z0-9])' + w.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&') + '($|[^A-Za-z0-9])', /[A-Z]/.test(w) ? '' : 'i'));\nconst about = (t) => !rx.length || rx.some(r => r.test(String(t || '')));\nconst seen = new Map();\n// First the articles the run's posts link to (often the official page itself), at most 3; then Google.\nfor (const x of [].concat(s.posts || [])) {\n  const url = String(x.linked_url || '').split('#')[0]; const h = host(url);\n  if (!/^https?:/i.test(url) || isPlatform(h) || seen.has(url) || seen.size >= 3 || !about(x.title + ' ' + x.summary)) continue;\n  seen.set(url, { url, domain: h, found_by: 'post', gdate: '', title: String(x.title || '').slice(0, 200), snippet: String(x.summary || '').slice(0, 400) });\n}\n// Take the top result of every list, then the second of every list, and so on, so each query gets its best pages in.\nfor (let r = 0; r < 10 && seen.size < s.max_pages; r++) {\n  for (const list of lists) {\n    const x = list[r]; if (!x || !x.link || !/^https?:/i.test(x.link)) continue;\n    const url = x.link.split('#')[0]; const h = host(url);\n    if (isPlatform(h) || seen.has(url) || !about(x.title + ' ' + x.snippet + ' ' + url)) continue;\n    seen.set(url, { url, domain: h, found_by: 'serper', gdate: x.date || '', title: String(x.title || '').slice(0, 200), snippet: String(x.snippet || '').slice(0, 400) });\n    if (seen.size >= s.max_pages) break;\n  }\n}\nconst list = [...seen.values()];\nreturn [{ json: { candidates: list.map(({ title, snippet, ...c }) => c), snippets: list, count: list.length } }];"
+      }
+    },
+    {
+      "id": "61b4e693-b701-48cb-9a3f-9f8bb0ffa9ab",
+      "name": "Read Pages (via Read Web Pages)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1300,
+        800
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "pKQ5GRVqkVr5OiLF",
+          "cachedResultName": "Claim Checks | Read Web Pages"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "2c7ef102-e038-4762-9097-2a7c38c75508",
+      "name": "Build Answer Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        800
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: numbers the pages and builds the model's page list (text of read pages, Google's snippet for the others).\nconst snips = Object.fromEntries(($('Build Page List').first().json.snippets || []).map(x => [x.url, x]));\nconst read = Object.fromEntries($input.all().map(i => i.json).filter(p => p && p.url).map(p => [p.url, p]));\nconst pages = ($('Build Page List').first().json.snippets || []).map((c, i) => {\n  const p = read[c.url] || {};\n  const ok = p.read_status === 'read' && p.text;\n  return { n: i + 1, url: c.url, domain: c.domain, title: c.title, published: p.published || '', date_from: p.date_from || '', read_status: p.read_status || 'not read',\n    body: ok ? String(p.text).slice(0, 7000) : (c.title + '. ' + c.snippet) };\n});\n// The posts themselves count too, after the pages: what a post says is at best claimed (by its own team) or unverified.\nconst platform = { reddit: 'reddit.com', hacker_news: 'news.ycombinator.com', x: 'x.com' };\n// The subject's must-words (from the planner): a word with capitals must match exactly, a lower-case one in any case.\nconst must = [].concat((($('Plan Answer Search (via Ask Venice)').first().json.output || {}).must_words) || []).map(w => String(w).trim()).filter(Boolean);\nconst rx = must.map(w => new RegExp('(^|[^A-Za-z0-9])' + w.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&') + '($|[^A-Za-z0-9])', /[A-Z]/.test(w) ? '' : 'i'));\nconst about = (t) => !rx.length || rx.some(r => r.test(String(t || '')));\n[].concat($('Store Settings').first().json.posts || []).filter(x => about(x.title + ' ' + x.summary)).slice(0, 12).forEach(x => pages.push({ n: pages.length + 1, url: x.url, domain: platform[x.source] || x.source, title: x.title,\n  published: String(x.published_at || '').slice(0, 10), date_from: x.published_at ? 'post' : '', read_status: 'post', body: x.title + (x.summary ? '. ' + x.summary : '') }));\nconst xesc = (t) => String(t || '').replace(/</g, '‹').replace(/>/g, '›');\nconst pages_xml = pages.map(p => `<page n=\"${p.n}\" domain=\"${p.domain}\" date=\"${p.published || 'date unknown'}\" status=\"${p.read_status === 'read' ? 'read' : p.read_status === 'post' ? 'post' : 'snippet only'}\">${xesc(p.body)}</page>`).join('\\n');\nreturn [{ json: { pages: pages.map(({ body, ...p }) => p), pages_xml: pages_xml || '(no pages found)' } }];"
+      }
+    },
+    {
+      "id": "75dd6fe3-2d43-40e8-970a-07ea95dc51d9",
+      "name": "Find Answer (via Ask Venice)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1740,
+        800
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RzRuzMVi64lHyHwy",
+          "cachedResultName": "Claim Checks | Ask Venice"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "step": "Find Answer",
+            "body": "={{ { model: 'kimi-k2-6', temperature: 0, max_tokens: 3000, venice_parameters: { disable_thinking: true }, response_format: { type: 'json_schema', json_schema: { name: 'answer', strict: true, schema: {\"type\": \"object\", \"properties\": {\"summary\": {\"type\": \"string\"}, \"items\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"name\": {\"type\": \"string\"}, \"what\": {\"type\": \"string\"}, \"status\": {\"type\": \"string\"}, \"sources\": {\"type\": \"array\", \"items\": {\"type\": \"integer\"} } }, \"required\": [\"name\", \"what\", \"status\", \"sources\"], \"additionalProperties\": false} }, \"gaps\": {\"type\": \"string\"} }, \"required\": [\"summary\", \"items\", \"gaps\"], \"additionalProperties\": false} } }, messages: [{ role: 'system', content: \"<role>You answer a user's question for a research report, using only the web pages given. Like a careful research assistant, you list what the pages say and how well each point is backed; you never fill gaps from memory.</role>\\n\\n<material>\\nEach <page> has a number n, its domain, its publication date (or \\\"date unknown\\\") and either its text or, when it could not be read, only Google's title and snippet. A page with status \\\"post\\\" is a social media post found by the run (its title and summary).\\n</material>\\n\\n<rules>\\n1. Use only the pages. Never add names, numbers, dates, links or facts that are not in them.\\n2. summary: 2-4 sentences that answer the question directly. If the pages do not answer it, say so plainly and say what they do show.\\n3. items: the concrete answers the question asks for (for example each project, team, product, cause or reason), most relevant first, at most 10. name: as the pages write it. what: 1-2 sentences on what it is or does, from the pages.\\n4. status, exactly one of:\\n   confirmed: an independent official source (the organiser, the body the question is about, official documentation or results) or an established news outlet states it.\\n   claimed: only the item's own team, site, repository or post states it.\\n   unverified: only blogs, aggregators, forums, posts by others, or a Google snippet without the page.\\n   A post never makes an item confirmed: a post by the item's own team is claimed, any other post unverified.\\n5. sources: the numbers of the pages that state the item; at least one.\\n6. A page published long before the question's event is earlier context only: say so in what (for example: \\\"from the 2024 edition\\\").\\n7. gaps: one sentence on what the pages could not answer (for example: \\\"The winners have not been announced yet.\\\"); \\\"\\\" if nothing is missing.\\n8. Plain, direct English; no hype.\\n</rules>\\n\\n<example>\\n<input>\\n<question>which open-source projects got the Example Foundation grants this autumn?</question>\\n<pages>\\n<page n=\\\"1\\\" domain=\\\"examplefoundation.org\\\" date=\\\"2026-11-02\\\" status=\\\"read\\\">Autumn 2026 grants: we are funding Tidepool, a local-first sync engine, and Larkspur, an accessibility linter for web apps.</page>\\n<page n=\\\"2\\\" domain=\\\"larkspur.dev\\\" date=\\\"2026-11-03\\\" status=\\\"read\\\">We are thrilled to join the Example Foundation programme. Larkspur will add screen-reader tests.</page>\\n<page n=\\\"3\\\" domain=\\\"somedevblog.net\\\" date=\\\"date unknown\\\" status=\\\"snippet only\\\">Rumour: Quillbase also received a grant from the Example Foundation...</page>\\n</pages>\\n</input>\\n<output>{\\\"summary\\\":\\\"The Example Foundation's autumn 2026 grants went to Tidepool and Larkspur, according to the foundation's own announcement [1]. A blog also names Quillbase, but no other page confirms it.\\\",\\\"items\\\":[{\\\"name\\\":\\\"Tidepool\\\",\\\"what\\\":\\\"A local-first sync engine, funded in the autumn 2026 round.\\\",\\\"status\\\":\\\"confirmed\\\",\\\"sources\\\":[1]},{\\\"name\\\":\\\"Larkspur\\\",\\\"what\\\":\\\"An accessibility linter for web apps; its team says the grant will fund screen-reader tests.\\\",\\\"status\\\":\\\"confirmed\\\",\\\"sources\\\":[1,2]},{\\\"name\\\":\\\"Quillbase\\\",\\\"what\\\":\\\"Named as a grant recipient by one blog snippet only.\\\",\\\"status\\\":\\\"unverified\\\",\\\"sources\\\":[3]}],\\\"gaps\\\":\\\"The pages do not give the grant amounts.\\\"}</output>\\n</example>\" }, { role: 'user', content: '<question>' + $('Store Settings').first().json.question + '</question>\\n<subject>' + ($('Plan Answer Search (via Ask Venice)').first().json.output || {}).subject + '</subject>\\n<today>' + $('Store Settings').first().json.today + '</today>\\n<pages>\\n' + $json.pages_xml + '\\n</pages>' }] } }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "afa04157-112e-487c-ba5a-c1daae160475",
+      "name": "Build Answer Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1960,
+        800
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: turns the model's page numbers into dated links and fixes the status words; the caller gets one answer object.\nconst s = $('Store Settings').first().json;\nconst plan = $('Plan Answer Search (via Ask Venice)').first().json.output || {};\nconst pages = $('Build Answer Input').first().json.pages || [];\nconst byN = Object.fromEntries(pages.map(p => [p.n, p]));\nconst out = $input.first().json.output || {};\nconst STATUS = ['confirmed', 'claimed', 'unverified'];\nconst items = [].concat(out.items || []).slice(0, 10).map(it => {\n  const st = String(it.status || '').toLowerCase().trim();\n  const links = [...new Set([].concat(it.sources || []))].map(n => byN[n]).filter(Boolean)\n    .map(p => ({ url: p.url, domain: p.domain, date: p.published, date_from: p.date_from }));\n  return { name: String(it.name || '').slice(0, 120), what: String(it.what || '').slice(0, 400), status: STATUS.includes(st) ? st : 'unverified', links };\n}).filter(it => it.name);\nreturn [{ json: { answer: { question: s.question, subject: plan.subject || '', answer_type: plan.answer_type || '', queries: [].concat(plan.queries || []),\n  summary: String(out.summary || ''), items, gaps: String(out.gaps || ''),\n  pages_read: pages.filter(p => p.read_status === 'read').length, pages_total: pages.filter(p => p.read_status !== 'post').length, posts_used: pages.filter(p => p.read_status === 'post').length } } }];"
+      }
+    },
+    {
+      "id": "31a9a9b8-0a2e-4317-85a5-13afc5ab0a4f",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Claim Checks | Answer Question\n\nAnswers a question typed as a research topic (for example \"what are the best projects at the NEAR hackathon?\"). The posts on Reddit, Hacker News and X rarely hold the answer; pages on the web do (the organiser's list, results, coverage). This finds those pages, reads them and lists the answers, each marked confirmed, claimed (only its own team says so) or unverified.\n\n**Called by:** \"WF3 — Research Pipeline\", once per run whose keyword is a question, after the posts are collected. \"WF3\" waits. Locked to \"WF3\".\n**Sections:** Plan And Search → Read And Answer. \"WF3\" gets one `answer` object for the report, the chat summary and the run's briefing.\n**Alerts:** a failed step stops this workflow; \"WF3\" goes on without the answer and lists it in the run's ONE problem alert.\nstructure-ok: no error workflow on purpose, like the other run steps.\n**Services called:** Venice (Kimi K2.6: search planner, answer writer) via \"Ask Venice\" · Serper (Google results) · \"Read Web Pages\" (the web and Bright Data).",
+        "width": 2180,
+        "height": 340,
+        "color": 5
+      }
+    },
+    {
+      "id": "582e1724-259e-477a-9800-f6b3b4e4137f",
+      "name": "Search Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        420
+      ],
+      "parameters": {
+        "content": "## Plan And Search\n\nTriggered by: \"WF3\" (When Called By Pipeline), with run_id, question, mode, window_days and the posts of the question's angles.\n\nWhat it does, step by step:\n1. Store Settings: the id of \"Read Web Pages\", at most 8 pages, the sites never used (social platforms, video), today's date.\n2. Plan Answer Search (via Ask Venice, Kimi K2.6): the subject under its full name (\"NEAR Protocol\", not \"near\"), the kind of answer, and 3 Google queries (the official source, the answer in people's words, coverage), using the posts' words, and 1-2 must-words every relevant page contains (\"NEAR\").\n3. Search Google (Serper): each query twice in one call, last month first, then any date.\n4. Build Page List keeps only posts and results with a must-word: first up to 3 articles the posts link to, then the best result of every query, then the next ones, without duplicates or social pages; at most 8.",
+        "width": 1180,
+        "height": 700,
+        "color": 4
+      }
+    },
+    {
+      "id": "1a12b378-32f4-4ea6-9c6c-fde06e861a37",
+      "name": "Answer Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1240,
+        420
+      ],
+      "parameters": {
+        "content": "## Read And Answer\n\nTriggered by: runs inline after Plan And Search.\n\nWhat it does, step by step:\n1. Read Pages (via Read Web Pages): the text and date of every page; blocked pages through Bright Data.\n2. Build Answer Input numbers the pages (their text, or Google's snippet when a page could not be read), then the posts.\n3. Find Answer (via Ask Venice, Kimi K2.6): a direct answer, up to 10 items (each confirmed, claimed or unverified, with its page numbers; a post is never enough for confirmed) and what is missing. Only from the pages.\n4. Build Answer Result turns page numbers into dated links and returns the answer to \"WF3\".",
+        "width": 940,
+        "height": 700,
+        "color": 6
+      }
+    }
+  ],
+  "connections": {
+    "When Called By Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Plan Answer Search (via Ask Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Answer Search (via Ask Venice)": {
+      "main": [
+        [
+          {
+            "node": "Search Google (Serper)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Google (Serper)": {
+      "main": [
+        [
+          {
+            "node": "Build Page List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Page List": {
+      "main": [
+        [
+          {
+            "node": "Read Pages (via Read Web Pages)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Pages (via Read Web Pages)": {
+      "main": [
+        [
+          {
+            "node": "Build Answer Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Answer Input": {
+      "main": [
+        [
+          {
+            "node": "Find Answer (via Ask Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Answer (via Ask Venice)": {
+      "main": [
+        [
+          {
+            "node": "Build Answer Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "",
+    "timezone": "Europe/Rome",
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "ccResearchPipe01"
+  },
+  "active": false
+}

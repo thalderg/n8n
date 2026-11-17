@@ -1,0 +1,1286 @@
+{
+  "id": "ccCollectFind001",
+  "name": "Claim Checks | Collect Findings",
+  "nodes": [
+    {
+      "id": "49f5a14d-2cd3-576e-a3d3-45b4829bbbe8",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Claim Checks | Collect Findings\n\nSearches ONE source for ONE angle of a Claim Checks run, throws away the trash and saves every item (kept and dropped, with the reason) to Airtable table Findings. Returns a short status to the caller; the findings themselves stay in Airtable.\n\n**Called by:** \"WF3 — Research Pipeline\": Google Trends once per keyword (its angles share the terms), then Reddit, Hacker News and X once per angle. Locked to \"WF3\".\n**Sections:** Entry → one source section (Google Trends, Reddit, Hacker News or X) → for Reddit, Hacker News and X, \"Shared: Reddit + Hacker News + X\" (duplicates, filter, save). Google Trends saves nothing: it returns up to 2 rising search terms.\n**Alerts:** a failed step stops this call and goes back to \"WF3\", which lists every problem of the run in ONE alert (\"Report Run Problems\"). An empty source is normal, not an error.\nstructure-ok: no error workflow on purpose, so a run with several failures sends one alert, not one per failure.\n**Services called:** SerpApi (Google Trends) · ScrapeCreators (Reddit) · HN Algolia (Hacker News) · twitterapi.io (X) · Venice (GLM-5.3 Flash: pick terms, filter posts) · Airtable (Findings) · \"Ask Venice\" (every model step; backup model GPT-6 Luna).",
+        "width": 4220,
+        "height": 300,
+        "color": 5
+      }
+    },
+    {
+      "id": "be3dc22a-368b-512f-98ba-3e875fe76a70",
+      "name": "Entry Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        380
+      ],
+      "parameters": {
+        "content": "## Entry\n\nTriggered by: \"WF3\" (When Called By Pipeline).\n\nWhat it does, step by step:\n1. Takes the input: run_id, keywords, angle, search_phrase, source, mode, window_days, trend_terms, check_duplicates.\n2. Store Settings adds the Airtable ids, the caps, the engagement minimums and the search terms (the angle's query built by \"WF3\" from its word groups, else the angle phrase, plus at most 2 Trends terms).\n3. Route By Source sends the call to the source's section.",
+        "width": 760,
+        "height": 740,
+        "color": 4
+      }
+    },
+    {
+      "id": "87289990-c9e5-57b3-ad9a-a952c99d2346",
+      "name": "Trends Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        820,
+        380
+      ],
+      "parameters": {
+        "content": "## Google Trends\n\nTriggered by: Route By Source when source = google_trends.\n\nWhat it does, step by step:\n1. Search Google Trends (SerpApi) finds the searches rising around the keyword's short Trends term (from its wide angle) (the planner's trends_term, e.g. \"crypto hack\"; the search phrase if it is missing) over the run's window; Take Rising Queries keeps the top 10.\n2. If there are any, Pick Trend Terms (via Ask Venice, light model), keeps at most 2 that really belong to the keyword.\n3. Build Trends Result returns the terms to \"WF3\" (none is normal for a small topic). Nothing is stored.",
+        "width": 1340,
+        "height": 740,
+        "color": 6
+      }
+    },
+    {
+      "id": "6999fc02-63d7-5493-9dbc-7f356b15a0b9",
+      "name": "Reddit Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        820,
+        1180
+      ],
+      "parameters": {
+        "content": "## Reddit\n\nTriggered by: Route By Source when source = reddit.\n\nWhat it does, step by step:\n1. One ScrapeCreators search per search term, the most relevant posts of the last day or week.\n2. Rank Reddit Posts removes duplicates, drops posts under the minimum (daily 20 upvotes and 5 comments; weekly 40 and 10) and keeps the top 3 by score + comments.\n3. Continues in \"Shared: Reddit + Hacker News + X\".",
+        "width": 1340,
+        "height": 480,
+        "color": 3
+      }
+    },
+    {
+      "id": "8e054699-021c-5bd1-85c7-39dd05efc321",
+      "name": "HN Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        820,
+        1720
+      ],
+      "parameters": {
+        "content": "## Hacker News\n\nTriggered by: Route By Source when source = hacker_news.\n\nWhat it does, step by step:\n1. One free Hacker News search per search term, stories of the last 7 days.\n2. Rank HN Stories removes duplicates and keeps the 2 stories with the most points (url = HN page, linked_url = the article).\n3. Continues in \"Shared: Reddit + Hacker News + X\".",
+        "width": 1340,
+        "height": 480,
+        "color": 2
+      }
+    },
+    {
+      "id": "e0df6ccd-5e0d-51e0-a9c5-ef312565f07a",
+      "name": "Shared Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2220,
+        1180
+      ],
+      "parameters": {
+        "content": "## Shared: Reddit + Hacker News + X\n\nTriggered by: runs inline after the Reddit, Hacker News or X section.\n\nWhat it does, step by step:\n1. Collect Candidates gathers the ranked posts; Find Already Reported (Airtable Findings) looks for the same post kept by an earlier angle of this run (\"found by another angle\") and, on scheduled runs, kept in another run of the last 7 days (\"already reported\").\n2. Filter Posts (via Ask Venice, light model, one call): keeps posts with a checkable claim or a useful opinion, drops ads, bait, jokes and off-topic posts, with a reason and a summary.\n3. If there is anything to save, every post (kept or dropped) is saved to Findings, 10 per call.\n4. Build Collect Result returns status, kept_count and dropped_count to \"WF3\".",
+        "width": 2000,
+        "height": 720,
+        "color": 7
+      }
+    },
+    {
+      "id": "6956e549-bce2-5a5a-a38a-ee2f6031d058",
+      "name": "When Called By Pipeline",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        700
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "e8f09d98-da02-542f-bbd0-8e782cb01560",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        280,
+        700
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1ace8ea1-f412-59c4-8e9c-17e6f4190d47",
+              "name": "airtable_base",
+              "type": "string",
+              "value": "YOUR_AIRTABLE_BASE_ID"
+            },
+            {
+              "id": "d76f0a00-06e8-5dd0-91c5-4a55af8495a5",
+              "name": "findings_table",
+              "type": "string",
+              "value": "YOUR_AIRTABLE_FINDINGS_TABLE_ID"
+            },
+            {
+              "id": "a3048641-5fe3-51e5-9ef0-10d73b35e854",
+              "name": "max_reddit",
+              "type": "number",
+              "value": 3
+            },
+            {
+              "id": "69419a39-64a3-5f80-a53e-a4cc7c180ee4",
+              "name": "max_hn",
+              "type": "number",
+              "value": 2
+            },
+            {
+              "id": "09c81433-0492-5067-bf76-a4492529d9b6",
+              "name": "search_terms",
+              "type": "array",
+              "value": "={{ [$json.query || $json.search_phrase].concat(($json.trend_terms || []).slice(0, 2)).filter(t => t && String(t).trim()) }}"
+            },
+            {
+              "id": "6674e23d-c4ad-5307-aaa8-bce07cc3b02a",
+              "name": "max_x",
+              "type": "number",
+              "value": 3
+            },
+            {
+              "id": "dadb4e56-3f09-597f-975f-ca43bf37a3e1",
+              "name": "window",
+              "type": "number",
+              "value": "={{ Number($json.window_days || ($json.mode === 'today' ? 1 : 7)) }}"
+            },
+            {
+              "id": "601dee91-f2a5-53ad-8f6a-a017cdb4c55a",
+              "name": "reddit_min_score",
+              "type": "number",
+              "value": "={{ Number($json.window_days || ($json.mode === 'today' ? 1 : 7)) === 1 ? 20 : 40 }}"
+            },
+            {
+              "id": "1f30613c-1f74-57cc-83c3-e128323a34a1",
+              "name": "reddit_min_comments",
+              "type": "number",
+              "value": "={{ Number($json.window_days || ($json.mode === 'today' ? 1 : 7)) === 1 ? 5 : 10 }}"
+            },
+            {
+              "id": "b4f5e5fc-5efe-5623-a1ab-155b3c292363",
+              "name": "x_min_likes",
+              "type": "number",
+              "value": "={{ Number($json.window_days || ($json.mode === 'today' ? 1 : 7)) === 1 ? 50 : 100 }}"
+            },
+            {
+              "id": "db37a0f3-9a52-5804-9c3b-c1660958f33a",
+              "name": "x_min_retweets",
+              "type": "number",
+              "value": "={{ Number($json.window_days || ($json.mode === 'today' ? 1 : 7)) === 1 ? 2 : 5 }}"
+            },
+            {
+              "id": "4365cde4-39de-52b0-84a6-317d63fe7fb1",
+              "name": "x_min_bookmarks",
+              "type": "number",
+              "value": "={{ Number($json.window_days || ($json.mode === 'today' ? 1 : 7)) === 1 ? 10 : 20 }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "aeafda1b-0690-500d-a621-93ce14f63e79",
+      "name": "Route By Source",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        500,
+        700
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "r0",
+                    "leftValue": "={{ $json.source }}",
+                    "rightValue": "google_trends",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "google_trends"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "r1",
+                    "leftValue": "={{ $json.source }}",
+                    "rightValue": "reddit",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reddit"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "r2",
+                    "leftValue": "={{ $json.source }}",
+                    "rightValue": "hacker_news",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "hacker_news"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "r3",
+                    "leftValue": "={{ $json.source }}",
+                    "rightValue": "x",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "x"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      }
+    },
+    {
+      "id": "166f773b-978d-53c6-bc21-d651a4fb47e2",
+      "name": "Search Google Trends (SerpApi)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "stopWorkflow",
+      "position": [
+        880,
+        700
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://serpapi.com/search.json",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "serpApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "engine",
+              "value": "google_trends"
+            },
+            {
+              "name": "q",
+              "value": "={{ $json.trends_term || $json.search_phrase }}"
+            },
+            {
+              "name": "data_type",
+              "value": "RELATED_QUERIES"
+            },
+            {
+              "name": "date",
+              "value": "={{ $json.mode === 'today' ? 'now 1-d' : 'now 7-d' }}"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "serpApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "SerpAPI account"
+        }
+      }
+    },
+    {
+      "id": "ab794e3e-2b4c-5f6e-87cb-d3e371098ecb",
+      "name": "Take Rising Queries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        700
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rising = ($input.first().json.related_queries || {}).rising || [];\nconst s = $('Store Settings').first().json;\nconst asked = [s.search_phrase, s.trends_term].map(t => String(t || '').toLowerCase().trim());\nconst terms = [...new Set(rising.map(r => String(r.query || '').trim()).filter(t => t && !asked.includes(t.toLowerCase())))].slice(0, 10);\nreturn [{ json: { candidates: terms } }];"
+      }
+    },
+    {
+      "id": "c4e70984-8106-5ad9-874b-48c26170141f",
+      "name": "Has Rising Terms?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1320,
+        700
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9391f671-2429-5ca2-b439-dd76b473dd53",
+              "leftValue": "={{ $json.candidates.length }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "rightValue": 0
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "f62d6960-9112-55e5-9b02-d593f65c9265",
+      "name": "Build Trends Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1760,
+        700
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const s = $('Store Settings').first().json;\nlet terms = [];\nif ($('Pick Trend Terms (via Ask Venice)').isExecuted) {\n  const out = $('Pick Trend Terms (via Ask Venice)').first().json.output || {};\n  terms = (out.terms || []).filter(t => typeof t === 'string' && t.trim()).slice(0, 2);\n}\nreturn [{ json: { run_id: s.run_id, angle: s.angle, source: 'google_trends', status: terms.length ? 'ok' : 'empty',\n  kept_count: 0, dropped_count: 0, trend_terms: terms, context: s.context || null } }];"
+      }
+    },
+    {
+      "id": "ae29c2c4-6cb8-511c-a0e7-5173d83e8cc5",
+      "name": "Split Reddit Terms",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        880,
+        1440
+      ],
+      "parameters": {
+        "fieldToSplitOut": "search_terms",
+        "include": "noOtherFields",
+        "options": {
+          "destinationFieldName": "term"
+        }
+      }
+    },
+    {
+      "id": "c3447f50-c2b3-5b9e-ad5f-51146fabe64a",
+      "name": "Search Reddit (ScrapeCreators)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "stopWorkflow",
+      "position": [
+        1100,
+        1440
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.scrapecreators.com/v1/reddit/search",
+        "options": {
+          "timeout": 45000
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.term }}"
+            },
+            {
+              "name": "filter",
+              "value": "posts"
+            },
+            {
+              "name": "sort",
+              "value": "relevance"
+            },
+            {
+              "name": "timeframe",
+              "value": "={{ $('Store Settings').first().json.window_days == 1 ? 'day' : 'week' }}"
+            },
+            {
+              "name": "trim",
+              "value": "true"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Scrape Creator - Reddit"
+        }
+      }
+    },
+    {
+      "id": "a8b3d796-d34b-542a-b4c7-5a16393b7f20",
+      "name": "Rank Reddit Posts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "alwaysOutputData": true,
+      "position": [
+        1320,
+        1440
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const s = $('Store Settings').first().json;\nconst max = s.max_reddit;\nconst seen = new Map();\nfor (const it of $input.all()) {\n  for (const p of (it.json.posts || [])) {\n    if (!p || !p.id || seen.has(p.id)) continue;\n    seen.set(p.id, p);\n  }\n}\nconst isReddit = (u) => { const m = String(u || '').match(/^https?:\\/\\/([^\\/?#:]+)/i); return !m || /(^|\\.)(reddit\\.com|redd\\.it)$/i.test(m[1]); };\nconst ranked = [...seen.values()]\n  .filter(p => (p.score || 0) >= s.reddit_min_score && (p.num_comments || 0) >= s.reddit_min_comments)\n  .sort((a, b) => ((b.score || 0) + (b.num_comments || 0)) - ((a.score || 0) + (a.num_comments || 0)))\n  .slice(0, max);\nreturn ranked.map(p => ({ json: {\n  source: 'reddit',\n  source_id: 'reddit:' + p.id,\n  title: String(p.title || '').slice(0, 300),\n  url: p.permalink ? 'https://www.reddit.com' + p.permalink : (p.url && /reddit\\.com\\/r\\/[^\\/]+\\/comments\\//i.test(p.url) ? p.url : 'https://www.reddit.com/comments/' + p.id),\n  linked_url: p.url && /^https?:/i.test(p.url) && !isReddit(p.url) ? p.url : '',\n  published_at: p.created_at_iso || (p.created_utc ? new Date(p.created_utc * 1000).toISOString() : null),\n  text: String(p.selftext || '').replace(/\\s+/g, ' ').slice(0, 600),\n  engagement: (p.score || 0) + (p.num_comments || 0),\n} }));"
+      }
+    },
+    {
+      "id": "fb874dd6-ff38-5371-a332-a4cc9cd3229f",
+      "name": "Split HN Terms",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        880,
+        2000
+      ],
+      "parameters": {
+        "fieldToSplitOut": "search_terms",
+        "include": "noOtherFields",
+        "options": {
+          "destinationFieldName": "term"
+        }
+      }
+    },
+    {
+      "id": "2d06e00c-5bd9-5a90-b0ce-5d5a55beed86",
+      "name": "Search Hacker News (HN Algolia)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "stopWorkflow",
+      "position": [
+        1100,
+        2000
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://hn.algolia.com/api/v1/search",
+        "options": {
+          "timeout": 30000
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.term }}"
+            },
+            {
+              "name": "tags",
+              "value": "story"
+            },
+            {
+              "name": "numericFilters",
+              "value": "={{ 'created_at_i>' + Math.floor(Date.now() / 1000 - 7 * 86400) }}"
+            },
+            {
+              "name": "hitsPerPage",
+              "value": "20"
+            },
+            {
+              "name": "optionalWords",
+              "value": "={{ $json.term }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "4359d764-043b-50e3-a029-5f0b12a1f87d",
+      "name": "Rank HN Stories",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "alwaysOutputData": true,
+      "position": [
+        1320,
+        2000
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const max = $('Store Settings').first().json.max_hn;\nconst seen = new Map();\nfor (const it of $input.all()) {\n  for (const h of (it.json.hits || [])) {\n    if (!h || !h.objectID || seen.has(h.objectID)) continue;\n    seen.set(h.objectID, h);\n  }\n}\nconst ranked = [...seen.values()].sort((a, b) => (b.points || 0) - (a.points || 0)).slice(0, max);\nreturn ranked.map(h => ({ json: {\n  source: 'hacker_news',\n  source_id: 'hn:' + h.objectID,\n  title: String(h.title || '').slice(0, 300),\n  url: 'https://news.ycombinator.com/item?id=' + h.objectID,\n  linked_url: h.url || '',\n  published_at: h.created_at || null,\n  text: String(h.story_text || '').replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').slice(0, 600),\n  engagement: (h.points || 0) + (h.num_comments || 0),\n} }));"
+      }
+    },
+    {
+      "id": "784fbe9d-45f6-5b9d-b27a-a59db69a5657",
+      "name": "Collect Candidates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2280,
+        1480
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const s = $('Store Settings').first().json;\nconst cands = $input.all().map(i => i.json).filter(c => c && c.source_id);\nconst esc = (v) => String(v).replace(/'/g, \"\\\\'\");\nconst run = esc(s.run_id);\nconst check = s.check_duplicates === true || s.check_duplicates === 'true';\n// Same run: the same post already saved by an earlier angle (every run).\nconst postUrls = [...new Set(cands.map(c => c.url).filter(Boolean))];\nconst sameRun = postUrls.length ? `AND({run_id}='${run}', OR(${postUrls.map(u => `{url}='${esc(u)}'`).join(',')}))` : '';\n// Other runs of the last 7 days: same post or same linked article (scheduled runs only).\nconst urls = [...new Set(cands.flatMap(c => [c.url, c.linked_url]).filter(Boolean))];\nconst ors = urls.flatMap(u => [`{url}='${esc(u)}'`, `{linked_url}='${esc(u)}'`]);\nconst older = check && urls.length ? `AND({run_id}!='${run}', IS_AFTER(CREATED_TIME(), DATEADD(NOW(), -7, 'days')), OR(${ors.join(',')}))` : '';\nconst parts = [sameRun, older].filter(Boolean);\n// FALSE() when there is nothing to look up: Airtable then returns no rows.\nconst formula = parts.length ? `AND({kept}, OR(${parts.join(',')}))` : 'FALSE()';\nreturn [{ json: { candidates: cands.map((c, i) => ({ ...c, id: 'p' + (i + 1) })), formula } }];"
+      }
+    },
+    {
+      "id": "2904290a-6728-5a9d-a648-9f8e091e5e87",
+      "name": "Find Already Reported (Airtable Findings)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        2500,
+        1480
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_FINDINGS_TABLE_ID",
+        "options": {
+          "timeout": 30000
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "={{ $json.formula }}"
+            },
+            {
+              "name": "pageSize",
+              "value": "100"
+            }
+          ]
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "0b093a18-51fd-5e29-a147-bc457c36d1d2",
+      "name": "Mark Repeats",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2720,
+        1480
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const base = $('Collect Candidates').first().json;\nconst run = $('Store Settings').first().json.run_id;\nconst thisRun = new Set(), older = new Set();\nif ($('Find Already Reported (Airtable Findings)').isExecuted) {\n  for (const r of ($('Find Already Reported (Airtable Findings)').first().json.records || [])) {\n    if (r.fields.run_id === run) { if (r.fields.url) thisRun.add(r.fields.url); continue; }\n    if (r.fields.url) older.add(r.fields.url);\n    if (r.fields.linked_url) older.add(r.fields.linked_url);\n  }\n}\nconst candidates = base.candidates.map(c => {\n  let repeat = '';\n  if (thisRun.has(c.url)) repeat = 'found by another angle';\n  else if (older.has(c.url) || (!!c.linked_url && older.has(c.linked_url))) repeat = 'already reported';\n  return { ...c, repeat };\n});\nconst fresh = candidates.filter(c => !c.repeat);\nconst posts = fresh.map(c => JSON.stringify({ id: c.id, title: c.title, text: c.text, links_to: c.linked_url || null })).join('\\n');\nreturn [{ json: { candidates, fresh_count: fresh.length, posts } }];"
+      }
+    },
+    {
+      "id": "74df98df-a9a2-553d-bcf5-60fc3440bb59",
+      "name": "Apply Filter Decisions",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3160,
+        1480
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const base = $('Mark Repeats').first().json;\n// The filter answer is always there: a failed model call stops this workflow and \"WF3\" reports it.\nconst dec = {};\nfor (const d of ($('Filter Posts (via Ask Venice)').first().json.output.decisions || [])) dec[d.id] = d;\nconst rows = base.candidates.map(c => {\n  let kept = false, reason = '', summary = '';\n  if (c.repeat) { reason = c.repeat; }\n  else if (dec[c.id]) { kept = dec[c.id].keep === true; reason = kept ? '' : String(dec[c.id].reason || '').slice(0, 200); summary = String(dec[c.id].summary || '').slice(0, 400); }\n  else { reason = 'no filter decision'; }\n  return { ...c, kept, drop_reason: reason, summary: summary || c.title };\n});\nreturn [{ json: { rows } }];"
+      }
+    },
+    {
+      "id": "952490c0-981e-5d47-8e30-1347efe9cdf2",
+      "name": "Build Airtable Batches",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "alwaysOutputData": false,
+      "position": [
+        3600,
+        1680
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const s = $('Store Settings').first().json;\nconst rows = $input.first().json.rows;\nconst recs = rows.map(r => ({ fields: {\n  title: r.title, run_id: s.run_id, angle: s.angle, source: r.source, url: r.url,\n  ...(r.linked_url ? { linked_url: r.linked_url } : {}),\n  ...(r.published_at ? { published_at: r.published_at } : {}),\n  summary: r.summary, kept: r.kept, drop_reason: r.drop_reason,\n} }));\nconst out = [];\nfor (let i = 0; i < recs.length; i += 10) out.push({ json: { records: recs.slice(i, i + 10), typecast: true } });\nreturn out;"
+      }
+    },
+    {
+      "id": "3eaf8e24-a7c3-58a1-b0ff-9113f04e0869",
+      "name": "Save Findings (Airtable Findings)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        3820,
+        1680
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_FINDINGS_TABLE_ID",
+        "options": {
+          "timeout": 30000,
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 250
+            }
+          }
+        },
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ records: $json.records, typecast: true }) }}"
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "28c67630-3ec9-530d-ba9a-be0f0a6cd951",
+      "name": "Build Collect Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4040,
+        1480
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const s = $('Store Settings').first().json;\nconst rows = $('Apply Filter Decisions').isExecuted ? $('Apply Filter Decisions').first().json.rows : [];\nconst kept = rows.filter(r => r.kept).length;\nreturn [{ json: { run_id: s.run_id, angle: s.angle, source: s.source, status: kept ? 'ok' : 'empty',\n  kept_count: kept, dropped_count: rows.length - kept, trend_terms: [], context: s.context || null } }];"
+      }
+    },
+    {
+      "id": "5c18d269-2e97-546d-8e67-09714cbe7dee",
+      "name": "Anything To Save?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3380,
+        1480
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "64e4d178-2f19-5184-a1ff-745cd938762c",
+              "leftValue": "={{ $json.rows.length }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "rightValue": 0
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "b1692e43-a45d-5650-bc1a-aeb69d62f11b",
+      "name": "X Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        820,
+        2260
+      ],
+      "parameters": {
+        "content": "## X\n\nTriggered by: Route By Source when source = x.\n\nWhat it does, step by step:\n1. One twitterapi.io search per search term: top posts of the last 24 h or 7 days, no replies or reposts, over the like and repost minimums.\n2. Rank X Posts removes duplicates and checks every minimum and the date again (daily 50 likes, 2 reposts, 10 bookmarks; weekly 100, 5, 20), keeps the top 3.\n3. Continues in \"Shared: Reddit + Hacker News + X\".",
+        "width": 1340,
+        "height": 480,
+        "color": 1
+      }
+    },
+    {
+      "id": "645c3d22-57f0-53e7-9edf-3bac44839091",
+      "name": "Split X Terms",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        880,
+        2520
+      ],
+      "parameters": {
+        "fieldToSplitOut": "search_terms",
+        "include": "noOtherFields",
+        "options": {
+          "destinationFieldName": "term"
+        }
+      }
+    },
+    {
+      "id": "66e6c1b6-d7d2-5c62-87ab-69e728119b6e",
+      "name": "Search X (twitterapi.io)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "stopWorkflow",
+      "position": [
+        1100,
+        2520
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://api.twitterapi.io/twitter/tweet/advanced_search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.term + ' min_faves:' + $('Store Settings').first().json.x_min_likes + ' min_retweets:' + $('Store Settings').first().json.x_min_retweets + ' -filter:replies -filter:retweets within_time:' + ($('Store Settings').first().json.window === 1 ? '24h' : '7d') }}"
+            },
+            {
+              "name": "queryType",
+              "value": "Top"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 45000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "twitterapi.io"
+        }
+      }
+    },
+    {
+      "id": "dfa3644b-9987-5d35-a237-2bacd641cf6f",
+      "name": "Rank X Posts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "alwaysOutputData": true,
+      "position": [
+        1320,
+        2520
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const s = $('Store Settings').first().json;\nconst seen = new Map();\nfor (const it of $input.all()) {\n  for (const t of (it.json.tweets || [])) {\n    if (!t || !t.id || seen.has(t.id)) continue;\n    seen.set(t.id, t);\n  }\n}\n// The search asks for the like and repost minimums (min_faves, min_retweets) and the window (within_time).\n// twitterapi.io still pads thin results with weaker posts (tested 2026-10-28, mostly on 24h searches; since_time made it worse),\n// and X has no bookmark operator, so every minimum and the date are checked again here.\nconst cutoff = Date.now() - s.window * 86400000;\nconst n = (v) => Number(v || 0);\nconst isX = (u) => /^https?:\\/\\/([^\\/?#:]+\\.)?(x\\.com|twitter\\.com|t\\.co)([\\/?#:]|$)/i.test(String(u || ''));\nconst ranked = [...seen.values()]\n  .filter(t => n(t.likeCount) >= s.x_min_likes && n(t.retweetCount) >= s.x_min_retweets && n(t.bookmarkCount) >= s.x_min_bookmarks)\n  .filter(t => { const d = new Date(t.createdAt); return !isNaN(d) && d.getTime() >= cutoff; })\n  .sort((a, b) => (n(b.likeCount) + n(b.retweetCount) + n(b.bookmarkCount) + n(b.replyCount)) - (n(a.likeCount) + n(a.retweetCount) + n(a.bookmarkCount) + n(a.replyCount)))\n  .slice(0, s.max_x);\nreturn ranked.map(t => {\n  const user = t.author && t.author.userName ? t.author.userName : '';\n  const text = String(t.text || '').replace(/\\s+/g, ' ').trim();\n  const link = ((t.entities && t.entities.urls) || []).map(u => u.expanded_url).find(u => u && /^https?:/i.test(u) && !isX(u)) || '';\n  const when = t.createdAt ? new Date(t.createdAt) : null;\n  return { json: {\n    source: 'x',\n    source_id: 'x:' + t.id,\n    title: ((user ? '@' + user + ': ' : '') + text).slice(0, 300),\n    url: t.url || ('https://x.com/i/status/' + t.id),\n    linked_url: link,\n    published_at: when && !isNaN(when) ? when.toISOString() : null,\n    text: text.slice(0, 600),\n    engagement: n(t.likeCount) + n(t.retweetCount) + n(t.bookmarkCount) + n(t.replyCount),\n  } };\n});"
+      }
+    },
+    {
+      "id": "av-picktrendterms",
+      "name": "Pick Trend Terms (via Ask Venice)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1540,
+        900
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RzRuzMVi64lHyHwy",
+          "cachedResultName": "Claim Checks | Ask Venice"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "step": "Pick Trend Terms",
+            "body": "={{ { model: 'z-ai-glm-5-3-flash', temperature: 0, max_tokens: 2000, reasoning_effort: 'low', response_format: { type: 'json_schema', json_schema: { name: 'trend_terms', strict: true, schema: {\"type\": \"object\", \"properties\": {\"terms\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} }, \"reason\": {\"type\": \"string\"} }, \"required\": [\"terms\", \"reason\"], \"additionalProperties\": false} } }, messages: [{ role: 'system', content: \"<role>You choose which Google Trends rising searches belong to a research angle. The terms you keep become extra search queries on Reddit and Hacker News.</role>\\n\\n<rules>\\n1. Keep at most 2 terms. Keep a term only if it is about the same subject as the angle and could find news or discussion.\\n2. Drop navigational searches (login, download, app, price of a ticker), other meanings of the same word, people or brands unrelated to the angle, and near-duplicates of the angle phrase.\\n3. If no term fits, return an empty list. Returning nothing is better than a weak term.\\n4. Copy kept terms exactly as given.\\n</rules>\\n\\n<example>\\n<input>\\n<angle>Open-weight coding models</angle>\\n<terms>[\\\"qwen3 coder\\\", \\\"deepseek login\\\", \\\"kimi k2 coding benchmark\\\", \\\"open source\\\", \\\"gemini app\\\"]</terms>\\n</input>\\n<output>{\\\"terms\\\": [\\\"qwen3 coder\\\", \\\"kimi k2 coding benchmark\\\"], \\\"reason\\\": \\\"Both name open-weight coding models; the others are navigational or too broad.\\\"}</output>\\n</example>\" }, { role: 'user', content: '<angle>' + $('Store Settings').first().json.angle + '</angle>\\n<terms>' + JSON.stringify($json.candidates) + '</terms>' }] } }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "av-filterposts",
+      "name": "Filter Posts (via Ask Venice)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        2940,
+        1480
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RzRuzMVi64lHyHwy",
+          "cachedResultName": "Claim Checks | Ask Venice"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "step": "Filter Posts",
+            "body": "={{ { model: 'z-ai-glm-5-3-flash', temperature: 0, max_tokens: 4000, reasoning_effort: 'low', response_format: { type: 'json_schema', json_schema: { name: 'filter_decisions', strict: true, schema: {\"type\": \"object\", \"properties\": {\"decisions\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\"}, \"keep\": {\"type\": \"boolean\"}, \"reason\": {\"type\": \"string\"}, \"summary\": {\"type\": \"string\"} }, \"required\": [\"id\", \"keep\", \"reason\", \"summary\"], \"additionalProperties\": false} } }, \"required\": [\"decisions\"], \"additionalProperties\": false} } }, messages: [{ role: 'system', content: \"<role>You screen social posts for a claim-checking pipeline. For each post you decide whether it carries a checkable claim or a useful opinion about the research angle, or whether it is trash.</role>\\n\\n<drop_when>\\n1. Advertisement, sponsored or affiliate post.\\n2. Engagement bait: giveaways, \\\"follow for more\\\", polls whose point is reach.\\n3. No checkable claim and no useful opinion: jokes, memes, bare reactions, help requests with no claim.\\n4. Off-topic for the angle, including the same word with another meaning.\\n</drop_when>\\n\\n<rules>\\n1. Judge only from the title, the text and where the post links to. Popularity is not evidence.\\n2. When unsure between weak and useful, keep it: a later step checks every claim.\\n3. reason: at most 12 words. summary: one neutral sentence with the post's main claim or view, at most 30 words, no facts that are not in the post.\\n4. Return exactly one decision for every id, in the input order.\\n</rules>\\n\\n<example>\\n<input>\\n<angle>AI coding agents</angle>\\n<posts>\\n{\\\"id\\\":\\\"p1\\\",\\\"title\\\":\\\"Example Corp ships agent v5 with background tasks\\\",\\\"text\\\":\\\"\\\",\\\"links_to\\\":\\\"https://example.com/blog/v5\\\"}\\n{\\\"id\\\":\\\"p2\\\",\\\"title\\\":\\\"Win a free year of Pro! Retweet and follow\\\",\\\"text\\\":\\\"Giveaway ends Friday\\\",\\\"links_to\\\":null}\\n{\\\"id\\\":\\\"p3\\\",\\\"title\\\":\\\"I think agents will replace junior devs within 2 years\\\",\\\"text\\\":\\\"After a month of using them daily...\\\",\\\"links_to\\\":null}\\n</posts>\\n</input>\\n<output>{\\\"decisions\\\":[{\\\"id\\\":\\\"p1\\\",\\\"keep\\\":true,\\\"reason\\\":\\\"Checkable product release claim\\\",\\\"summary\\\":\\\"Example Corp released version 5 of its coding agent with background tasks.\\\"},{\\\"id\\\":\\\"p2\\\",\\\"keep\\\":false,\\\"reason\\\":\\\"Giveaway, engagement bait\\\",\\\"summary\\\":\\\"A giveaway offering a free year of a Pro plan.\\\"},{\\\"id\\\":\\\"p3\\\",\\\"keep\\\":true,\\\"reason\\\":\\\"Useful opinion on the angle\\\",\\\"summary\\\":\\\"The author believes coding agents will replace junior developers within two years.\\\"}]}</output>\\n</example>\" }, { role: 'user', content: '<angle>' + $('Store Settings').first().json.angle + '</angle>\\n<posts>\\n' + $json.posts + '\\n</posts>' }] } }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When Called By Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Route By Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route By Source": {
+      "main": [
+        [
+          {
+            "node": "Search Google Trends (SerpApi)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split Reddit Terms",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split HN Terms",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split X Terms",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Google Trends (SerpApi)": {
+      "main": [
+        [
+          {
+            "node": "Take Rising Queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Take Rising Queries": {
+      "main": [
+        [
+          {
+            "node": "Has Rising Terms?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Rising Terms?": {
+      "main": [
+        [
+          {
+            "node": "Pick Trend Terms (via Ask Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Trends Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Reddit Terms": {
+      "main": [
+        [
+          {
+            "node": "Search Reddit (ScrapeCreators)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Reddit (ScrapeCreators)": {
+      "main": [
+        [
+          {
+            "node": "Rank Reddit Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split HN Terms": {
+      "main": [
+        [
+          {
+            "node": "Search Hacker News (HN Algolia)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Hacker News (HN Algolia)": {
+      "main": [
+        [
+          {
+            "node": "Rank HN Stories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank Reddit Posts": {
+      "main": [
+        [
+          {
+            "node": "Collect Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank HN Stories": {
+      "main": [
+        [
+          {
+            "node": "Collect Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Already Reported (Airtable Findings)": {
+      "main": [
+        [
+          {
+            "node": "Mark Repeats",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Filter Decisions": {
+      "main": [
+        [
+          {
+            "node": "Anything To Save?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anything To Save?": {
+      "main": [
+        [
+          {
+            "node": "Build Airtable Batches",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Collect Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Airtable Batches": {
+      "main": [
+        [
+          {
+            "node": "Save Findings (Airtable Findings)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split X Terms": {
+      "main": [
+        [
+          {
+            "node": "Search X (twitterapi.io)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search X (twitterapi.io)": {
+      "main": [
+        [
+          {
+            "node": "Rank X Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rank X Posts": {
+      "main": [
+        [
+          {
+            "node": "Collect Candidates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Candidates": {
+      "main": [
+        [
+          {
+            "node": "Find Already Reported (Airtable Findings)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Findings (Airtable Findings)": {
+      "main": [
+        [
+          {
+            "node": "Build Collect Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Trend Terms (via Ask Venice)": {
+      "main": [
+        [
+          {
+            "node": "Build Trends Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Repeats": {
+      "main": [
+        [
+          {
+            "node": "Filter Posts (via Ask Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Posts (via Ask Venice)": {
+      "main": [
+        [
+          {
+            "node": "Apply Filter Decisions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "ccResearchPipe01"
+  },
+  "active": false
+}

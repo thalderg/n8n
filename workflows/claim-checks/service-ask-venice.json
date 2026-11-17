@@ -1,0 +1,290 @@
+{
+  "id": "RzRuzMVi64lHyHwy",
+  "name": "Claim Checks | Ask Venice",
+  "nodes": [
+    {
+      "id": "av-title",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        240,
+        40
+      ],
+      "parameters": {
+        "color": 6,
+        "width": 1400,
+        "height": 300,
+        "content": "# Claim Checks | Ask Venice\n\nAsks Venice ONE model question for another Claim Checks step and returns the answer as `output` (the parsed JSON when the step sends a schema). If the main model gives no complete answer, the same question goes to a backup model, so one slow or offline model does not stop a run.\n\n**Called by:** \"WF3 — Research Pipeline\", \"Verify Story\", \"Collect Findings\", \"Follow Up Story\", \"Story Chat\" (every model step except the two web searches and the Story Chat agent). Locked to them.\n**Alerts:** no error workflow on purpose: a failure goes back to the calling step, so the caller's own alert names the step (and Collect/Verify failures stay in the run's ONE problem alert).\nstructure-ok: no error workflow on purpose, so a failure is reported once, by the caller.\n**Services called:** Venice (main model from the step, e.g. Kimi K2.6 or GLM-5.3 Flash; backup GPT-6 Luna)."
+      }
+    },
+    {
+      "id": "av-sec",
+      "name": "Ask With Backup Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        240,
+        380
+      ],
+      "parameters": {
+        "color": 4,
+        "width": 1400,
+        "height": 680,
+        "content": "## Ask With Backup\n\nTriggered by: a calling step (When Called By Step), with the step name and the full Venice request.\n\nWhat it does, step by step:\n1. Store Settings holds the backup model (GPT-6 Luna).\n2. Ask Main Model (Venice): the request as sent, 60 s limit, 3 tries.\n3. Main Answer Complete? checks it finished and, for a schema step, is valid JSON. No → Ask Backup Model (Venice): the same request on GPT-6 Luna, 60 s, 3 tries.\n4. Read Answer returns `output` and `model_used`; it fails with the step name if neither model answered."
+      }
+    },
+    {
+      "id": "av-trig",
+      "name": "When Called By Step",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        300,
+        700
+      ],
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "step"
+            },
+            {
+              "name": "body",
+              "type": "object"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "av-set",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        520,
+        700
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": true,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "av-s1",
+              "name": "backup_model",
+              "type": "string",
+              "value": "openai-gpt-6-luna"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "av-main",
+      "name": "Ask Main Model (Venice)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput",
+      "position": [
+        740,
+        700
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.venice.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "venice api"
+        }
+      }
+    },
+    {
+      "id": "av-if",
+      "name": "Main Answer Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        700
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "av-c1",
+              "leftValue": "={{ (() => { const c = ($json.choices || [])[0] || {}; const text = c.message && c.message.content; if (c.finish_reason !== 'stop' || !text) return false; if (!$('Store Settings').item.json.body.response_format) return true; try { JSON.parse(text); return true; } catch (e) { return false; } })() }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "av-backup",
+      "name": "Ask Backup Model (Venice)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "onError": "stopWorkflow",
+      "position": [
+        1180,
+        840
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.venice.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify((() => { const s = $('Store Settings').item.json; const b = JSON.parse(JSON.stringify(s.body)); b.model = s.backup_model; delete b.temperature; if (b.venice_parameters) { delete b.venice_parameters.disable_thinking; } b.reasoning_effort = 'low'; b.max_tokens = (b.max_tokens || 2000) + 2000; return b; })()) }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "venice api"
+        }
+      }
+    },
+    {
+      "id": "av-read",
+      "name": "Read Answer",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1400,
+        700
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "av-r1",
+              "name": "output",
+              "type": "object",
+              "value": "={{ (() => { const s = $('Store Settings').item.json; const c = ($json.choices || [])[0] || {}; const text = c.message && c.message.content; if (c.finish_reason !== 'stop' || !text) throw new Error('No complete answer from the main or the backup model for ' + s.step + ': ' + (c.finish_reason || ($json.error && $json.error.message) || 'no answer')); return s.body.response_format ? JSON.parse(text) : { text: text }; })() }}"
+            },
+            {
+              "id": "av-r2",
+              "name": "model_used",
+              "type": "string",
+              "value": "={{ $json.model || '' }}"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "When Called By Step": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Ask Main Model (Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask Main Model (Venice)": {
+      "main": [
+        [
+          {
+            "node": "Main Answer Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Main Answer Complete?": {
+      "main": [
+        [
+          {
+            "node": "Read Answer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ask Backup Model (Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask Backup Model (Venice)": {
+      "main": [
+        [
+          {
+            "node": "Read Answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "",
+    "timezone": "Europe/Rome",
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "ccResearchPipe01,ccVerifyStory001,ccCollectFind001,ccFollowUpStor01,3B9Il26esYH8IJEP,6tQ5vBxixkQqpDKO"
+  },
+  "active": false
+}

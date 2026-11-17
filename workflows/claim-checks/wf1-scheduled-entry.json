@@ -1,0 +1,250 @@
+{
+  "id": "ccScheduledEnt01",
+  "name": "Claim Checks | WF1 — Scheduled Entry",
+  "nodes": [
+    {
+      "id": "d31cfb8a-ce71-5d96-903b-7cc6a978faef",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Claim Checks | WF1 — Scheduled Entry\n\nStarts the scheduled Claim Checks runs from the Airtable table Keywords: every day at 07:00 (Europe/Rome) for keywords with mode \"today\", and on Mondays also for keywords with mode \"7days\". One run per recipient and mode.\n\n**Calls:** \"WF3 — Research Pipeline\" (same folder), one run after the other, so the Venice spend stays predictable. Scheduled runs skip stories already reported in the last 7 days.\n**Standalone:** yes, it is a main workflow with its own trigger (no caller lock).\n**Services called:** Airtable (table Keywords) · \"WF3 — Research Pipeline\".",
+        "height": 300,
+        "width": 1120,
+        "color": 5
+      }
+    },
+    {
+      "id": "39ca41b9-4245-5f89-9ad9-de170ffd2717",
+      "name": "Start Runs Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        384
+      ],
+      "parameters": {
+        "content": "## Start Scheduled Runs\n\nTriggered by: Every Day At 7 (cron 0 7 * * *, Europe/Rome), or by hand with Test Run As Monday, which runs as on a Monday (every active keyword, both modes).\n\nWhat it does, step by step:\n1. Read Active Keywords (Airtable Keywords) reads the active rows of Keywords: on Mondays both modes, on other days mode \"today\" only.\n2. Group Into Runs makes one run per recipient and mode, with its run id (CC-yyyymmdd-hhmmss-xxxx), all its keywords, and check_duplicates on.\n3. Start Research Run (via WF3) calls \"WF3\" once per run and waits for it before starting the next. A failed run alerts from \"WF3\" and the next one still starts.",
+        "height": 640,
+        "width": 1120,
+        "color": 4
+      }
+    },
+    {
+      "id": "5de9017c-ff6c-5950-a62d-16252c3d1986",
+      "name": "Every Day At 7",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        64,
+        640
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 7 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ecd64263-1a30-52fc-bb5b-fa638489e1f2",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        288,
+        640
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d382bf4a-0f1b-56ec-a249-c8516f0e7073",
+              "name": "wf3_id",
+              "type": "string",
+              "value": "ccResearchPipe01"
+            },
+            {
+              "id": "029432aa-cc72-5cc7-9ca0-979b9b41aa3e",
+              "name": "is_monday",
+              "type": "boolean",
+              "value": "={{ $('Test Run As Monday').isExecuted || $now.setZone('Europe/Rome').weekday === 1 }}"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "d1ffbc05-ace6-5ed6-ad04-b7d50e08f6ac",
+      "name": "Read Active Keywords (Airtable Keywords)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000,
+      "position": [
+        512,
+        640
+      ],
+      "parameters": {
+        "url": "https://api.airtable.com/v0/YOUR_AIRTABLE_BASE_ID/YOUR_AIRTABLE_KEYWORDS_TABLE_ID",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "={{ $json.is_monday ? \"AND({active}, OR({mode}='today', {mode}='7days'))\" : \"AND({active}, {mode}='today')\" }}"
+            },
+            {
+              "name": "pageSize",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "6f14a5cd-ab14-52c6-a5b7-76388bc7a677",
+      "name": "Group Into Runs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        640
+      ],
+      "parameters": {
+        "jsCode": "const rows = ($input.first().json.records || []).map(r => r.fields).filter(f => f.keyword && f.recipient && f.mode);\nconst groups = {};\nfor (const f of rows) { const k = f.recipient + '|' + f.mode; (groups[k] = groups[k] || { recipient: f.recipient, mode: f.mode, keywords: [] }).keywords.push(f.keyword); }\nconst stamp = $now.setZone('Europe/Rome').toFormat('yyyyLLdd-HHmmss');\nreturn Object.values(groups).map(g => ({ json: { run_id: 'CC-' + stamp + '-' + Math.random().toString(36).slice(2, 6).toUpperCase(),\n  keywords: [...new Set(g.keywords)], mode: g.mode, recipient: g.recipient, requested_by: 'schedule', chat_id: '', check_duplicates: true } }));"
+      }
+    },
+    {
+      "id": "c0549245-9737-5bf5-bf84-431e9d772102",
+      "name": "Start Research Run (via WF3)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        944,
+        640
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ccResearchPipe01",
+          "cachedResultName": "Claim Checks | WF3 — Research Pipeline"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    },
+    {
+      "id": "17f2e8de-60b5-4621-86b6-b5b3f79819d1",
+      "name": "Test Run As Monday",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        64,
+        820
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Every Day At 7": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Read Active Keywords (Airtable Keywords)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Active Keywords (Airtable Keywords)": {
+      "main": [
+        [
+          {
+            "node": "Group Into Runs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Group Into Runs": {
+      "main": [
+        [
+          {
+            "node": "Start Research Run (via WF3)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Run As Monday": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "timezone": "Europe/Rome",
+    "binaryMode": "separate"
+  },
+  "active": false
+}
