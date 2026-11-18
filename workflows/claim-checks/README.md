@@ -104,7 +104,7 @@ flowchart LR
     H --> I["PDF · Telegram ·<br/>email · archive"]
 ```
 
-A run with two topics takes about 10-15 minutes (12.5 in the last test, with a question). Model and search costs grow with the number of topics, since each one gets its own 6 angles and up to 5 checks; a question adds 2 model calls, 6 Google searches and up to 8 page reads.
+A run with two topics takes about 20-30 minutes (29.5 in the test of 18 Nov: 69 posts kept and 10 claims checked, each check 1-3 minutes). Model and search costs grow with the number of topics, since each one gets its own 6 angles and up to 5 checks; a question adds 2 model calls, 6 Google searches and up to 8 page reads.
 
 ---
 
@@ -118,7 +118,7 @@ A search for one phrase finds only the posts that use those exact words. People 
 flowchart LR
     T["Topic<br/>crypto hacks and exploits"] --> P["Planner"]
     P --> G1["Group 1 · the subject<br/>crypto, DeFi, exchange, protocol,<br/>bridge, wallet, token, BTC, ETH"]
-    P --> G2["Group 2 · the event<br/>hack, hacked, exploit, exploited,<br/>drained, stolen, breach, attacker"]
+    P --> G2["Group 2 · the event, every word form<br/>hack, hacks, hacked, hacker, hackers,<br/>attack, attacks, backdoor, backdoored,<br/>exploit, exploited, drained, stolen"]
     G1 --> Q1["X and Reddit<br/>(crypto OR DeFi OR …) (hack OR drained OR …)"]
     G2 --> Q1
     G1 --> Q2["Hacker News (no OR)<br/>every word as an optional word,<br/>best matches first"]
@@ -127,13 +127,39 @@ flowchart LR
 
 The **first angle of every topic is its wide angle** ("All news on crypto hacks and exploits"), so a post the narrower angles miss is still found. The engagement minimums and the model filter keep the wider searches clean.
 
+**Every word form, because X matches whole words.** A post that says "hackers backdoored crypto teams" contains none of "hack, hacked, exploit…": X does not match "hackers" to "hack". The planner writes each form as its own word (hack, hacks, hacked, hacker, hackers; attack, attacks; backdoor, backdoored). X also returns only 20 posts per search, ranked by engagement, so the day's biggest story fills them; the main query therefore runs twice, by engagement (**Top**) and by time (**Latest**), and a newer post with fewer likes still gets in. (Found on 18 Nov: the story of North Korean hackers backdooring crypto teams through a Claude Code config file was on X with 78 likes and never reached the top 20.)
+
+**Each angle adds new posts.** Up to 12 posts per source go to the filter; posts another angle already kept, or reported in the last 7 days, are removed first; then the best are kept, up to 5 Reddit, 4 Hacker News and 5 X posts per angle. The filter judges a post against the **topic**, not the angle, so a crypto-skimmer attack is not dropped for being "not a bridge hack".
+
 Why it matters: with one phrase per angle, X returned 0-5 posts per crypto search and a $15.5M exchange hack slipped through. With word groups the same run returned 20 posts per search, found 78 mentions of the hack and checked it as a claim.
 
 ### 2. Every topic gets its own searches and checks
 
 The limits are per topic: each topic gets 6 angles and its 5 strongest claims are checked. With one shared limit, a busy topic (a big hack) took the searches and checks of a quiet one (AI research), which then got 2 narrow angles and almost no stories.
 
-### 3. A question gets an answer, not just a check
+### 3. Yesterday's story is not today's news
+
+Hacker News is searched over 7 days, and a fresh article can be about an old event, so a daily report could present a week-old story as news (it did: a model release of 12 Nov in the report of 18 Nov). Now every checked claim gets the date it **first appeared**: the earliest date of its posts and of the pages that back it. If that is before the run's window:
+
+- the model must name a **new fact** about the event (a new figure, decision, ruling, seizure, result, release, a statement by the party involved), with its date and the page that reports it. New coverage, a social post, commentary or a recap is not new;
+- code then checks it: the fact's date and the page's own date must be inside the window, the page must have been read, and it must not be a social platform;
+- **nothing new:** the story is left out of the report, the Telegram summary and the archive, and the PDF footer lists it under "Earlier news with nothing new";
+- **something new:** it is reported as **"Update on news first seen 12 Nov: …"**, never as a new event.
+
+```mermaid
+flowchart LR
+    C["Checked claim"] --> D{"First appeared<br/>inside the window?"}
+    D -- yes --> N["Today's news"]
+    D -- no --> F{"A new fact,<br/>dated inside the window,<br/>on a page that was read?"}
+    F -- yes --> U["Reported as<br/>'Update on news first seen …'"]
+    F -- no --> O["Left out<br/>(listed in the footer)"]
+```
+
+In a test on 18 Nov this left out a CERN result of 9 Nov, a claim about a Maya site of 12 Nov and an FBI seizure of 12 Nov, and kept an LLM benchmark of July as an update, because its author published new results on 17 Nov.
+
+The claims to check are also chosen fairly: the best claim of every angle first, then the rest by the number of independent sources, so a security story is not pushed out by product launches.
+
+### 4. A question gets an answer, not just a check
 
 Posts rarely hold the answer to a question such as "what are the best projects at the NEAR hackathon?": the organiser's project list, results pages and coverage do. When a topic starts with a question word or ends with "?", the planner aims its angles at the answer, and **Answer Question** writes 3 Google queries (the official source, the answer in people's words, coverage), reads up to 8 pages and lists the answers. Each one is marked **confirmed** (the organiser, an official source or a news outlet says it), **claimed** (only its own team says it) or **unverified** (blogs, forums, a search snippet), with dated links. The answer opens the PDF and the Telegram summary; the posts are still checked as usual.
 
@@ -146,11 +172,11 @@ flowchart LR
     A --> O["Answer first in the PDF<br/>and the Telegram summary"]
 ```
 
-### 4. Google Trends with a short term
+### 5. Google Trends with a short term
 
 Google Trends has no data for long phrases, so each topic's wide angle gets a 1-2 word **Trends term** ("crypto hack", "drug discovery"). The rising searches around it are offered to a small model that keeps at most 2 that really belong to the topic ("crypto hack north korea" stays, "blooket join" goes). Those terms become extra searches for the run.
 
-### 5. The label comes from rules, not from the model
+### 6. The label comes from rules, not from the model
 
 The model only judges each page: does it **support**, **contradict** or **only mention** the claim, and is it **official**, a **reliable outlet** (an editable list of newsrooms) or **other**. Then fixed rules give the label:
 
@@ -175,11 +201,11 @@ flowchart TD
     S6 --> S7["Write the explainer<br/>(model, facts only from the pages)"]
 ```
 
-### 6. Every source has a date; old pages are marked "background"
+### 7. Every source has a date; old pages are marked "background"
 
 Each page gets its publication date from its own metadata, else from its address, else from Google's date; never guessed from the text. A page older than the run's window (7 days for a daily run, 30 for a weekly one) is shown as **background**, and the writers may use it only as earlier context, never as the news. Google is searched for recent pages first, so fresh coverage comes before old articles about the same subject.
 
-### 7. Pages that block automated reading
+### 8. Pages that block automated reading
 
 Every page is first read directly. Only a page that refuses (blocked, rate-limited, empty) is read again through **Bright Data's Web Unlocker**. Some pages load their text with scripts (an official blog, for example), so the unlocker returns an empty shell: those get **one more try with `render`**, where Bright Data runs the page's scripts first. It is slower, so it is used only for pages still without text, and never for video or LinkedIn pages. A page that still cannot be read is listed as blocked, so you can open it yourself, but it never counts. One shared workflow, "Read Web Pages", does this for both the claim checks and the answers.
 
@@ -196,17 +222,17 @@ flowchart LR
     R -- yes --> B
 ```
 
-### 8. One story, one number, forever
+### 9. One story, one number, forever
 
 Every checked claim is saved to the story archive with a **permanent story number**: story 214 is the same story in the morning summary, in `list`, `dig` and `update`, at any time. When a later run finds a post (or the article a post links to) that an archived story already has, it is the **same story**: it keeps its number, gets the new label, and a dated "checked again" entry is added to its history. Stories are never merged on a guess.
 
-### 9. A conversation about each story
+### 10. A conversation about each story
 
 After `dig` or `update`, any message is a question about that story. The answer comes from a reasoning model (Kimi K2.6 on Venice, with a backup model) that can search the web, read pages, search the archive with read-only SQL and look up the run records. Its order of trust: the checked story and its updates first, then your saved conversations, then fresh web results; a fresh source that contradicts the story is shown with both sides. It never presents another post as the story's original post.
 
 Nothing is saved automatically. `save` keeps a summary of the conversation, `close` saves and ends it, `forget` drops it. Replying to any old message brings that conversation back, with its story.
 
-### 10. Built to survive failures
+### 11. Built to survive failures
 
 - Every model call goes through **Ask Venice**: the main model, then a backup model if the first fails or returns broken output.
 - A source that fails does not stop the run: the report says which source failed.
@@ -214,7 +240,7 @@ Nothing is saved automatically. `save` keeps a summary of the conversation, `clo
 - **One alert per run** (Report Run Problems), not one per failure.
 
 
-### 11. No silent failures
+### 12. No silent failures
 
 A report that quietly misses a source looks exactly like a good one, so every failure is named:
 
@@ -279,7 +305,7 @@ flowchart LR
     subgraph AT["Airtable · working data of each run"]
         KW["Keywords"]
         RU["Runs"]
-        FI["Findings<br/>every post, kept or dropped"]
+        FI["Findings<br/>every kept post"]
         CL["Clusters<br/>every claim with its evidence"]
     end
     subgraph PG["Postgres · the story archive"]
@@ -297,13 +323,13 @@ flowchart LR
     CO --> ME
 ```
 
-**Airtable** keeps the working data of each run, readable by a person: the topics, each run, every post found (kept or dropped, with the reason) and every claim with its evidence. You can open it and see why a post was dropped.
+**Airtable** keeps the working data of each run, readable by a person: the topics, each run, every post kept and every claim with its evidence. You can open it and see why a post was dropped.
 
 **Airtable stays small, on the Free plan.** Its Free plan allows 1,000 records per base, and a run with two topics saves about 95 rows. **Clean Old Records** runs every day at 06:30, before the morning run, and deletes the rows no workflow reads any more; the archive in Postgres keeps everything that lasts:
 
 | Rows | Kept for | Why that long |
 |---|---|---|
-| dropped posts | 1 day | read only during their own run |
+| dropped posts | not saved | nothing reads them after the run (since 18 Nov) |
 | kept posts | 7 days | the "already reported" check looks back 7 days |
 | Clusters (claims) | 14 days | the bot's `reports` list goes back 14 days |
 | Runs | 14 days | same |
@@ -424,7 +450,7 @@ Import the ten JSON files. Every node that calls another workflow is named `… 
 | claims checked per topic | WF3 · Store Settings `max_verify` | 5 |
 | pages read for an answer | Answer Question · Store Settings `max_pages` | 8 |
 | days Airtable rows are kept | Clean Old Records · Store Settings | dropped posts 1, kept posts 7, Clusters 14, Runs 14 |
-| posts kept per angle | Collect Findings · Store Settings | Reddit 3, Hacker News 2, X 3 |
+| posts kept per angle | Collect Findings · Store Settings | Reddit 5, Hacker News 4, X 5 (from a pool of 12 per source) |
 | engagement minimums | Collect Findings · Store Settings | Reddit score 20 and 5 comments (daily), X 50 likes and 2 reposts (daily); doubled for weekly runs |
 | pages read per claim | Verify Story · Store Settings `max_candidates` | 8 |
 

@@ -12,7 +12,7 @@
         0
       ],
       "parameters": {
-        "content": "# Claim Checks | Collect Findings\n\nSearches ONE source for ONE angle of a Claim Checks run, throws away the trash and saves every item (kept and dropped, with the reason) to Airtable table Findings. Returns a short status to the caller; the findings themselves stay in Airtable.\n\n**Called by:** \"WF3 — Research Pipeline\": Google Trends once per keyword (its angles share the terms), then Reddit, Hacker News and X once per angle. Locked to \"WF3\".\n**Sections:** Entry → one source section (Google Trends, Reddit, Hacker News or X) → for Reddit, Hacker News and X, \"Shared: Reddit + Hacker News + X\" (duplicates, filter, save). Google Trends saves nothing: it returns up to 2 rising search terms.\n**Alerts:** a source search that fails (service down, network error) does not stop this call: it returns status \"failed\" with the error, and \"WF3\" names that source in the run's ONE alert (\"Report Run Problems\"). Any other failed step stops this call and goes back to \"WF3\", which reports it too. An empty source is normal, not an error.\nstructure-ok: no error workflow on purpose, so a run with several failures sends one alert, not one per failure.\n**Services called:** SerpApi (Google Trends) · ScrapeCreators (Reddit) · HN Algolia (Hacker News) · twitterapi.io (X) · Venice (GLM-5.3 Flash: pick terms, filter posts) · Airtable (Findings) · \"Ask Venice\" (every model step; backup model GPT-6 Luna).",
+        "content": "# Claim Checks | Collect Findings\n\nSearches ONE source for ONE angle of a Claim Checks run, throws away the trash and saves the kept posts to Airtable table Findings (dropped posts are not saved since 2026-11-18). Returns a short status to the caller; the findings themselves stay in Airtable.\n\n**Called by:** \"WF3 — Research Pipeline\": Google Trends once per keyword (its angles share the terms), then Reddit, Hacker News and X once per angle. Locked to \"WF3\".\n**Sections:** Entry → one source section (Google Trends, Reddit, Hacker News or X) → for Reddit, Hacker News and X, \"Shared: Reddit + Hacker News + X\" (duplicates, filter, save). Google Trends saves nothing: it returns up to 2 rising search terms.\n**Alerts:** a source search that fails (service down, network error) does not stop this call: it returns status \"failed\" with the error, and \"WF3\" names that source in the run's ONE alert (\"Report Run Problems\"). Any other failed step stops this call and goes back to \"WF3\", which reports it too. An empty source is normal, not an error.\nstructure-ok: no error workflow on purpose, so a run with several failures sends one alert, not one per failure.\n**Services called:** SerpApi (Google Trends) · ScrapeCreators (Reddit) · HN Algolia (Hacker News) · twitterapi.io (X) · Venice (GLM-5.3 Flash: pick terms, filter posts) · Airtable (Findings) · \"Ask Venice\" (every model step; backup model GPT-6 Luna).",
         "width": 4220,
         "height": 300,
         "color": 5
@@ -60,7 +60,7 @@
         1180
       ],
       "parameters": {
-        "content": "## Reddit\n\nTriggered by: Route By Source when source = reddit.\n\nWhat it does, step by step:\n1. One ScrapeCreators search per search term, the most relevant posts of the last day or week.\n2. Rank Reddit Posts removes duplicates, drops posts under the minimum (daily 20 upvotes and 5 comments; weekly 40 and 10) and keeps the top 3 by score + comments.\n3. Continues in \"Shared: Reddit + Hacker News + X\".",
+        "content": "## Reddit\n\nTriggered by: Route By Source when source = reddit.\n\nWhat it does, step by step:\n1. One ScrapeCreators search per search term, the most relevant posts of the last day or week.\n2. Rank Reddit Posts removes duplicates, drops posts under the minimum (daily 20 upvotes and 5 comments; weekly 40 and 10) and passes the top 12 by score + comments to the filter (the cap of 5 per angle comes after the filter).\n3. Continues in \"Shared: Reddit + Hacker News + X\".",
         "width": 1340,
         "height": 480,
         "color": 3
@@ -76,7 +76,7 @@
         1720
       ],
       "parameters": {
-        "content": "## Hacker News\n\nTriggered by: Route By Source when source = hacker_news.\n\nWhat it does, step by step:\n1. One free Hacker News search per search term, stories of the last 7 days.\n2. Rank HN Stories removes duplicates and keeps the 2 stories with the most points (url = HN page, linked_url = the article).\n3. Continues in \"Shared: Reddit + Hacker News + X\".",
+        "content": "## Hacker News\n\nTriggered by: Route By Source when source = hacker_news.\n\nWhat it does, step by step:\n1. One free Hacker News search per search term, stories of the last 7 days.\n2. Rank HN Stories removes duplicates and passes the 12 stories with the most points to the filter (cap of 4 per angle after the filter) (url = HN page, linked_url = the article).\n3. Continues in \"Shared: Reddit + Hacker News + X\".",
         "width": 1340,
         "height": 480,
         "color": 2
@@ -92,7 +92,7 @@
         1180
       ],
       "parameters": {
-        "content": "## Shared: Reddit + Hacker News + X\n\nTriggered by: runs inline after the Reddit, Hacker News or X section.\n\nWhat it does, step by step:\n1. Collect Candidates gathers the ranked posts; Find Already Reported (Airtable Findings) looks for the same post kept by an earlier angle of this run (\"found by another angle\") and, on scheduled runs, kept in another run of the last 7 days (\"already reported\").\n2. Filter Posts (via Ask Venice, light model, one call): keeps posts with a checkable claim or a useful opinion, drops ads, bait, jokes and off-topic posts, with a reason and a summary.\n3. If there is anything to save, every post (kept or dropped) is saved to Findings, 10 per call.\n4. Build Collect Result returns status, kept_count and dropped_count to \"WF3\".",
+        "content": "## Shared: Reddit + Hacker News + X\n\nTriggered by: runs inline after the Reddit, Hacker News or X section.\n\nWhat it does, step by step:\n1. Collect Candidates gathers the ranked posts; Find Already Reported (Airtable Findings) looks for the same post kept by an earlier angle of this run (\"found by another angle\") and, on scheduled runs, kept in another run of the last 7 days (\"already reported\").\n2. Filter Posts (via Ask Venice, light model, one call): judges each new post against the KEYWORD (the angle is only the search route): keeps a checkable claim or a useful opinion, drops ads, bait, jokes and off-topic posts. Apply Filter Decisions then keeps the best-ranked new posts up to the cap per angle (Reddit 5, Hacker News 4, X 5), so repeats never use up the cap.\n3. If any post is kept, the kept posts are saved to Findings, 10 per call (dropped posts are not saved).\n4. Build Collect Result returns status, kept_count and dropped_count to \"WF3\".",
         "width": 2000,
         "height": 720,
         "color": 7
@@ -140,13 +140,13 @@
               "id": "a3048641-5fe3-51e5-9ef0-10d73b35e854",
               "name": "max_reddit",
               "type": "number",
-              "value": 3
+              "value": 5
             },
             {
               "id": "69419a39-64a3-5f80-a53e-a4cc7c180ee4",
               "name": "max_hn",
               "type": "number",
-              "value": 2
+              "value": 4
             },
             {
               "id": "09c81433-0492-5067-bf76-a4492529d9b6",
@@ -158,7 +158,7 @@
               "id": "6674e23d-c4ad-5307-aaa8-bce07cc3b02a",
               "name": "max_x",
               "type": "number",
-              "value": 3
+              "value": 5
             },
             {
               "id": "dadb4e56-3f09-597f-975f-ca43bf37a3e1",
@@ -195,6 +195,12 @@
               "name": "x_min_bookmarks",
               "type": "number",
               "value": "={{ Number($json.window_days || ($json.mode === 'today' ? 1 : 7)) === 1 ? 10 : 20 }}"
+            },
+            {
+              "id": "716c8e39-16a8-42b2-aa6d-78aac21eb95d",
+              "name": "pool_size",
+              "type": "number",
+              "value": 12
             }
           ]
         },
@@ -426,7 +432,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const s = $('Store Settings').first().json;\nconst errText = (e) => String(typeof e === 'string' ? e : (e && (e.message || e.description || JSON.stringify(e))) || 'unknown error').replace(/\\s+/g, ' ').slice(0, 160);\n// A failed Trends search comes back as an error item: reported as \"failed\" with the error, never a silent empty.\nconst err = $('Search Google Trends (SerpApi)').first().json.error;\nlet terms = [];\nif ($('Pick Trend Terms (via Ask Venice)').isExecuted) {\n  const out = $('Pick Trend Terms (via Ask Venice)').first().json.output || {};\n  terms = (out.terms || []).filter(t => typeof t === 'string' && t.trim()).slice(0, 2);\n}\nreturn [{ json: { run_id: s.run_id, angle: s.angle, source: 'google_trends', status: err ? 'failed' : (terms.length ? 'ok' : 'empty'), error: err ? errText(err) : null,\n  kept_count: 0, dropped_count: 0, trend_terms: terms, context: s.context || null } }];"
+        "jsCode": "const s = $('Store Settings').first().json;\nconst errText = (e) => String(typeof e === 'string' ? e : (e && (e.message || e.description || JSON.stringify(e))) || 'unknown error').replace(/\\s+/g, ' ').slice(0, 160);\n// A failed Trends search comes back as an error item: reported as \"failed\" with the error, never a silent empty.\n// SerpApi answers \"hasn't returned any results\" as an error: that is an empty result, not a failure.\nconst rawErr = $('Search Google Trends (SerpApi)').first().json.error;\nconst err = rawErr && !/hasn.t returned any results|no results/i.test(errText(rawErr)) ? rawErr : null;\nlet terms = [];\nif ($('Pick Trend Terms (via Ask Venice)').isExecuted) {\n  const out = $('Pick Trend Terms (via Ask Venice)').first().json.output || {};\n  terms = (out.terms || []).filter(t => typeof t === 'string' && t.trim()).slice(0, 2);\n}\nreturn [{ json: { run_id: s.run_id, angle: s.angle, source: 'google_trends', status: err ? 'failed' : (terms.length ? 'ok' : 'empty'), error: err ? errText(err) : null,\n  kept_count: 0, dropped_count: 0, trend_terms: terms, context: s.context || null } }];"
       }
     },
     {
@@ -510,7 +516,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const s = $('Store Settings').first().json;\nconst max = s.max_reddit;\nconst seen = new Map();\nfor (const it of $input.all()) {\n  for (const p of (it.json.posts || [])) {\n    if (!p || !p.id || seen.has(p.id)) continue;\n    seen.set(p.id, p);\n  }\n}\nconst isReddit = (u) => { const m = String(u || '').match(/^https?:\\/\\/([^\\/?#:]+)/i); return !m || /(^|\\.)(reddit\\.com|redd\\.it)$/i.test(m[1]); };\nconst ranked = [...seen.values()]\n  .filter(p => (p.score || 0) >= s.reddit_min_score && (p.num_comments || 0) >= s.reddit_min_comments)\n  .sort((a, b) => ((b.score || 0) + (b.num_comments || 0)) - ((a.score || 0) + (a.num_comments || 0)))\n  .slice(0, max);\nreturn ranked.map(p => ({ json: {\n  source: 'reddit',\n  source_id: 'reddit:' + p.id,\n  title: String(p.title || '').slice(0, 300),\n  url: p.permalink ? 'https://www.reddit.com' + p.permalink : (p.url && /reddit\\.com\\/r\\/[^\\/]+\\/comments\\//i.test(p.url) ? p.url : 'https://www.reddit.com/comments/' + p.id),\n  linked_url: p.url && /^https?:/i.test(p.url) && !isReddit(p.url) ? p.url : '',\n  published_at: p.created_at_iso || (p.created_utc ? new Date(p.created_utc * 1000).toISOString() : null),\n  text: String(p.selftext || '').replace(/\\s+/g, ' ').slice(0, 600),\n  engagement: (p.score || 0) + (p.num_comments || 0),\n} }));"
+        "jsCode": "const s = $('Store Settings').first().json;\n// The pool goes to the filter; the cap per angle is applied after repeats and trash are removed (Apply Filter Decisions).\nconst max = s.pool_size;\nconst seen = new Map();\nfor (const it of $input.all()) {\n  for (const p of (it.json.posts || [])) {\n    if (!p || !p.id || seen.has(p.id)) continue;\n    seen.set(p.id, p);\n  }\n}\nconst isReddit = (u) => { const m = String(u || '').match(/^https?:\\/\\/([^\\/?#:]+)/i); return !m || /(^|\\.)(reddit\\.com|redd\\.it)$/i.test(m[1]); };\nconst ranked = [...seen.values()]\n  .filter(p => (p.score || 0) >= s.reddit_min_score && (p.num_comments || 0) >= s.reddit_min_comments)\n  .sort((a, b) => ((b.score || 0) + (b.num_comments || 0)) - ((a.score || 0) + (a.num_comments || 0)))\n  .slice(0, max);\nreturn ranked.map(p => ({ json: {\n  source: 'reddit',\n  source_id: 'reddit:' + p.id,\n  title: String(p.title || '').slice(0, 300),\n  url: p.permalink ? 'https://www.reddit.com' + p.permalink : (p.url && /reddit\\.com\\/r\\/[^\\/]+\\/comments\\//i.test(p.url) ? p.url : 'https://www.reddit.com/comments/' + p.id),\n  linked_url: p.url && /^https?:/i.test(p.url) && !isReddit(p.url) ? p.url : '',\n  published_at: p.created_at_iso || (p.created_utc ? new Date(p.created_utc * 1000).toISOString() : null),\n  text: String(p.selftext || '').replace(/\\s+/g, ' ').slice(0, 600),\n  engagement: (p.score || 0) + (p.num_comments || 0),\n} }));"
       }
     },
     {
@@ -586,7 +592,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const max = $('Store Settings').first().json.max_hn;\nconst seen = new Map();\nfor (const it of $input.all()) {\n  for (const h of (it.json.hits || [])) {\n    if (!h || !h.objectID || seen.has(h.objectID)) continue;\n    seen.set(h.objectID, h);\n  }\n}\nconst ranked = [...seen.values()].sort((a, b) => (b.points || 0) - (a.points || 0)).slice(0, max);\nreturn ranked.map(h => ({ json: {\n  source: 'hacker_news',\n  source_id: 'hn:' + h.objectID,\n  title: String(h.title || '').slice(0, 300),\n  url: 'https://news.ycombinator.com/item?id=' + h.objectID,\n  linked_url: h.url || '',\n  published_at: h.created_at || null,\n  text: String(h.story_text || '').replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').slice(0, 600),\n  engagement: (h.points || 0) + (h.num_comments || 0),\n} }));"
+        "jsCode": "// The pool goes to the filter; the cap per angle is applied after repeats and trash are removed (Apply Filter Decisions).\nconst max = $('Store Settings').first().json.pool_size;\nconst seen = new Map();\nfor (const it of $input.all()) {\n  for (const h of (it.json.hits || [])) {\n    if (!h || !h.objectID || seen.has(h.objectID)) continue;\n    seen.set(h.objectID, h);\n  }\n}\nconst ranked = [...seen.values()].sort((a, b) => (b.points || 0) - (a.points || 0)).slice(0, max);\nreturn ranked.map(h => ({ json: {\n  source: 'hacker_news',\n  source_id: 'hn:' + h.objectID,\n  title: String(h.title || '').slice(0, 300),\n  url: 'https://news.ycombinator.com/item?id=' + h.objectID,\n  linked_url: h.url || '',\n  published_at: h.created_at || null,\n  text: String(h.story_text || '').replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').slice(0, 600),\n  engagement: (h.points || 0) + (h.num_comments || 0),\n} }));"
       }
     },
     {
@@ -672,7 +678,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const base = $('Mark Repeats').first().json;\n// The filter answer is always there: a failed model call stops this workflow and \"WF3\" reports it.\nconst dec = {};\nfor (const d of ($('Filter Posts (via Ask Venice)').first().json.output.decisions || [])) dec[d.id] = d;\nconst rows = base.candidates.map(c => {\n  let kept = false, reason = '', summary = '';\n  if (c.repeat) { reason = c.repeat; }\n  else if (dec[c.id]) { kept = dec[c.id].keep === true; reason = kept ? '' : String(dec[c.id].reason || '').slice(0, 200); summary = String(dec[c.id].summary || '').slice(0, 400); }\n  else { reason = 'no filter decision'; }\n  return { ...c, kept, drop_reason: reason, summary: summary || c.title };\n});\nreturn [{ json: { rows } }];"
+        "jsCode": "const base = $('Mark Repeats').first().json;\n// The filter answer is always there: a failed model call stops this workflow and \"WF3\" reports it.\nconst dec = {};\nfor (const d of ($('Filter Posts (via Ask Venice)').first().json.output.decisions || [])) dec[d.id] = d;\nconst rows = base.candidates.map(c => {\n  let kept = false, reason = '', summary = '';\n  if (c.repeat) { reason = c.repeat; }\n  else if (dec[c.id]) { kept = dec[c.id].keep === true; reason = kept ? '' : String(dec[c.id].reason || '').slice(0, 200); summary = String(dec[c.id].summary || '').slice(0, 400); }\n  else { reason = 'no filter decision'; }\n  return { ...c, kept, drop_reason: reason, summary: summary || c.title };\n});\n// Cap per angle, after repeats and trash are out: the best-ranked kept posts stay, so each angle adds new posts, not the same viral ones.\nconst s = $('Store Settings').first().json;\nconst cap = ({ reddit: s.max_reddit, hacker_news: s.max_hn, x: s.max_x })[s.source] || 5;\nlet n = 0;\nfor (const r of rows) { if (!r.kept) continue; n += 1; if (n > cap) { r.kept = false; r.drop_reason = `over the cap of ${cap} posts per angle`; } }\nreturn [{ json: { rows } }];"
       }
     },
     {
@@ -688,7 +694,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const s = $('Store Settings').first().json;\nconst rows = $input.first().json.rows;\nconst recs = rows.map(r => ({ fields: {\n  title: r.title, run_id: s.run_id, angle: s.angle, source: r.source, url: r.url,\n  ...(r.linked_url ? { linked_url: r.linked_url } : {}),\n  ...(r.published_at ? { published_at: r.published_at } : {}),\n  summary: r.summary, kept: r.kept, drop_reason: r.drop_reason,\n} }));\nconst out = [];\nfor (let i = 0; i < recs.length; i += 10) out.push({ json: { records: recs.slice(i, i + 10), typecast: true } });\nreturn out;"
+        "jsCode": "const s = $('Store Settings').first().json;\n// Only kept posts are saved: nothing reads dropped posts after the run, and Airtable's Free plan has a 1,000-row limit.\nconst rows = $input.first().json.rows.filter(r => r.kept);\nconst recs = rows.map(r => ({ fields: {\n  title: r.title, run_id: s.run_id, angle: s.angle, source: r.source, url: r.url,\n  ...(r.linked_url ? { linked_url: r.linked_url } : {}),\n  ...(r.published_at ? { published_at: r.published_at } : {}),\n  summary: r.summary, kept: r.kept, drop_reason: r.drop_reason,\n} }));\nconst out = [];\nfor (let i = 0; i < recs.length; i += 10) out.push({ json: { records: recs.slice(i, i + 10), typecast: true } });\nreturn out;"
       }
     },
     {
@@ -755,15 +761,15 @@
       "parameters": {
         "conditions": {
           "options": {
-            "caseSensitive": true,
+            "version": 2,
             "leftValue": "",
-            "typeValidation": "loose",
-            "version": 2
+            "caseSensitive": true,
+            "typeValidation": "loose"
           },
           "conditions": [
             {
               "id": "64e4d178-2f19-5184-a1ff-745cd938762c",
-              "leftValue": "={{ $json.rows.length }}",
+              "leftValue": "={{ $json.rows.filter(r => r.kept).length }}",
               "operator": {
                 "type": "number",
                 "operation": "gt"
@@ -787,27 +793,10 @@
         2260
       ],
       "parameters": {
-        "content": "## X\n\nTriggered by: Route By Source when source = x.\n\nWhat it does, step by step:\n1. One twitterapi.io search per search term: top posts of the last 24 h or 7 days, no replies or reposts, over the like and repost minimums.\n2. Rank X Posts removes duplicates and checks every minimum and the date again (daily 50 likes, 2 reposts, 10 bookmarks; weekly 100, 5, 20), keeps the top 3.\n3. Continues in \"Shared: Reddit + Hacker News + X\".",
+        "content": "## X\n\nTriggered by: Route By Source when source = x.\n\nWhat it does, step by step:\n1. Build X Searches: the main query twice, by engagement (Top) and by time (Latest), the Trends terms by engagement only; X returns 20 posts per search. Search X (twitterapi.io): posts of the last 24 h or 7 days, no replies or reposts, over the like and repost minimums.\n2. Rank X Posts removes duplicates and checks every minimum and the date again (daily 50 likes, 2 reposts, 10 bookmarks; weekly 100, 5, 20), passes the top 12 to the filter (cap of 5 per angle after the filter).\n3. Continues in \"Shared: Reddit + Hacker News + X\".",
         "width": 1340,
         "height": 480,
         "color": 1
-      }
-    },
-    {
-      "id": "645c3d22-57f0-53e7-9edf-3bac44839091",
-      "name": "Split X Terms",
-      "type": "n8n-nodes-base.splitOut",
-      "typeVersion": 1,
-      "position": [
-        880,
-        2520
-      ],
-      "parameters": {
-        "fieldToSplitOut": "search_terms",
-        "include": "noOtherFields",
-        "options": {
-          "destinationFieldName": "term"
-        }
       }
     },
     {
@@ -834,7 +823,7 @@
             },
             {
               "name": "queryType",
-              "value": "Top"
+              "value": "={{ $json.query_type || 'Top' }}"
             }
           ]
         },
@@ -862,7 +851,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const s = $('Store Settings').first().json;\nconst seen = new Map();\nfor (const it of $input.all()) {\n  for (const t of (it.json.tweets || [])) {\n    if (!t || !t.id || seen.has(t.id)) continue;\n    seen.set(t.id, t);\n  }\n}\n// The search asks for the like and repost minimums (min_faves, min_retweets) and the window (within_time).\n// twitterapi.io still pads thin results with weaker posts (tested 2026-10-28, mostly on 24h searches; since_time made it worse),\n// and X has no bookmark operator, so every minimum and the date are checked again here.\nconst cutoff = Date.now() - s.window * 86400000;\nconst n = (v) => Number(v || 0);\nconst isX = (u) => /^https?:\\/\\/([^\\/?#:]+\\.)?(x\\.com|twitter\\.com|t\\.co)([\\/?#:]|$)/i.test(String(u || ''));\nconst ranked = [...seen.values()]\n  .filter(t => n(t.likeCount) >= s.x_min_likes && n(t.retweetCount) >= s.x_min_retweets && n(t.bookmarkCount) >= s.x_min_bookmarks)\n  .filter(t => { const d = new Date(t.createdAt); return !isNaN(d) && d.getTime() >= cutoff; })\n  .sort((a, b) => (n(b.likeCount) + n(b.retweetCount) + n(b.bookmarkCount) + n(b.replyCount)) - (n(a.likeCount) + n(a.retweetCount) + n(a.bookmarkCount) + n(a.replyCount)))\n  .slice(0, s.max_x);\nreturn ranked.map(t => {\n  const user = t.author && t.author.userName ? t.author.userName : '';\n  const text = String(t.text || '').replace(/\\s+/g, ' ').trim();\n  const link = ((t.entities && t.entities.urls) || []).map(u => u.expanded_url).find(u => u && /^https?:/i.test(u) && !isX(u)) || '';\n  const when = t.createdAt ? new Date(t.createdAt) : null;\n  return { json: {\n    source: 'x',\n    source_id: 'x:' + t.id,\n    title: ((user ? '@' + user + ': ' : '') + text).slice(0, 300),\n    url: t.url || ('https://x.com/i/status/' + t.id),\n    linked_url: link,\n    published_at: when && !isNaN(when) ? when.toISOString() : null,\n    text: text.slice(0, 600),\n    engagement: n(t.likeCount) + n(t.retweetCount) + n(t.bookmarkCount) + n(t.replyCount),\n  } };\n});"
+        "jsCode": "const s = $('Store Settings').first().json;\nconst seen = new Map();\nfor (const it of $input.all()) {\n  for (const t of (it.json.tweets || [])) {\n    if (!t || !t.id || seen.has(t.id)) continue;\n    seen.set(t.id, t);\n  }\n}\n// The search asks for the like and repost minimums (min_faves, min_retweets) and the window (within_time).\n// twitterapi.io still pads thin results with weaker posts (tested 2026-10-28, mostly on 24h searches; since_time made it worse),\n// and X has no bookmark operator, so every minimum and the date are checked again here.\nconst cutoff = Date.now() - s.window * 86400000;\nconst n = (v) => Number(v || 0);\nconst isX = (u) => /^https?:\\/\\/([^\\/?#:]+\\.)?(x\\.com|twitter\\.com|t\\.co)([\\/?#:]|$)/i.test(String(u || ''));\nconst ranked = [...seen.values()]\n  .filter(t => n(t.likeCount) >= s.x_min_likes && n(t.retweetCount) >= s.x_min_retweets && n(t.bookmarkCount) >= s.x_min_bookmarks)\n  .filter(t => { const d = new Date(t.createdAt); return !isNaN(d) && d.getTime() >= cutoff; })\n  .sort((a, b) => (n(b.likeCount) + n(b.retweetCount) + n(b.bookmarkCount) + n(b.replyCount)) - (n(a.likeCount) + n(a.retweetCount) + n(a.bookmarkCount) + n(a.replyCount)))\n  .slice(0, s.pool_size);  // the cap per angle is applied after the filter\nreturn ranked.map(t => {\n  const user = t.author && t.author.userName ? t.author.userName : '';\n  const text = String(t.text || '').replace(/\\s+/g, ' ').trim();\n  const link = ((t.entities && t.entities.urls) || []).map(u => u.expanded_url).find(u => u && /^https?:/i.test(u) && !isX(u)) || '';\n  const when = t.createdAt ? new Date(t.createdAt) : null;\n  return { json: {\n    source: 'x',\n    source_id: 'x:' + t.id,\n    title: ((user ? '@' + user + ': ' : '') + text).slice(0, 300),\n    url: t.url || ('https://x.com/i/status/' + t.id),\n    linked_url: link,\n    published_at: when && !isNaN(when) ? when.toISOString() : null,\n    text: text.slice(0, 600),\n    engagement: n(t.likeCount) + n(t.retweetCount) + n(t.bookmarkCount) + n(t.replyCount),\n  } };\n});"
       }
     },
     {
@@ -943,7 +932,7 @@
           "mappingMode": "defineBelow",
           "value": {
             "step": "Filter Posts",
-            "body": "={{ { model: 'z-ai-glm-5-3-flash', temperature: 0, max_tokens: 4000, reasoning_effort: 'low', response_format: { type: 'json_schema', json_schema: { name: 'filter_decisions', strict: true, schema: {\"type\": \"object\", \"properties\": {\"decisions\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\"}, \"keep\": {\"type\": \"boolean\"}, \"reason\": {\"type\": \"string\"}, \"summary\": {\"type\": \"string\"} }, \"required\": [\"id\", \"keep\", \"reason\", \"summary\"], \"additionalProperties\": false} } }, \"required\": [\"decisions\"], \"additionalProperties\": false} } }, messages: [{ role: 'system', content: \"<role>You screen social posts for a claim-checking pipeline. For each post you decide whether it carries a checkable claim or a useful opinion about the research angle, or whether it is trash.</role>\\n\\n<drop_when>\\n1. Advertisement, sponsored or affiliate post.\\n2. Engagement bait: giveaways, \\\"follow for more\\\", polls whose point is reach.\\n3. No checkable claim and no useful opinion: jokes, memes, bare reactions, help requests with no claim.\\n4. Off-topic for the angle, including the same word with another meaning.\\n</drop_when>\\n\\n<rules>\\n1. Judge only from the title, the text and where the post links to. Popularity is not evidence.\\n2. When unsure between weak and useful, keep it: a later step checks every claim.\\n3. reason: at most 12 words. summary: one neutral sentence with the post's main claim or view, at most 30 words, no facts that are not in the post.\\n4. Return exactly one decision for every id, in the input order.\\n</rules>\\n\\n<example>\\n<input>\\n<angle>AI coding agents</angle>\\n<posts>\\n{\\\"id\\\":\\\"p1\\\",\\\"title\\\":\\\"Example Corp ships agent v5 with background tasks\\\",\\\"text\\\":\\\"\\\",\\\"links_to\\\":\\\"https://example.com/blog/v5\\\"}\\n{\\\"id\\\":\\\"p2\\\",\\\"title\\\":\\\"Win a free year of Pro! Retweet and follow\\\",\\\"text\\\":\\\"Giveaway ends Friday\\\",\\\"links_to\\\":null}\\n{\\\"id\\\":\\\"p3\\\",\\\"title\\\":\\\"I think agents will replace junior devs within 2 years\\\",\\\"text\\\":\\\"After a month of using them daily...\\\",\\\"links_to\\\":null}\\n</posts>\\n</input>\\n<output>{\\\"decisions\\\":[{\\\"id\\\":\\\"p1\\\",\\\"keep\\\":true,\\\"reason\\\":\\\"Checkable product release claim\\\",\\\"summary\\\":\\\"Example Corp released version 5 of its coding agent with background tasks.\\\"},{\\\"id\\\":\\\"p2\\\",\\\"keep\\\":false,\\\"reason\\\":\\\"Giveaway, engagement bait\\\",\\\"summary\\\":\\\"A giveaway offering a free year of a Pro plan.\\\"},{\\\"id\\\":\\\"p3\\\",\\\"keep\\\":true,\\\"reason\\\":\\\"Useful opinion on the angle\\\",\\\"summary\\\":\\\"The author believes coding agents will replace junior developers within two years.\\\"}]}</output>\\n</example>\" }, { role: 'user', content: '<angle>' + $('Store Settings').first().json.angle + '</angle>\\n<posts>\\n' + $json.posts + '\\n</posts>' }] } }}"
+            "body": "={{ { model: 'z-ai-glm-5-3-flash', temperature: 0, max_tokens: 4000, reasoning_effort: 'low', response_format: { type: 'json_schema', json_schema: { name: 'filter_decisions', strict: true, schema: {\"type\": \"object\", \"properties\": {\"decisions\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"id\": {\"type\": \"string\"}, \"keep\": {\"type\": \"boolean\"}, \"reason\": {\"type\": \"string\"}, \"summary\": {\"type\": \"string\"} }, \"required\": [\"id\", \"keep\", \"reason\", \"summary\"], \"additionalProperties\": false} } }, \"required\": [\"decisions\"], \"additionalProperties\": false} } }, messages: [{ role: 'system', content: \"<role>You screen social posts for a claim-checking pipeline. For each post you decide whether it carries a checkable claim or a useful opinion about the keyword the user follows, or whether it is trash. The angle is only the search route that found the post.</role>\\n\\n<drop_when>\\n1. Advertisement, sponsored or affiliate post.\\n2. Engagement bait: giveaways, \\\"follow for more\\\", polls whose point is reach.\\n3. No checkable claim and no useful opinion: jokes, memes, bare reactions, help requests with no claim.\\n4. Off-topic for the keyword, including the same word with another meaning. Never drop a post only because it does not fit the angle: if it fits the keyword, keep it.\\n</drop_when>\\n\\n<rules>\\n1. Judge only from the title, the text and where the post links to. Popularity is not evidence.\\n2. When unsure between weak and useful, keep it: a later step checks every claim.\\n3. reason: at most 12 words. summary: one neutral sentence with the post's main claim or view, at most 30 words, no facts that are not in the post.\\n4. Return exactly one decision for every id, in the input order.\\n</rules>\\n\\n<example>\\n<input>\\n<keyword>AI coding agents</keyword>\\n<angle>New coding agent releases</angle>\\n<posts>\\n{\\\"id\\\":\\\"p1\\\",\\\"title\\\":\\\"Example Corp ships agent v5 with background tasks\\\",\\\"text\\\":\\\"\\\",\\\"links_to\\\":\\\"https://example.com/blog/v5\\\"}\\n{\\\"id\\\":\\\"p2\\\",\\\"title\\\":\\\"Win a free year of Pro! Retweet and follow\\\",\\\"text\\\":\\\"Giveaway ends Friday\\\",\\\"links_to\\\":null}\\n{\\\"id\\\":\\\"p3\\\",\\\"title\\\":\\\"I think agents will replace junior devs within 2 years\\\",\\\"text\\\":\\\"After a month of using them daily...\\\",\\\"links_to\\\":null}\\n</posts>\\n</input>\\n<output>{\\\"decisions\\\":[{\\\"id\\\":\\\"p1\\\",\\\"keep\\\":true,\\\"reason\\\":\\\"Checkable product release claim\\\",\\\"summary\\\":\\\"Example Corp released version 5 of its coding agent with background tasks.\\\"},{\\\"id\\\":\\\"p2\\\",\\\"keep\\\":false,\\\"reason\\\":\\\"Giveaway, engagement bait\\\",\\\"summary\\\":\\\"A giveaway offering a free year of a Pro plan.\\\"},{\\\"id\\\":\\\"p3\\\",\\\"keep\\\":true,\\\"reason\\\":\\\"Useful opinion on the angle\\\",\\\"summary\\\":\\\"The author believes coding agents will replace junior developers within two years.\\\"}]}</output>\\n</example>\" }, { role: 'user', content: '<keyword>' + ($('Store Settings').first().json.keyword || [].concat($('Store Settings').first().json.keywords || []).join(', ')) + '</keyword>\\n<angle>' + $('Store Settings').first().json.angle + '</angle>\\n<posts>\\n' + $json.posts + '\\n</posts>' }] } }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -969,6 +958,21 @@
           "attemptToConvertTypes": false,
           "convertFieldsToString": false
         }
+      }
+    },
+    {
+      "id": "3e861def-d1a2-468f-ab16-491e8130f9b5",
+      "name": "Build X Searches",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        2520
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: X returns only 20 posts per search. The main query runs twice, ranked by engagement (Top) and by time (Latest),\n// so a newer post with fewer likes is not crowded out by the day's biggest story; the Trends terms run as Top only.\nconst s = $('Store Settings').first().json;\nconst terms = [].concat(s.search_terms || []).filter(Boolean);\nreturn terms.flatMap((term, i) => (i === 0 ? ['Top', 'Latest'] : ['Top']).map(query_type => ({ json: { term, query_type } })));"
       }
     }
   ],
@@ -1020,7 +1024,7 @@
         ],
         [
           {
-            "node": "Split X Terms",
+            "node": "Build X Searches",
             "type": "main",
             "index": 0
           }
@@ -1184,17 +1188,6 @@
         ]
       ]
     },
-    "Split X Terms": {
-      "main": [
-        [
-          {
-            "node": "Search X (twitterapi.io)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Search X (twitterapi.io)": {
       "main": [
         [
@@ -1266,6 +1259,17 @@
         [
           {
             "node": "Apply Filter Decisions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build X Searches": {
+      "main": [
+        [
+          {
+            "node": "Search X (twitterapi.io)",
             "type": "main",
             "index": 0
           }
