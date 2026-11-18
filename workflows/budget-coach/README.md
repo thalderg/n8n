@@ -256,6 +256,26 @@ erDiagram
     }
 ```
 
+### What the tables look like
+
+**Budget Categories**: the categories and their default monthly budget.
+
+<img src="images/notion-budget-categories.png" alt="Notion table: Budget Categories" width="100%">
+
+**Budget Lines**: one line per category per month, plus the Overall cap; Notion sums the spending.
+
+<img src="images/notion-budget-lines.png" alt="Notion table: Budget Lines" width="100%">
+
+**Family Expenses**: every expense, with who paid, the card and how it arrived (text, voice, receipt photo).
+
+<img src="images/notion-family-expenses.png" alt="Notion table: Family Expenses" width="100%">
+
+**Subscriptions**: every subscription, with its next renewal computed by a Notion formula.
+
+<img src="images/notion-subscriptions.png" alt="Notion table: Subscriptions" width="100%">
+
+<sub>Recreated from the demo Notion tables (data read through the Notion API), in Notion's table layout.</sub>
+
 **How the money adds up.** Every expense links to two budget lines: its category's line for that month and the month's **Overall** line (the cap). Notion rollups then sum the spending on each line. A Code node only reads those sums and draws the bars.
 
 **How renewals work without a script.** A subscription stores one known billing date (Renewal Anchor) and its Billing Cycle. A Notion formula rolls that date forward to the next renewal, and another formula sets **Needs Alert** when that date is within 7 days and you have not confirmed it. The renewal check only reads Needs Alert.
@@ -286,7 +306,7 @@ You need: a recent n8n version (the workflows use Data Tables and the MCP Client
 1. **Telegram:** create a bot with [@BotFather](https://core.telegram.org/bots#how-do-i-create-a-bot) and add a *Telegram API* credential in n8n. Send `/start` to the bot; your chat ID is `message.chat.id` in the first execution.
 2. **Notion:** create the 4 tables and the 2 memory pages above under one page. Share that page with a Notion integration. Add a *Notion API* credential and a *Notion MCP* credential in n8n.
 3. **LLM:** add an *OpenAI* credential with the base URL of your provider (Venice: `https://api.venice.ai/api/v1`).
-4. **Postgres:** add a *Postgres* credential. The memory table is created automatically.
+4. **Postgres:** add a *Postgres* credential for the chat memory. You do not need to create any table: the first time an agent gets a message, its *Postgres Chat Memory* node creates the table `n8n_chat_histories` in the database of your credential (that database user needs permission to create tables). The table holds only the chat history. Each agent keeps its own conversation in it (the key is `demo-<chat id>-<agent name>`), so the [Productivity Coach](../productivity-coach/) agents can use the same table. Each agent reads the last 20 exchanges (40 messages); older rows stay in the table until you delete them.
 5. **Data Table:** create an n8n Data Table with the log columns above.
 6. **Import** the JSON files in this order: `service-send-and-log-reply`, the two `agent-` files, `wf2-scheduled-check-ins`, `wf1-telegram-router`, `utility-pin-tags-message`. If n8n gives a workflow a new ID, select the right workflow again in each *Execute Workflow* node.
 7. **Replace the placeholders.** They are in capitals:

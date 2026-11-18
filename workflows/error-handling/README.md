@@ -32,6 +32,9 @@ Built with n8n: 1 error handler, 1 watchdog, 1 demo workflow.
 </table>
 <p align="center"><sub>Alerts recreated from the demo run, in the exact format the workflow sends.</sub></p>
 
+<img src="images/notion-alerts.png" alt="Notion table: n8n Alerts" width="100%">
+<p align="center"><i>Notion: every failure becomes a page in the alerts table.</i><br><sub>Recreated from real alerts of a test server (read through the Notion API); server address and workflow IDs hidden.</sub></p>
+
 ---
 
 ## The big picture

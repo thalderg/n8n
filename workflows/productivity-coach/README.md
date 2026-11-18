@@ -298,6 +298,38 @@ erDiagram
     }
 ```
 
+### What the tables look like
+
+**Projects**: one row per outcome, with its rank, SMART numbers and prediction.
+
+<img src="images/notion-projects.png" alt="Notion table: Projects" width="100%">
+
+**Weekly Plan**: the weekly goals, each with its Done When and confidence.
+
+<img src="images/notion-weekly-plan.png" alt="Notion table: Weekly Plan" width="100%">
+
+**Tasks**: the daily tasks under each goal.
+
+<img src="images/notion-tasks.png" alt="Notion table: Tasks" width="100%">
+
+**Subtasks**: the steps of a ★★ or ★★★ task.
+
+<img src="images/notion-subtasks.png" alt="Notion table: Subtasks" width="100%">
+
+**Weekly Reviews**: one row per project per week, written at the Saturday review.
+
+<img src="images/notion-weekly-reviews.png" alt="Notion table: Weekly Reviews" width="100%">
+
+**Project Ideas**: ideas waiting for a verdict before they become projects.
+
+<img src="images/notion-project-ideas.png" alt="Notion table: Project Ideas" width="100%">
+
+**Scratchpad**: quick notes that are not tasks.
+
+<img src="images/notion-scratchpad.png" alt="Notion table: Scratchpad" width="100%">
+
+<sub>Recreated from the demo Notion tables (data read through the Notion API), in Notion's table layout.</sub>
+
 **The tree in Notion.** A weekly goal is a row of *Weekly Plan* (Type = Goal) due on its Sunday and linked to a project. Its daily tasks link to it, and each task holds its subtasks. One Notion relation per level, so any view (a board by day, a list by project) works without extra fields.
 
 <details>
@@ -333,7 +365,7 @@ You need: a recent n8n version (the workflows use Data Tables and the MCP Client
 2. **Google Calendar:** create a calendar for the assistant and add a *Google Calendar OAuth2* credential. The calendar ID is under Settings → Integrate calendar.
 3. **Notion:** create the 7 tables and the 3 memory pages above under one page and share it with a Notion integration. Add a *Notion API* and a *Notion MCP* credential.
 4. **LLM:** an *OpenAI* credential with your provider's base URL (Venice: `https://api.venice.ai/api/v1`).
-5. **Postgres:** a *Postgres* credential for the chat memory.
+5. **Postgres:** add a *Postgres* credential for the chat memory. You do not need to create any table: the first time an agent gets a message, its *Postgres Chat Memory* node creates the table `n8n_chat_histories` in the database of your credential (that database user needs permission to create tables). The table holds only the chat history. Each agent keeps its own conversation in it (the key is `demo-<chat id>-<agent name>`), so the [Budget Coach](../budget-coach/) agents can use the same table. Each agent reads the last 20 exchanges (40 messages); older rows stay in the table until you delete them.
 6. **Data Table:** an n8n Data Table with the log columns above.
 7. **Import** in this order: the three `service-` files, the two `agent-` files, `wf2-scheduled-check-ins`, `wf1-telegram-router`, `utility-pin-tags-message`. If n8n gives a workflow a new ID, select the right workflow again in each *Execute Workflow* node.
 8. **Replace the placeholders:**
