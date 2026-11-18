@@ -44,7 +44,7 @@
         380
       ],
       "parameters": {
-        "content": "## Google Trends\n\nTriggered by: Route By Source when source = google_trends.\n\nWhat it does, step by step:\n1. Search Google Trends (SerpApi) finds the searches rising around the keyword's short Trends term (from its wide angle) (the planner's trends_term, e.g. \"crypto hack\"; the search phrase if it is missing) over the run's window; Take Rising Queries keeps the top 10.\n2. If there are any, Pick Trend Terms (via Ask Venice, light model), keeps at most 2 that really belong to the keyword.\n3. Build Trends Result returns the terms to \"WF3\" (none is normal for a small topic). Nothing is stored.",
+        "content": "## Google Trends\n\nTriggered by: Route By Source when source = google_trends.\n\nWhat it does, step by step:\n0. Weekly Window? Only a 7-day window (Monday runs, bot searches) asks Google Trends. A daily run goes to Skip Trends On Daily Runs: status \"skipped\", no SerpApi call (2026-11-18: 3 of 16 November runs got any rising search, all weak).\n1. Search Google Trends (SerpApi) finds the searches rising around the keyword's short Trends term (from its wide angle) (the planner's trends_term, e.g. \"crypto hack\"; the search phrase if it is missing) over the run's window; Take Rising Queries keeps the top 10.\n2. If there are any, Pick Trend Terms (via Ask Venice, light model), keeps at most 2 that really belong to the keyword.\n3. Build Trends Result returns the terms to \"WF3\" (none is normal for a small topic). Nothing is stored.",
         "width": 1340,
         "height": 740,
         "color": 6
@@ -331,7 +331,7 @@
       "typeVersion": 4.2,
       "onError": "continueRegularOutput",
       "position": [
-        880,
+        1100,
         700
       ],
       "parameters": {
@@ -377,7 +377,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1100,
+        1320,
         700
       ],
       "parameters": {
@@ -392,7 +392,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        1320,
+        1540,
         700
       ],
       "parameters": {
@@ -426,7 +426,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1760,
+        1980,
         700
       ],
       "parameters": {
@@ -860,7 +860,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
-        1540,
+        1760,
         900
       ],
       "parameters": {
@@ -974,6 +974,57 @@
         "language": "javaScript",
         "jsCode": "// Why Code: X returns only 20 posts per search. The main query runs twice, ranked by engagement (Top) and by time (Latest),\n// so a newer post with fewer likes is not crowded out by the day's biggest story; the Trends terms run as Top only.\nconst s = $('Store Settings').first().json;\nconst terms = [].concat(s.search_terms || []).filter(Boolean);\nreturn terms.flatMap((term, i) => (i === 0 ? ['Top', 'Latest'] : ['Top']).map(query_type => ({ json: { term, query_type } })));"
       }
+    },
+    {
+      "id": "3566074c-69bc-4d3f-8672-fe81b406ae2a",
+      "name": "Weekly Window?",
+      "notesInFlow": true,
+      "notes": "7-day window: ask Google Trends. 1-day window: skip (no SerpApi call).",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        880,
+        700
+      ],
+      "parameters": {
+        "looseTypeValidation": true,
+        "options": {},
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "loose"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "2f1888b8-bcbb-4701-9e7b-970da1156351",
+              "leftValue": "={{ Number($('Store Settings').first().json.window) }}",
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              },
+              "rightValue": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "98593713-8313-4dd8-97c8-191904ebeb49",
+      "name": "Skip Trends On Daily Runs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        920
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: the same result shape as Build Trends Result, without calling SerpApi. In November 2026 a 1-day window gave\n// rising searches in 3 of 16 runs, all weak, while using most of SerpApi's monthly allowance; the word groups cover the wordings.\nconst s = $('Store Settings').first().json;\nreturn [{ json: { run_id: s.run_id, angle: s.angle, source: 'google_trends', status: 'skipped', error: null,\n  kept_count: 0, dropped_count: 0, trend_terms: [], context: s.context || null } }];"
+      }
     }
   ],
   "connections": {
@@ -1003,7 +1054,7 @@
       "main": [
         [
           {
-            "node": "Search Google Trends (SerpApi)",
+            "node": "Weekly Window?",
             "type": "main",
             "index": 0
           }
@@ -1270,6 +1321,24 @@
         [
           {
             "node": "Search X (twitterapi.io)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Weekly Window?": {
+      "main": [
+        [
+          {
+            "node": "Search Google Trends (SerpApi)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Trends On Daily Runs",
             "type": "main",
             "index": 0
           }

@@ -91,7 +91,7 @@ Topics can be broad or narrow and written in plain words: the planner turns them
 
 ```mermaid
 flowchart LR
-    A["Plan 6 angles per topic<br/>(model)"] --> B["Google Trends<br/>once per topic"]
+    A["Plan 6 angles per topic<br/>(model)"] --> B["Google Trends<br/>once per topic, 7-day runs only"]
     B --> C["Reddit · Hacker News · X<br/>per angle"]
     C --> D["Keep posts with<br/>real engagement"]
     D --> E["Filter<br/>(model)"]
@@ -175,6 +175,8 @@ flowchart LR
 ### 5. Google Trends with a short term
 
 Google Trends has no data for long phrases, so each topic's wide angle gets a 1-2 word **Trends term** ("crypto hack", "drug discovery"). The rising searches around it are offered to a small model that keeps at most 2 that really belong to the topic ("crypto hack north korea" stays, "blooket join" goes). Those terms become extra searches for the run.
+
+**Only for 7-day searches.** Google Trends is asked only on Monday's weekly run and on searches from the bot, never on the daily run: over 16 runs in November a 1-day window gave rising searches only 3 times, all weak, while using most of SerpApi's free monthly allowance. The word groups already cover the ways people write about a topic.
 
 ### 6. The label comes from rules, not from the model
 
