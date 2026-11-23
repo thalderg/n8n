@@ -159,9 +159,9 @@ The weekly goals usually come from the Projects Coach after the Saturday review.
 flowchart TD
     A["Saturday review: the Projects Coach proposes next week's goals"] --> B{"You change any goal?"}
     B -- "yes, one by one" --> A
-    B -- "no: yes to all" --> C["Hand-off to the Productivity Agent"]
-    C --> D["It writes the goals and proposes their priority order"]
-    D --> E["Goal 1 of N: all its tasks, each on a day"]
+    B -- "no: yes to all" --> C["The Coach saves the goals: a changed goal is edited in place, only a new goal gets a new row"]
+    C --> D["Hand-off: the Productivity Agent proposes the priority order"]
+    D --> E["Goal 1 of N: keep, change or replace the tasks already under it, then its new tasks, each on a day"]
     E --> F{"Confirm or correct"}
     F --> G["Saved. Then the subtasks of each task"]
     G --> H{"Confirm or correct"}
@@ -171,10 +171,11 @@ flowchart TD
     J --> K["The week card"]
 ```
 
-- **The goals come first.** In 9 cases out of 10 the goals are already agreed with the Coach, so planning starts at the priority order. The agent changes a goal only when you ask.
-- **Reset on your own.** "Reset the week" asks which goals to carry and what to change; "reset and move on" cancels last week's goals and asks for new ones. A goal carried exactly keeps its done tasks; a goal changed even by a word becomes a new goal, and the old one is cancelled.
+- **The goals come first.** In 9 cases out of 10 the Coach has already saved the goals, so planning starts at the priority order. The Productivity Agent never rewrites them; it changes a goal only when you ask, and then edits that same goal.
+- **Reset on your own.** "Reset the week" asks which goals to carry and what to change; "reset and move on" cancels last week's goals and asks for new ones. A carried or changed goal stays the same goal, so its tasks stay under it and you decide for each open one: keep, change or replace.
 - **Days.** Tasks start on the first free day: Monday when you plan at the weekend, today on a weekday before 17:00, else tomorrow.
-- **Leftovers last.** What is left from last week and is not under one of this week's goals comes at the end, once the new week is planned.
+- **Leftovers last.** Open goals of earlier weeks and the tasks under no goal of this week come at the end, numbered, once the new week is planned.
+- **"#productivity yes".** It starts the Coach's planning hand-off only if the Productivity Agent has not answered it yet; otherwise it answers the agent's last question.
 
 ### Its alerts
 
@@ -391,7 +392,7 @@ You need: a recent n8n version (the workflows use Data Tables and the MCP Client
 2. **Google Calendar:** create a calendar for the assistant and add a *Google Calendar OAuth2* credential. The calendar ID is under Settings → Integrate calendar.
 3. **Notion:** create the 7 tables and the 3 memory pages above under one page and share it with a Notion integration. Add a *Notion API* and a *Notion MCP* credential.
 4. **LLM:** an *OpenAI* credential with your provider's base URL (Venice: `https://api.venice.ai/api/v1`).
-5. **Postgres:** add a *Postgres* credential for the chat memory. You do not need to create any table: the first time an agent gets a message, its *Postgres Chat Memory* node creates the table `n8n_chat_histories` in the database of your credential (that database user needs permission to create tables). The table holds only the chat history. Each agent keeps its own conversation in it (the key is `demo-<chat id>-<agent name>`), so the [Budget Coach](../budget-coach/) agents can use the same table. Each agent reads the last 20 exchanges (40 messages); older rows stay in the table until you delete them.
+5. **Postgres:** add a *Postgres* credential for the chat memory. You do not need to create any table: the first time an agent gets a message, its *Postgres Chat Memory* node creates the table `n8n_chat_histories` in the database of your credential (that database user needs permission to create tables). The table holds only the chat history. Each agent keeps its own conversation in it (the key is `demo-<chat id>-<agent name>`), so the [Budget Coach](../budget-coach/) agents can use the same table. The Projects Coach reads the last 20 exchanges (40 messages), the Productivity Agent the last 10 (20 messages); older rows stay in the table until you delete them.
 6. **Data Table:** an n8n Data Table with the log columns above.
 7. **Import** in this order: the three `service-` files, the two `agent-` files, `wf2-scheduled-check-ins`, `wf1-telegram-router`, `utility-pin-tags-message`. If n8n gives a workflow a new ID, select the right workflow again in each *Execute Workflow* node.
 8. **Replace the placeholders:**
