@@ -145,10 +145,36 @@ flowchart TD
 - **Daily tasks.** It proposes 2-5 tasks per goal, from today to Friday. A day you name always wins. At most 1-2 complex tasks a day, hardest first, all inside 09:00-17:00.
 - **Your own list is saved at once.** Tasks you send with their days (and the lines under a task as its subtasks) are written straight away, even when a day goes over the 5-task limit: one line then tells you which day is full and offers a move. A question about one task never holds back the rest.
 - **Subtasks.** Complex tasks get 2-5 subtasks, split across days when needed.
-- **Proposals wait for a yes; orders do not.** "Plan my week" gives a proposal that is written only after "confirm". "Add X", "mark Y done" or "all done except Z" are written at once.
+- **Proposals wait for a yes; orders do not.** A plan is proposed step by step and each step is written only after your yes (see "Planning the week" below). "Add X", "mark Y done" or "all done except Z" are written at once.
 - **Calendar.** Anything with a clock time becomes a Google Calendar event (calls 15 min, meetings 1 h, else 30 min).
 - **Scratchpad.** Quick notes and ideas, linked to the related task, never turned into tasks unless you ask.
 - **Moves are counted.** Every time a task changes date, *Times Moved* goes up. A task moved 3 times gets the question: do it today, move it again, or cancel it?
+- **Duplicates are flagged.** Two open rows with the same title (the same task twice on a day, or the same goal twice) are named with a proposal to merge or cancel; nothing changes without your yes.
+
+### Planning the week: one goal at a time
+
+The weekly goals usually come from the Projects Coach after the Saturday review. The Productivity Agent then plans the week with you as a short conversation: one step per message, you confirm or correct, and every confirmed step is saved to Notion at once. Because each reply is small, each one comes back in seconds, and the agent always continues from Notion, never from a long chat history.
+
+```mermaid
+flowchart TD
+    A["Saturday review: the Projects Coach proposes next week's goals"] --> B{"You change any goal?"}
+    B -- "yes, one by one" --> A
+    B -- "no: yes to all" --> C["Hand-off to the Productivity Agent"]
+    C --> D["It writes the goals and proposes their priority order"]
+    D --> E["Goal 1 of N: all its tasks, each on a day"]
+    E --> F{"Confirm or correct"}
+    F --> G["Saved. Then the subtasks of each task"]
+    G --> H{"Confirm or correct"}
+    H --> I{"More goals?"}
+    I -- "yes" --> E
+    I -- "no" --> J["Leftovers from last week: complete, cancel, remove or keep"]
+    J --> K["The week card"]
+```
+
+- **The goals come first.** In 9 cases out of 10 the goals are already agreed with the Coach, so planning starts at the priority order. The agent changes a goal only when you ask.
+- **Reset on your own.** "Reset the week" asks which goals to carry and what to change; "reset and move on" cancels last week's goals and asks for new ones. A goal carried exactly keeps its done tasks; a goal changed even by a word becomes a new goal, and the old one is cancelled.
+- **Days.** Tasks start on the first free day: Monday when you plan at the weekend, today on a weekday before 17:00, else tomorrow.
+- **Leftovers last.** What is left from last week and is not under one of this week's goals comes at the end, once the new week is planned.
 
 ### Its alerts
 
