@@ -195,3 +195,7 @@ const ownerLookup = {
 | `watchdog.json` | Watchdog: crashed runs and silent workflows, every 4 hours |
 | `demo-payment-failure.json` | Demo — Payment Failure Alert: a failure on purpose, for demos |
 | `images/` | screenshots |
+
+## License
+
+[MIT](LICENSE). You may use, change and share these workflows, also for paid work. They come as is, with no warranty.

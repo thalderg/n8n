@@ -324,3 +324,7 @@ Free-plan limits of the other services: Hunter 50 credits a month, SerpApi 250 s
 | `wf3-handle-replies.json` | WF3 |
 | `wf4-send-weekly-report.json` | WF4 |
 | `sample-sheet/Vacancy Outreach.xlsx` | the Google Sheet with sample data |
+
+## License
+
+[MIT](LICENSE). You may use, change and share these workflows, also for paid work. They come as is, with no warranty.

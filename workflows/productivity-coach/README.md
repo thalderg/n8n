@@ -425,3 +425,7 @@ You need: a recent n8n version (the workflows use Data Tables and the MCP Client
 | `I'm confused: newsletter or clients?` | Focus mode: options in one table, a verdict. |
 | `weekly review` | The review conversation, one question at a time. |
 | `how much did I spend on coffee?` | One line: money belongs to the [Budget Coach](../budget-coach/). |
+
+## License
+
+[MIT](LICENSE). You may use, change and share these workflows, also for paid work. They come as is, with no warranty.

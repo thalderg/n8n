@@ -7,23 +7,25 @@ Automation systems I design and build with [n8n](https://n8n.io). Each system li
 | Folder | What it holds |
 |---|---|
 | `workflows/` | Documented systems, one folder per system (this page). |
-| `workflows2025/` | Automatic monthly backups of my n8n cloud instance. Raw exports, not documented. |
+| `workflows2025/` | Automatic monthly backups of my n8n cloud instance. Raw exports, not documented, no license. |
 
 ## Systems
 
-| System | What it does | Services |
-|---|---|---|
-| [Vacancy Outreach](vacancy-outreach/) | Finds companies with open job vacancies, writes a personal email that offers matching candidates, asks you to approve it in Telegram, sends it, follows up and handles the replies. | Google Sheets, Gmail, Telegram, Venice (LLM), Hunter, SerpApi |
-| [Productivity Coach](productivity-coach/) | A Telegram planner and goal coach: projects → weekly goals → daily tasks → subtasks, a 07:00 plan, a 19:00 wrap-up and a Saturday weekly review led by an AI coach. Every list is a card built by code from Notion. | Telegram, Notion (MCP), Google Calendar, Venice (LLM), Postgres |
-| [Claim Checks](claim-checks/) | A research desk in Telegram: every morning it reads what people post about your topics on Reddit, Hacker News and X, checks each claim against official sources and reliable news, labels it (Corroborated, Single source, Disputed, Unverified, Opinion), sends a PDF briefing, and keeps every story in a searchable archive you can dig into and ask questions about. | Airtable, Postgres, Telegram, Venice (Kimi K2.6), Reddit (ScrapeCreators), Hacker News, X (twitterapi.io), Google Trends (SerpApi), Serper, Bright Data, Google Drive, Gmail |
-| [Error Handling](error-handling/) | One error handler for every workflow: rates each failure P1 to P4, alerts in Telegram, Slack or email by priority, logs it to Google Sheets and Notion, and messages the workflow owner. A watchdog catches crashed and silent workflows. | Telegram, Slack, Gmail, Google Sheets, Notion, n8n API |
-| [Budget Coach](budget-coach/) | A Telegram family budget and subscription tracker: logs expenses from text, voice or receipt photos, warns at 80% and 100% of a budget, totals subscriptions and alerts 7 days before each renewal. | Telegram, Notion (MCP), Venice (LLM), Postgres, NBP and ECB exchange rates |
+| System | What it does | Services | License |
+|---|---|---|---|
+| [Vacancy Outreach](vacancy-outreach/) | Finds companies with open job vacancies, writes a personal email that offers matching candidates, asks you to approve it in Telegram, sends it, follows up and handles the replies. | Google Sheets, Gmail, Telegram, Venice (LLM), Hunter, SerpApi | MIT |
+| [Productivity Coach](productivity-coach/) | A Telegram planner and goal coach: projects → weekly goals → daily tasks → subtasks, a 07:00 plan, a 19:00 wrap-up and a Saturday weekly review led by an AI coach. Every list is a card built by code from Notion. | Telegram, Notion (MCP), Google Calendar, Venice (LLM), Postgres | MIT |
+| [Claim Checks](claim-checks/) | A research desk in Telegram: every morning it reads what people post about your topics on Reddit, Hacker News and X, checks each claim against official sources and reliable news, labels it (Corroborated, Single source, Disputed, Unverified, Opinion), sends a PDF briefing, and keeps every story in a searchable archive you can dig into and ask questions about. | Airtable, Postgres, Telegram, Venice (Kimi K2.6), Reddit (ScrapeCreators), Hacker News, X (twitterapi.io), Google Trends (SerpApi), Serper, Bright Data, Google Drive, Gmail | MIT |
+| [Error Handling](error-handling/) | One error handler for every workflow: rates each failure P1 to P4, alerts in Telegram, Slack or email by priority, logs it to Google Sheets and Notion, and messages the workflow owner. A watchdog catches crashed and silent workflows. | Telegram, Slack, Gmail, Google Sheets, Notion, n8n API | MIT |
+| [Budget Coach](budget-coach/) | A Telegram family budget and subscription tracker: logs expenses from text, voice or receipt photos, warns at 80% and 100% of a budget, totals subscriptions and alerts 7 days before each renewal. | Telegram, Notion (MCP), Venice (LLM), Postgres, NBP and ECB exchange rates | MIT |
+| [GHL Store Automation](ghl-store-automation/) | Connects a Shopify store to GoHighLevel: every lead and customer moves through the pipeline (New Lead → Contacted → Cart Created → Purchased → Repeat Customer), with an instant lead reply, one abandoned-cart reminder and a 60-day win-back campaign. A demo simulator proves every case with a PASS/FAIL table. | Shopify, GoHighLevel, Gmail, Mailpit, n8n Data Tables | MIT |
 
 ## What every system folder contains
 
 ```
 <system-name>/
 ├── README.md          what it does, flowcharts, setup steps
+├── LICENSE            the license of this system (MIT unless the README says otherwise)
 ├── wf1-....json       the n8n workflows, ready to import
 ├── wf2-....json
 ├── sample-sheet/      sample data (a Google Sheet to import), when the system uses one
@@ -43,3 +45,7 @@ Automation systems I design and build with [n8n](https://n8n.io). Each system li
 - **Names:** `System | WF1 — Action`. Every node name says what the node does, for example `Send Follow-up In Thread`.
 - **No secrets in the files:** credentials, API keys and personal IDs are removed before upload.
 - **Human in the loop:** systems that write to people (email, chat) ask for approval by default.
+
+## License
+
+Each system folder has its own license file. The systems in `workflows/` are under the [MIT License](LICENSE) unless their README says otherwise: you may use, change and share them, also for paid work, and they come as is, with no warranty. `workflows2025/` has no license.

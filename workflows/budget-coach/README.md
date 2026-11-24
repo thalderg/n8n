@@ -335,3 +335,7 @@ You need: a recent n8n version (the workflows use Data Tables and the MCP Client
 | `how much do I pay per month for all my subscriptions?` | The exact monthly total in EUR, one line per subscription, and what is not included. |
 | `how do I cancel the gym?` | The cancellation steps found on the web, the renewal date and the saved cancel link. |
 | `add a task for tomorrow` | One line: tasks belong to the [Productivity Coach](../productivity-coach/). |
+
+## License
+
+[MIT](LICENSE). You may use, change and share these workflows, also for paid work. They come as is, with no warranty.

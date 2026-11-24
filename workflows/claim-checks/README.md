@@ -487,3 +487,7 @@ Import the ten JSON files. Every node that calls another workflow is named `… 
 | `wf-clean-old-records.json` | Clean Old Records: daily Airtable cleanup (schedule or by hand) |
 | `database/claim-checks-database.sql` | the Postgres tables of the story archive and the read-only login |
 | `images/` | screenshots |
+
+## License
+
+[MIT](LICENSE). You may use, change and share these workflows, also for paid work. They come as is, with no warranty.
