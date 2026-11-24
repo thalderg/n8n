@@ -1,0 +1,1003 @@
+{
+  "id": "ghlAdaptLive0001",
+  "name": "[GHL Store Automation] | GHL Adapter (Live)",
+  "nodes": [
+    {
+      "id": "l-settings",
+      "name": "GHL Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        272,
+        368
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "s0",
+              "name": "location_id",
+              "value": "={{ $json.adapter_config.location_id }}",
+              "type": "string"
+            },
+            {
+              "id": "s1",
+              "name": "pipeline_id",
+              "value": "={{ $json.adapter_config.pipeline_id }}",
+              "type": "string"
+            },
+            {
+              "id": "s2",
+              "name": "stage_id_new_lead",
+              "value": "={{ $json.adapter_config.stage_id_new_lead }}",
+              "type": "string"
+            },
+            {
+              "id": "s3",
+              "name": "stage_id_contacted",
+              "value": "={{ $json.adapter_config.stage_id_contacted }}",
+              "type": "string"
+            },
+            {
+              "id": "s4",
+              "name": "stage_id_cart_created",
+              "value": "={{ $json.adapter_config.stage_id_cart_created }}",
+              "type": "string"
+            },
+            {
+              "id": "s5",
+              "name": "stage_id_purchased",
+              "value": "={{ $json.adapter_config.stage_id_purchased }}",
+              "type": "string"
+            },
+            {
+              "id": "s6",
+              "name": "stage_id_repeat_customer",
+              "value": "={{ $json.adapter_config.stage_id_repeat_customer }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "l-switch",
+      "name": "Route By Adapter Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        480,
+        368
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c1",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "upsert_stage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "upsert_stage"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c2",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "send_sms",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "send_sms"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "l-failcontact",
+      "name": "GHL Contact Update Failed P2",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        752,
+        672
+      ],
+      "parameters": {
+        "errorMessage": "GoHighLevel contact create or update failed"
+      }
+    },
+    {
+      "id": "l-ifadd",
+      "name": "Any Tags To Add?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        992,
+        464
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "i1",
+              "leftValue": "={{ ($('GHL Settings').first().json.add_tags || []).length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "l-addtags",
+      "name": "Add Contact Tags (GHL API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        384
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ $('Create Or Update GHL Contact').first().json.id }}/tags",
+        "authentication": "predefinedCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: $('GHL Settings').first().json.add_tags }) }}",
+        "options": {},
+        "nodeCredentialType": "highLevelOAuth2Api"
+      },
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "id": "l-ifremove",
+      "name": "Any Tags To Remove?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1424,
+        464
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "i2",
+              "leftValue": "={{ ($('GHL Settings').first().json.remove_tags || []).length > 0 }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "l-removetags",
+      "name": "Remove Contact Tags (GHL API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1648,
+        384
+      ],
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ $('Create Or Update GHL Contact').first().json.id }}/tags",
+        "authentication": "predefinedCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tags: $('GHL Settings').first().json.remove_tags }) }}",
+        "options": {},
+        "nodeCredentialType": "highLevelOAuth2Api"
+      },
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "id": "l-findopp",
+      "name": "Find Opportunity For Contact (GHL API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1872,
+        464
+      ],
+      "parameters": {
+        "url": "https://services.leadconnectorhq.com/opportunities/search",
+        "authentication": "predefinedCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "location_id",
+              "value": "={{ $('GHL Settings').first().json.location_id }}"
+            },
+            {
+              "name": "pipeline_id",
+              "value": "={{ $('GHL Settings').first().json.pipeline_id }}"
+            },
+            {
+              "name": "contact_id",
+              "value": "={{ $('Create Or Update GHL Contact').first().json.id }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "options": {},
+        "nodeCredentialType": "highLevelOAuth2Api"
+      },
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "id": "l-decide",
+      "name": "Decide Opportunity Action",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        464
+      ],
+      "parameters": {
+        "jsCode": "const input = $('GHL Settings').first().json;\nconst contact = $('Create Or Update GHL Contact').first().json || {};\nconst RANK = { new_lead: 1, contacted: 2, cart_created: 3, purchased: 4, repeat_customer: 5 };\nconst stageIds = {\n  new_lead: input.stage_id_new_lead,\n  contacted: input.stage_id_contacted,\n  cart_created: input.stage_id_cart_created,\n  purchased: input.stage_id_purchased,\n  repeat_customer: input.stage_id_repeat_customer,\n};\nconst keyById = Object.fromEntries(Object.entries(stageIds).map(([k, v]) => [v, k]));\nconst opps = ($input.first().json.opportunities || []).filter(o => !o.pipelineId || o.pipelineId === input.pipeline_id);\nconst opp = opps[0];\nconst target = input.target_stage || 'none';\nconst targetRank = RANK[target] || 0;\nconst stageBefore = opp ? (keyById[opp.pipelineStageId] || 'unknown') : 'none';\nconst currentRank = RANK[stageBefore] || 0;\nlet action = 'skip';\nif (targetRank > 0) {\n  if (!opp) action = 'create';\n  else if (targetRank > currentRank) action = 'update';\n}\nconst stageApplied = action === 'skip' ? stageBefore : target;\nconst tags = new Set(contact.tags || []);\n(input.add_tags || []).forEach(t => tags.add(t));\n(input.remove_tags || []).forEach(t => tags.delete(t));\nreturn [{ json: {\n  action,\n  contact_id: contact.id,\n  opportunity_id: opp ? opp.id : '',\n  stage_before: stageBefore,\n  stage_applied: stageApplied,\n  target_stage_id: stageIds[target] || '',\n  tags_final: [...tags],\n  order_value: input.order_value ?? null,\n  customer_name: [input.first_name, input.last_name].filter(Boolean).join(' ') || input.email,\n} }];"
+      }
+    },
+    {
+      "id": "l-routeopp",
+      "name": "Route Opportunity Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        2304,
+        464
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "o1",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "create",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "create"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "o2",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "update",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "update"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "o3",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "skip",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "skip"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "l-failstage",
+      "name": "GHL Stage Move Failed P2",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        2768,
+        672
+      ],
+      "parameters": {
+        "errorMessage": "GoHighLevel opportunity create or stage update failed"
+      }
+    },
+    {
+      "id": "l-outup",
+      "name": "Build Upsert Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2992,
+        464
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "ok",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "a2",
+              "name": "contact_id",
+              "value": "={{ $('Decide Opportunity Action').first().json.contact_id }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "opportunity_id",
+              "value": "={{ $('Decide Opportunity Action').first().json.opportunity_id || $json.id || ($json.opportunity && $json.opportunity.id) || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "stage_before",
+              "value": "={{ $('Decide Opportunity Action').first().json.stage_before }}",
+              "type": "string"
+            },
+            {
+              "id": "a5",
+              "name": "stage_applied",
+              "value": "={{ $('Decide Opportunity Action').first().json.stage_applied }}",
+              "type": "string"
+            },
+            {
+              "id": "a6",
+              "name": "tags_final",
+              "value": "={{ $('Decide Opportunity Action').first().json.tags_final }}",
+              "type": "array"
+            },
+            {
+              "id": "a7",
+              "name": "sms_sent",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "a8",
+              "name": "error",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "l-outsms",
+      "name": "Build SMS Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1264,
+        1152
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "ok",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "b2",
+              "name": "sms_sent",
+              "value": "={{ !$json.error }}",
+              "type": "boolean"
+            },
+            {
+              "id": "b3",
+              "name": "email",
+              "value": "={{ $('GHL Settings').first().json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "b4",
+              "name": "error",
+              "value": "={{ $json.error ? String($json.error.message || $json.error) : '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "l-trigger",
+      "name": "Receive Adapter Call",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        48,
+        368
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "l-t",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -336
+      ],
+      "parameters": {
+        "content": "# GHL Adapter (Live)\n\nThe real GoHighLevel adapter. Same input and output contract as the mock adapter. Talks to GoHighLevel with the native HighLevel nodes (contact, opportunity) and, where the node has no operation (tags, opportunity search, notes), with HTTP requests that use the same 'HighLevel account' OAuth2 credential.\n\n**Called by:** the four handler workflows (chosen by 'ghl_adapter_id' in the main workflow's Store Settings). **Standalone-capable:** no.\n\n**Sections:** 1. Route the call. 2. Upsert contact, tags and stage. 3. Record the SMS as a contact note.\n\n**Before use:** set the GoHighLevel location, pipeline and stage IDs in 'adapter_config' in the main workflow's Store Settings. On a new n8n server, reconnect the 'HighLevel account' credential (GoHighLevel refresh tokens are single-use).",
+        "height": 320,
+        "width": 1700,
+        "color": 7
+      }
+    },
+    {
+      "id": "l-1",
+      "name": "Section 1 Note - Route The Call",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        32
+      ],
+      "parameters": {
+        "content": "## Route the call\n\nTriggered by: a handler workflow calling this one (Execute Workflow).\n\nWhat it does, step by step:\n1. Receives the adapter input (action, email, phone, names, target stage, tags, SMS text, adapter_config).\n2. Reads the GoHighLevel IDs from adapter_config.\n3. Routes to 'upsert_stage' or 'send_sms' by the action.",
+        "height": 520,
+        "width": 640,
+        "color": 4
+      }
+    },
+    {
+      "id": "l-2",
+      "name": "Section 2 Note - Upsert Contact Tags And Stage",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        688,
+        32
+      ],
+      "parameters": {
+        "content": "## Upsert contact, tags and stage\n\nTriggered by: runs inline after 'Route the call' when action = upsert_stage.\n\nWhat it does, step by step:\n1. Creates or updates the contact by email (GoHighLevel upsert).\n2. Adds tags, removes tags (only when there are any).\n3. Looks for the contact's opportunity in the pipeline.\n4. Decides: create it, move it forward, or leave it (never moves backwards).\n5. Returns ok, contact_id, opportunity_id, stage_before, stage_applied, tags_final.",
+        "height": 780,
+        "width": 2560,
+        "color": 3
+      }
+    },
+    {
+      "id": "l-3",
+      "name": "Section 3 Note - Send SMS",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        688,
+        864
+      ],
+      "parameters": {
+        "content": "## Record the SMS as a contact note\n\nTriggered by: runs inline after 'Route the call' when action = send_sms.\n\nWhat it does, step by step:\n1. Finds (or creates) the contact by email.\n2. Adds the SMS text to the contact as a note 'SMS (demo, not sent): ...'. The demo sandbox has no phone number and SMS costs money; for a real send, replace this node with a POST to /conversations/messages (type SMS) using the same credential.\n3. Returns ok, sms_sent (true when the note was saved), error. A failure does not stop the caller (soft fail).",
+        "height": 480,
+        "width": 1200,
+        "color": 5
+      }
+    },
+    {
+      "id": "hlContact1",
+      "name": "Create Or Update GHL Contact",
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "onError": "continueErrorOutput",
+      "position": [
+        752,
+        464
+      ],
+      "parameters": {
+        "resource": "contact",
+        "operation": "create",
+        "email": "={{ $json.email }}",
+        "phone": "={{ $json.phone || '' }}",
+        "additionalFields": {
+          "firstName": "={{ $json.first_name || '' }}",
+          "lastName": "={{ $json.last_name || '' }}"
+        }
+      },
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "id": "hlOppCreate1",
+      "name": "Create GHL Opportunity",
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "onError": "continueErrorOutput",
+      "position": [
+        2544,
+        368
+      ],
+      "parameters": {
+        "resource": "opportunity",
+        "operation": "create",
+        "pipelineId": "={{ $('GHL Settings').first().json.pipeline_id }}",
+        "contactId": "={{ $json.contact_id }}",
+        "name": "={{ $json.customer_name + ' - Store Customer' }}",
+        "status": "open",
+        "additionalFields": {
+          "stageId": "={{ $json.target_stage_id }}",
+          "monetaryValue": "={{ $json.order_value ?? 0 }}"
+        }
+      },
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "id": "hlOppUpdate1",
+      "name": "Update GHL Opportunity Stage",
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "onError": "continueErrorOutput",
+      "position": [
+        2544,
+        528
+      ],
+      "parameters": {
+        "resource": "opportunity",
+        "operation": "update",
+        "opportunityId": "={{ $json.opportunity_id }}",
+        "updateFields": {
+          "stageId": "={{ $json.target_stage_id }}",
+          "monetaryValue": "={{ $json.order_value ?? 0 }}"
+        }
+      },
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "id": "hlContactSms1",
+      "name": "Find GHL Contact For SMS",
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "position": [
+        752,
+        1152
+      ],
+      "parameters": {
+        "resource": "contact",
+        "operation": "create",
+        "email": "={{ $json.email }}",
+        "phone": "={{ $json.phone || '' }}",
+        "additionalFields": {}
+      },
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "id": "hlSmsNote1",
+      "name": "Add SMS Note To Contact (GHL API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1008,
+        1152
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ $json.id }}/notes",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "highLevelOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ body: 'SMS (demo, not sent): ' + $('GHL Settings').first().json.sms_text }) }}",
+        "options": {}
+      },
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "HighLevel account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "GHL Settings": {
+      "main": [
+        [
+          {
+            "node": "Route By Adapter Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route By Adapter Action": {
+      "main": [
+        [
+          {
+            "node": "Create Or Update GHL Contact",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find GHL Contact For SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Tags To Add?": {
+      "main": [
+        [
+          {
+            "node": "Add Contact Tags (GHL API)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Any Tags To Remove?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Contact Tags (GHL API)": {
+      "main": [
+        [
+          {
+            "node": "Any Tags To Remove?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Any Tags To Remove?": {
+      "main": [
+        [
+          {
+            "node": "Remove Contact Tags (GHL API)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Find Opportunity For Contact (GHL API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Contact Tags (GHL API)": {
+      "main": [
+        [
+          {
+            "node": "Find Opportunity For Contact (GHL API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Opportunity For Contact (GHL API)": {
+      "main": [
+        [
+          {
+            "node": "Decide Opportunity Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decide Opportunity Action": {
+      "main": [
+        [
+          {
+            "node": "Route Opportunity Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Opportunity Action": {
+      "main": [
+        [
+          {
+            "node": "Create GHL Opportunity",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update GHL Opportunity Stage",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Upsert Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Adapter Call": {
+      "main": [
+        [
+          {
+            "node": "GHL Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Or Update GHL Contact": {
+      "main": [
+        [
+          {
+            "node": "Any Tags To Add?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GHL Contact Update Failed P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create GHL Opportunity": {
+      "main": [
+        [
+          {
+            "node": "Build Upsert Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GHL Stage Move Failed P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update GHL Opportunity Stage": {
+      "main": [
+        [
+          {
+            "node": "Build Upsert Output",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "GHL Stage Move Failed P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find GHL Contact For SMS": {
+      "main": [
+        [
+          {
+            "node": "Add SMS Note To Contact (GHL API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add SMS Note To Contact (GHL API)": {
+      "main": [
+        [
+          {
+            "node": "Build SMS Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "ghlHandlerLead01,ghlHandlerCart01,ghlHandlerOrdr01,ghlHandlerWinbk1",
+    "binaryMode": "separate"
+  },
+  "active": false
+}

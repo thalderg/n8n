@@ -1,0 +1,300 @@
+{
+  "id": "ghlEmailSender01",
+  "name": "[GHL Store Automation] | Email Sender",
+  "nodes": [
+    {
+      "id": "e-ifgmail",
+      "name": "Gmail Mode Selected?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        272,
+        560
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "g1",
+              "leftValue": "={{ ['gmail', 'both'].includes($json.email_mode) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "e-gmail",
+      "name": "Send Email Via Gmail",
+      "webhookId": "de03af21-8f49-4fba-8cb1-432f0cc8dffb",
+      "disabled": false,
+      "notes": "Sends with the 'Gmail account' credential when email_mode is gmail or both.",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        512,
+        464
+      ],
+      "parameters": {
+        "sendTo": "={{ $('Receive Email Request').first().json.to }}",
+        "subject": "={{ $('Receive Email Request').first().json.subject }}",
+        "emailType": "text",
+        "message": "={{ $('Receive Email Request').first().json.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "id": "e-ifmailpit",
+      "name": "Mailpit Mode Selected?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        800,
+        560
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "m1",
+              "leftValue": "={{ ['mailpit', 'both'].includes($('Receive Email Request').first().json.email_mode) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "e-smtp",
+      "name": "Send Email Via Mailpit",
+      "webhookId": "cc675168-146e-4ab3-9205-63edfbfc23d3",
+      "disabled": false,
+      "notes": "Attach the SMTP credential for Mailpit (host mailpit, port 1025, no auth).",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "onError": "continueRegularOutput",
+      "position": [
+        1040,
+        464
+      ],
+      "parameters": {
+        "fromEmail": "={{ $('Receive Email Request').first().json.from_email || 'store@demo.test' }}",
+        "toEmail": "={{ $('Receive Email Request').first().json.to }}",
+        "subject": "={{ $('Receive Email Request').first().json.subject }}",
+        "emailFormat": "text",
+        "text": "={{ $('Receive Email Request').first().json.body }}",
+        "options": {}
+      },
+      "credentials": {
+        "smtp": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Mailpit SMTP"
+        }
+      }
+    },
+    {
+      "id": "e-summary",
+      "name": "Summarise Email Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1488,
+        560
+      ],
+      "parameters": {
+        "jsCode": "const req = $('Receive Email Request').first().json;\nconst sentVia = [];\nconst errors = [];\nif ($('Send Email Via Gmail').isExecuted) {\n  const g = $('Send Email Via Gmail').first().json;\n  if (g.error) errors.push('gmail: ' + String(g.error.message || g.error)); else sentVia.push('gmail');\n}\nif ($('Send Email Via Mailpit').isExecuted) {\n  const m = $('Send Email Via Mailpit').first().json;\n  if (m.error) errors.push('mailpit: ' + String(m.error.message || m.error)); else sentVia.push('mailpit');\n}\nreturn [{ json: { ok: errors.length === 0 && sentVia.length > 0, sent_via: sentVia, error: errors.join(' | '), to: req.to } }];"
+      }
+    },
+    {
+      "id": "e-trigger",
+      "name": "Receive Email Request",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        48,
+        560
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "e-t",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -304
+      ],
+      "parameters": {
+        "content": "# Email Sender\n\nOne place that sends every email for the store automation. The caller passes the recipient, subject, body and an email mode; this workflow sends through Gmail (real delivery), through Mailpit (local test inbox), or both.\n\n**Called by:** the four handler workflows. **Standalone-capable:** no.\n\n**Email modes:** gmail = real email only, mailpit = local test inbox only, both = real email plus a copy in Mailpit.\n\n**Sections:** 1. Send through Gmail. 2. Send through Mailpit. 3. Report the result.\n\n**Input:** to, subject, body, email_mode, from_email. **Output:** ok, sent_via, error, to.\n\n**Credentials:** 'Gmail account' (Gmail OAuth2) on 'Send Email Via Gmail', 'Mailpit SMTP' (host mailpit, port 1025, no authentication) on 'Send Email Via Mailpit'. On a new n8n server, reconnect 'Gmail account' there.",
+        "height": 280,
+        "width": 1720,
+        "color": 7
+      }
+    },
+    {
+      "id": "e-1",
+      "name": "Section 1 Note - Send Through Gmail",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        32
+      ],
+      "parameters": {
+        "content": "## Send through Gmail\n\nTriggered by: a handler workflow calling this one (Execute Workflow).\n\nWhat it does, step by step:\n1. Receives the email request.\n2. If the mode is gmail or both, sends the email through Gmail. A failure here does not stop the workflow (soft fail); the error is reported in the result.",
+        "height": 680,
+        "width": 720,
+        "color": 4
+      }
+    },
+    {
+      "id": "e-2",
+      "name": "Section 2 Note - Send Through Mailpit",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        752,
+        32
+      ],
+      "parameters": {
+        "content": "## Send through Mailpit\n\nTriggered by: runs inline after 'Send through Gmail'.\n\nWhat it does, step by step:\n1. If the mode is mailpit or both, sends the same email by SMTP to the local Mailpit inbox (localhost:8025).\n2. A failure here is also a soft fail and is reported in the result.",
+        "height": 680,
+        "width": 620,
+        "color": 3
+      }
+    },
+    {
+      "id": "e-3",
+      "name": "Section 3 Note - Report The Result",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1392,
+        32
+      ],
+      "parameters": {
+        "content": "## Report the result\n\nTriggered by: runs inline after 'Send through Mailpit'.\n\nWhat it does, step by step:\n1. Collects which senders actually ran and whether each succeeded.\n2. Returns ok, sent_via, error and the recipient to the caller.",
+        "height": 680,
+        "width": 500,
+        "color": 5
+      }
+    }
+  ],
+  "connections": {
+    "Gmail Mode Selected?": {
+      "main": [
+        [
+          {
+            "node": "Send Email Via Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mailpit Mode Selected?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email Via Gmail": {
+      "main": [
+        [
+          {
+            "node": "Mailpit Mode Selected?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mailpit Mode Selected?": {
+      "main": [
+        [
+          {
+            "node": "Send Email Via Mailpit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Summarise Email Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email Via Mailpit": {
+      "main": [
+        [
+          {
+            "node": "Summarise Email Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Email Request": {
+      "main": [
+        [
+          {
+            "node": "Gmail Mode Selected?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "ghlHandlerLead01,ghlHandlerCart01,ghlHandlerOrdr01,ghlHandlerWinbk1",
+    "binaryMode": "separate"
+  },
+  "active": false
+}

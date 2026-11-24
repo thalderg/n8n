@@ -1,0 +1,490 @@
+{
+  "id": "ghlAdaptMock0001",
+  "name": "[GHL Store Automation] | GHL Adapter (Mock)",
+  "nodes": [
+    {
+      "id": "n-switch",
+      "name": "Route By Adapter Action",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        304,
+        404
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c1",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "upsert_stage",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "upsert_stage"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "c2",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "send_sms",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "send_sms"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n-find",
+      "name": "Find Mock Contact By Email",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "alwaysOutputData": true,
+      "position": [
+        624,
+        384
+      ],
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_MOCK_CONTACTS_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "keyValue": "={{ $json.email }}"
+            }
+          ]
+        },
+        "limit": 1
+      }
+    },
+    {
+      "id": "n-merge",
+      "name": "Merge Tags And Decide Stage",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        384
+      ],
+      "parameters": {
+        "jsCode": "const input = $('Receive Adapter Call').first().json;\nconst found = $input.first().json || {};\nconst RANK = { new_lead: 1, contacted: 2, cart_created: 3, purchased: 4, repeat_customer: 5 };\nconst existing = Boolean(found.email);\nconst stageBefore = existing && found.stage ? found.stage : 'none';\nconst currentRank = RANK[stageBefore] || 0;\nconst target = input.target_stage || 'none';\nconst targetRank = RANK[target] || 0;\nconst stageApplied = targetRank > currentRank ? target : stageBefore;\nconst tags = new Set((found.tags || '').split(',').map(t => t.trim()).filter(Boolean));\nfor (const t of (input.add_tags || [])) tags.add(t);\nfor (const t of (input.remove_tags || [])) tags.delete(t);\nconst contactId = found.contact_id || ('mock-' + Buffer.from(String(input.email)).toString('hex'));\nreturn [{ json: { email: input.email, contact_id: contactId, stage_before: stageBefore, stage_applied: stageApplied, target_stage: target, tags_final: [...tags], tags_csv: [...tags].join(','), run_id: input.run_id || '' } }];"
+      }
+    },
+    {
+      "id": "n-save",
+      "name": "Save Mock Contact",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1152,
+        384
+      ],
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_MOCK_CONTACTS_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "keyValue": "={{ $json.email }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $json.email }}",
+            "contact_id": "={{ $json.contact_id }}",
+            "stage": "={{ $json.stage_applied }}",
+            "tags": "={{ $json.tags_csv }}"
+          },
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": []
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n-logstage",
+      "name": "Log Mock Stage Change",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1408,
+        384
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_MOCK_LOG_DATA_TABLE_ID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ts": "={{ $now.toISO() }}",
+            "run_id": "={{ $('Merge Tags And Decide Stage').first().json.run_id }}",
+            "kind": "stage",
+            "email": "={{ $('Merge Tags And Decide Stage').first().json.email }}",
+            "detail": "={{ JSON.stringify({ stage_before: $('Merge Tags And Decide Stage').first().json.stage_before, stage_applied: $('Merge Tags And Decide Stage').first().json.stage_applied, target_stage: $('Merge Tags And Decide Stage').first().json.target_stage, tags: $('Merge Tags And Decide Stage').first().json.tags_final }) }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n-outup",
+      "name": "Build Upsert Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1664,
+        384
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "ok",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "a2",
+              "name": "contact_id",
+              "value": "={{ $('Merge Tags And Decide Stage').first().json.contact_id }}",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "opportunity_id",
+              "value": "={{ 'opp-' + $('Merge Tags And Decide Stage').first().json.contact_id }}",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "stage_before",
+              "value": "={{ $('Merge Tags And Decide Stage').first().json.stage_before }}",
+              "type": "string"
+            },
+            {
+              "id": "a5",
+              "name": "stage_applied",
+              "value": "={{ $('Merge Tags And Decide Stage').first().json.stage_applied }}",
+              "type": "string"
+            },
+            {
+              "id": "a6",
+              "name": "tags_final",
+              "value": "={{ $('Merge Tags And Decide Stage').first().json.tags_final }}",
+              "type": "array"
+            },
+            {
+              "id": "a7",
+              "name": "sms_sent",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "a8",
+              "name": "error",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n-logsms",
+      "name": "Log Mock SMS",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        624,
+        924
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_MOCK_LOG_DATA_TABLE_ID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ts": "={{ $now.toISO() }}",
+            "run_id": "={{ $json.run_id || '' }}",
+            "kind": "sms",
+            "email": "={{ $json.email }}",
+            "detail": "={{ $json.sms_text }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "n-outsms",
+      "name": "Build SMS Output",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        924
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1",
+              "name": "ok",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "b2",
+              "name": "sms_sent",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "b3",
+              "name": "email",
+              "value": "={{ $('Receive Adapter Call').first().json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "b4",
+              "name": "error",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "m-trigger",
+      "name": "Receive Adapter Call",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        48,
+        404
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "m-t",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -304
+      ],
+      "parameters": {
+        "content": "# GHL Adapter (Mock)\n\nStand-in for the live GoHighLevel adapter, used by the demo. Same input and output contract as the live adapter, but it reads and writes n8n data tables instead of calling GoHighLevel, so the whole flow can be tested with no accounts.\n\n**Called by:** the four handler workflows (chosen by 'ghl_adapter_id' in the main workflow's Store Settings). **Standalone-capable:** no.\n\n**Sections:** 1. Route the call. 2. Upsert contact and stage. 3. Send SMS.\n\nData tables used: ghl_mock_contacts, ghl_mock_log.",
+        "width": 1500,
+        "height": 300,
+        "color": 7
+      }
+    },
+    {
+      "id": "m-1",
+      "name": "Section 1 Note - Route The Call",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        64
+      ],
+      "parameters": {
+        "content": "## Route the call\n\nTriggered by: a handler workflow calling this one (Execute Workflow).\n\nWhat it does, step by step:\n1. Receives the adapter input (action, email, phone, names, target stage, tags, SMS text).\n2. Routes to 'upsert_stage' or 'send_sms' according to the action.",
+        "width": 560,
+        "height": 540,
+        "color": 4
+      }
+    },
+    {
+      "id": "m-2",
+      "name": "Section 2 Note - Upsert Contact And Stage",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        600,
+        64
+      ],
+      "parameters": {
+        "content": "## Upsert contact and stage (mock)\n\nTriggered by: runs inline after 'Route the call' when action = upsert_stage.\n\nWhat it does, step by step:\n1. Looks the contact up by email in ghl_mock_contacts.\n2. Merges tags (adds, removes) and decides the stage: only moves forward, never backwards.\n3. Saves the contact, logs the change in ghl_mock_log.\n4. Returns ok, contact_id, opportunity_id, stage_before, stage_applied, tags_final.",
+        "width": 1500,
+        "height": 520,
+        "color": 3
+      }
+    },
+    {
+      "id": "m-3",
+      "name": "Section 3 Note - Send SMS",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        600,
+        644
+      ],
+      "parameters": {
+        "content": "## Send SMS (mock)\n\nTriggered by: runs inline after 'Route the call' when action = send_sms.\n\nWhat it does, step by step:\n1. Records the SMS text in ghl_mock_log (kind = sms) instead of sending it.\n2. Returns ok and sms_sent = true.",
+        "width": 1000,
+        "height": 480,
+        "color": 5
+      }
+    }
+  ],
+  "connections": {
+    "Route By Adapter Action": {
+      "main": [
+        [
+          {
+            "node": "Find Mock Contact By Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Mock SMS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Mock Contact By Email": {
+      "main": [
+        [
+          {
+            "node": "Merge Tags And Decide Stage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Tags And Decide Stage": {
+      "main": [
+        [
+          {
+            "node": "Save Mock Contact",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Mock Contact": {
+      "main": [
+        [
+          {
+            "node": "Log Mock Stage Change",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Mock Stage Change": {
+      "main": [
+        [
+          {
+            "node": "Build Upsert Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Mock SMS": {
+      "main": [
+        [
+          {
+            "node": "Build SMS Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Adapter Call": {
+      "main": [
+        [
+          {
+            "node": "Route By Adapter Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "ghlHandlerLead01,ghlHandlerCart01,ghlHandlerOrdr01,ghlHandlerWinbk1"
+  },
+  "active": false
+}

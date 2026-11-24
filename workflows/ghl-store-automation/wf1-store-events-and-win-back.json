@@ -1,0 +1,956 @@
+{
+  "id": "TJ3dFxrcGF3QEAkD",
+  "name": "[GHL Store Automation] | WF1 — Store Events & Win-Back",
+  "nodes": [
+    {
+      "id": "w-title",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -384
+      ],
+      "parameters": {
+        "content": "# GHL Store Automation - Store Events & Win-Back (main workflow)\n\nThe entry point of the system. It receives every store event, checks it, and calls the sub-workflow for that event type. It holds no business logic itself.\n\n**Started by:** one intake webhook (contact form and Shopify events, each carrying an event type), a daily 09:00 schedule, a manual button, or an admin call on the webhook - the last three all mean 'run the win-back campaign'.\n\n**Sections on this canvas:**\n1. Intake and checks - source detection, Shopify signature and admin token checks, normalising the event\n2. Route to the handler - drop unusable events, route by event type, one call node per sub-workflow\n\n**Sub-workflows (separate workflows, folders under ghl-store-automation):** contact-form-lead / Handle Contact Form Lead; abandoned-cart / Handle Abandoned Cart; paid-order / Handle Paid Order; win-back / Run Win-Back Campaign. The handlers call: gohighlevel / GHL Adapter (Mock or Live, chosen by 'ghl_adapter_id') and email / Email Sender.\n\n**CONFIG is currently set for the DEMO** ('Store Settings': adapter_config.mode = live, email_mode = gmail, 2-minute cart wait). **Test copy rule:** on the n8n whose address is `test_instance_host` (the local test copy), 'Normalise Event' always switches to the mock adapter and Mailpit, so the same workflow is safe on both instances and a sync never puts the server in test mode. For production set adapter_config.mode = live (with the GoHighLevel location, pipeline and stage IDs), email_mode = gmail, cart_wait_seconds = 3600, put the store's signing secret in the 'Shopify Webhook Signing Secret' credential, and replace admin_token.",
+        "height": 360,
+        "width": 2444,
+        "color": 7
+      }
+    },
+    {
+      "id": "w-s1note",
+      "name": "Section 1 Note - Intake And Routing",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -16
+      ],
+      "parameters": {
+        "content": "## Intake and checks\n\nTriggered by: a POST to the intake webhook (contact form or Shopify), the daily 09:00 schedule, or the manual button.\n\nWhat it does, step by step:\n1. Adds the store settings to every incoming item.\n2. Detects the source: Shopify, admin call, contact form or schedule.\n3. Shopify events: recomputes the HMAC signature and rejects the event if it does not match the Shopify header.\n4. Admin events: rejects the call unless it carries the admin token.\n5. Normalises everything into one event shape (event_type, email, phone, names, checkout and order fields) .\n6. Passes the event on to 'Route to the handler'.",
+        "height": 1004,
+        "width": 2444,
+        "color": 4
+      }
+    },
+    {
+      "id": "w-webhook",
+      "name": "Receive Store Event",
+      "webhookId": "ghl-store-intake",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        48,
+        480
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ghl-store-intake",
+        "options": {
+          "rawBody": true
+        }
+      }
+    },
+    {
+      "id": "w-schedule",
+      "name": "Daily Win-Back Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        48,
+        656
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "w-manual",
+      "name": "Run Win-Back Manually",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        48,
+        832
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "w-settings",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        304,
+        656
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c1",
+              "name": "cart_wait_seconds",
+              "value": 120,
+              "type": "number"
+            },
+            {
+              "id": "c2",
+              "name": "winback_first_days",
+              "value": 60,
+              "type": "number"
+            },
+            {
+              "id": "c3",
+              "name": "winback_sms_gap_days",
+              "value": 7,
+              "type": "number"
+            },
+            {
+              "id": "c4",
+              "name": "winback_cooldown_days",
+              "value": 180,
+              "type": "number"
+            },
+            {
+              "id": "c5",
+              "name": "winback_enabled",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "c6",
+              "name": "email_mode",
+              "value": "gmail",
+              "type": "string"
+            },
+            {
+              "id": "c9",
+              "name": "store_url",
+              "value": "https://your-store.example",
+              "type": "string"
+            },
+            {
+              "id": "c10",
+              "name": "offer_text",
+              "value": "Enjoy 10% off your next order with code WELCOMEBACK",
+              "type": "string"
+            },
+            {
+              "id": "c11",
+              "name": "response_time",
+              "value": "one business day",
+              "type": "string"
+            },
+            {
+              "id": "c12",
+              "name": "from_email",
+              "value": "store@demo.test",
+              "type": "string"
+            },
+            {
+              "id": "c14",
+              "name": "admin_token",
+              "value": "ADMIN_TOKEN",
+              "type": "string"
+            },
+            {
+              "id": "c-adapter",
+              "name": "adapter_config",
+              "value": "{\"mode\": \"live\", \"location_id\": \"YOUR_GHL_LOCATION_ID\", \"pipeline_id\": \"YOUR_GHL_PIPELINE_ID\", \"stage_id_new_lead\": \"YOUR_GHL_STAGE_ID_NEW_LEAD\", \"stage_id_contacted\": \"YOUR_GHL_STAGE_ID_CONTACTED\", \"stage_id_cart_created\": \"YOUR_GHL_STAGE_ID_CART_CREATED\", \"stage_id_purchased\": \"YOUR_GHL_STAGE_ID_PURCHASED\", \"stage_id_repeat_customer\": \"YOUR_GHL_STAGE_ID_REPEAT_CUSTOMER\"}",
+              "type": "object"
+            },
+            {
+              "id": "c-ad",
+              "name": "ghl_adapter_mock_id",
+              "value": "ghlAdaptMock0001",
+              "type": "string"
+            },
+            {
+              "id": "c-em",
+              "name": "email_sender_id",
+              "value": "ghlEmailSender01",
+              "type": "string"
+            },
+            {
+              "id": "c-ad-live",
+              "name": "ghl_adapter_live_id",
+              "value": "ghlAdaptLive0001",
+              "type": "string"
+            },
+            {
+              "id": "c-testhost",
+              "name": "test_instance_host",
+              "value": "YOUR_TEST_N8N_HOST",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "w-detect",
+      "name": "Detect Event Source",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        528,
+        656
+      ],
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const j = item.json;\n  const headers = j.headers || {};\n  const body = j.body || {};\n  let source = 'schedule';\n  if (headers['x-shopify-topic']) source = 'shopify';\n  else if (body.event_type === 'winback_run') source = 'admin';\n  else if (j.headers) source = 'form';\n  return { json: { ...j, source }, binary: item.binary };\n});"
+      }
+    },
+    {
+      "id": "w-routesource",
+      "name": "Route By Event Source",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        752,
+        656
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "r1",
+                    "leftValue": "={{ $json.source }}",
+                    "rightValue": "shopify",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "shopify"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "r2",
+                    "leftValue": "={{ $json.source }}",
+                    "rightValue": "admin",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "admin"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "r3",
+                    "leftValue": "={{ $json.source }}",
+                    "rightValue": "form",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "form"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "r4",
+                    "leftValue": "={{ $json.source }}",
+                    "rightValue": "schedule",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "schedule"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w-hmac",
+      "name": "Compute Shopify Signature",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        480
+      ],
+      "parameters": {
+        "action": "hmac",
+        "binaryData": true,
+        "dataPropertyName": "computed_signature",
+        "encoding": "base64"
+      },
+      "credentials": {
+        "crypto": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Shopify Webhook Signing Secret"
+        }
+      }
+    },
+    {
+      "id": "w-sigok",
+      "name": "Shopify Signature Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1248,
+        480
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "sg1",
+              "leftValue": "={{ $json.computed_signature === $json.headers['x-shopify-hmac-sha256'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w-rejectsig",
+      "name": "Reject Invalid Shopify Signature P2",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        400
+      ],
+      "parameters": {
+        "errorMessage": "Shopify webhook signature did not match - event rejected"
+      }
+    },
+    {
+      "id": "w-adminok",
+      "name": "Admin Token Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1008,
+        720
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ad1",
+              "leftValue": "={{ $json.headers['x-admin-token'] === $json.admin_token && $json.admin_token !== 'ADMIN_TOKEN' }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w-rejectadmin",
+      "name": "Reject Unauthorized Admin Call P2",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1248,
+        832
+      ],
+      "parameters": {
+        "errorMessage": "Admin call rejected: missing or wrong admin token"
+      }
+    },
+    {
+      "id": "w-normalise",
+      "name": "Normalise Event",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1520,
+        656
+      ],
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\nconst headers = item.headers || {};\nconst body = item.body || {};\nconst clean = v => (v === undefined || v === null) ? '' : String(v).trim();\nconst ev = { event_type: 'ignored', received_at: new Date().toISOString(), email: '', phone: '', first_name: '', last_name: '', message: '', checkout_id: '', recovery_url: '', cart_items: '', cart_total: 0, order_id: '', order_total: 0, prior_order_count: 0, run_id: headers['x-demo-run-id'] || body.run_id || '' };\nif (item.source === 'shopify') {\n  const topic = headers['x-shopify-topic'];\n  const customer = body.customer || {};\n  const ship = body.shipping_address || {};\n  const bill = body.billing_address || {};\n  ev.email = clean(body.email || customer.email).toLowerCase();\n  // What the shopper typed in this checkout wins over Shopify's saved customer record, which keeps the name of an earlier order\n  // with the same email (real test, 23 Nov 2026: Shopify showed 'Thank you Anna', the customer record said 'Piero Pelu').\n  ev.phone = clean(body.phone || bill.phone || ship.phone || customer.phone);\n  const named = [bill, ship, customer].find(x => clean(x.first_name)) || {};\n  ev.first_name = clean(named.first_name);\n  ev.last_name = clean(named.last_name);\n  // Shopify sends checkouts/create when the checkout page opens, before any email; the email first arrives in a checkouts/update.\n  // An update counts as a cart event unless the checkout is already completed (paid); the cart handler starts once per checkout.\n  if (topic === 'checkouts/create' || (topic === 'checkouts/update' && !body.completed_at)) {\n    ev.event_type = 'checkout_created';\n    ev.checkout_id = clean(body.token || body.id);\n    ev.recovery_url = clean(body.abandoned_checkout_url);\n    ev.cart_items = (body.line_items || []).map(li => li.title + ' x' + li.quantity).join(', ');\n    ev.cart_total = Number(body.total_price || 0);\n  } else if (topic === 'orders/paid') {\n    ev.event_type = 'order_paid';\n    ev.order_id = clean(body.id);\n    ev.order_total = Number(body.total_price || 0);\n    ev.checkout_id = clean(body.checkout_token || body.checkout_id);\n    ev.prior_order_count = Math.max(0, Number(customer.orders_count || 1) - 1);\n  }\n} else if (item.source === 'form') {\n  const parts = clean(body.name).split(' ');\n  ev.event_type = body.event_type === 'contact_form' ? 'contact_form' : 'ignored';\n  ev.email = clean(body.email).toLowerCase();\n  ev.phone = clean(body.phone);\n  ev.first_name = clean(body.first_name || parts[0]);\n  ev.last_name = clean(body.last_name || parts.slice(1).join(' '));\n  ev.message = clean(body.message);\n} else {\n  ev.event_type = 'winback_run';\n}\n// The GoHighLevel node refuses a phone with spaces or dashes ('+48 500 000 001' fails, '+48500000001' works; real test 23 Nov 2026).\n// Keep only digits and a leading +; a leading 00 becomes +.\nev.phone = ev.phone.replace(/^00/, '+').replace(/(?!^\\+)\\D/g, '');\nconst s = $('Store Settings').first().json;\nconst settings = {};\nfor (const k of ['cart_wait_seconds', 'winback_first_days', 'winback_sms_gap_days', 'winback_cooldown_days', 'winback_enabled', 'email_mode', 'store_url', 'offer_text', 'response_time', 'from_email', 'adapter_config', 'email_sender_id']) settings[k] = s[k];\n// Each n8n picks its own mode. On the test copy (its address contains test_instance_host; written without 'n8n.' so the sync's address swap leaves it alone) every event uses the mock adapter and Mailpit,\n// so a local copy never touches real customers and a sync never switches the server to test mode. Any other n8n uses the settings above.\nsettings.test_instance = !!s.test_instance_host && String($execution.resumeUrl || '').includes(s.test_instance_host);\nif (settings.test_instance) {\n  settings.adapter_config = { ...(s.adapter_config || {}), mode: 'mock' };\n  settings.email_mode = 'mailpit';\n}\n// One switch: adapter_config.mode 'live' uses the real GoHighLevel adapter, anything else the mock.\nsettings.ghl_adapter_id = (settings.adapter_config || {}).mode === 'live' ? s.ghl_adapter_live_id : s.ghl_adapter_mock_id;\nreturn [{ json: { ...settings, ...ev } }];"
+      }
+    },
+    {
+      "id": "w-canprocess",
+      "name": "Event Can Be Processed?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1472,
+        1360
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cp1",
+              "leftValue": "={{ $json.event_type !== 'ignored' && ($json.event_type === 'winback_run' || $json.email !== '') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w-drop",
+      "name": "Drop Ignored Or Emailless Event",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        1600
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "w-s2note",
+      "name": "Section 2 Note - Route To The Handler",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        1008
+      ],
+      "parameters": {
+        "content": "## Route to the handler\n\nTriggered by: runs inline after 'Normalise Event'.\n\nWhat it does, step by step:\n1. Checks the event is known and has an email (the win-back run needs none); otherwise it is dropped.\n2. 'Route By Event Type' sends the event to the matching call node.\n3. Each 'Run ... Handler' node calls one sub-workflow (a separate workflow in its own folder under ghl-store-automation): contact_form = Handle Contact Form Lead, checkout_created = Handle Abandoned Cart, order_paid = Handle Paid Order, winback_run = Run Win-Back Campaign.",
+        "height": 900,
+        "width": 1396,
+        "color": 3
+      }
+    },
+    {
+      "id": "w-routetype",
+      "name": "Route By Event Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1712,
+        1360
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "t0",
+                    "leftValue": "={{ $json.event_type }}",
+                    "rightValue": "contact_form",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "contact_form"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "t1",
+                    "leftValue": "={{ $json.event_type }}",
+                    "rightValue": "checkout_created",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "checkout_created"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "t2",
+                    "leftValue": "={{ $json.event_type }}",
+                    "rightValue": "order_paid",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "order_paid"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "t3",
+                    "leftValue": "={{ $json.event_type }}",
+                    "rightValue": "winback_run",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "winback_run"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w-call-lead",
+      "name": "Run Contact Form Lead Handler (via Handle Contact Form Lead)",
+      "notes": "Calls the sub-workflow '[GHL Store Automation] | Handle Contact Form Lead' (folder ghl-store-automation).",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1984,
+        1360
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ghlHandlerLead01"
+        },
+        "workflowInputs": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w-call-cart",
+      "name": "Run Abandoned Cart Handler (via Handle Abandoned Cart)",
+      "notes": "Calls the sub-workflow '[GHL Store Automation] | Handle Abandoned Cart' (folder ghl-store-automation).",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1984,
+        1488
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ghlHandlerCart01"
+        },
+        "workflowInputs": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w-call-order",
+      "name": "Run Paid Order Handler (via Handle Paid Order)",
+      "notes": "Calls the sub-workflow '[GHL Store Automation] | Handle Paid Order' (folder ghl-store-automation).",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1984,
+        1600
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ghlHandlerOrdr01"
+        },
+        "workflowInputs": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w-call-winback",
+      "name": "Run Win-Back Campaign Handler (via Run Win-Back Campaign)",
+      "notes": "Calls the sub-workflow '[GHL Store Automation] | Run Win-Back Campaign' (folder ghl-store-automation).",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        1984,
+        1728
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "ghlHandlerWinbk1"
+        },
+        "workflowInputs": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "w-flow-note",
+      "name": "The Flow",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2464,
+        -384
+      ],
+      "parameters": {
+        "content": "# The Flow\n\nA full plain-language trace of one run through this entire system, start to finish — read this before opening any sub-workflow.\n\n## How a run starts\n- **Real store event:** a Shopify webhook (checkout created or updated / order paid; the customer's email first arrives in a checkout update, and the cart handler starts once per checkout) or a contact-form POST hits this workflow's webhook (`Receive Store Event`).\n- **Testing:** the separate **Demo Simulator** workflow builds a fake event, signs it exactly like Shopify would, and POSTs it to this same webhook — nothing downstream can tell the difference.\n- **Win-back:** the `Daily Win-Back Schedule` trigger (09:00), the `Run Win-Back Manually` button, or an admin call (`event_type: winback_run` + `x-admin-token` header) all mean \"run the win-back campaign now\".\n\n## Intake and checks (this canvas, Section 1)\n1. `Store Settings` stamps every incoming item with the shared config (adapter choice, email mode, wait times, admin token, etc).\n2. `Detect Event Source` figures out if this is a Shopify event, an admin call, a contact-form post, or the schedule.\n3. Shopify events: `Compute Shopify Signature` recomputes the HMAC (using the `Shopify Webhook Signing Secret` Crypto credential) and `Shopify Signature Valid?` rejects anything that doesn't match.\n4. Admin events: `Admin Token Valid?` rejects anything without the right `x-admin-token` header.\n5. `Normalise Event` reshapes Shopify, form, or admin input into one common event shape.\n\n## Routing (this canvas, Section 2)\n6. `Event Can Be Processed?` drops anything unusable (no email, unknown type).\n7. `Route By Event Type` sends the event to exactly one sub-workflow, by `event_type`:\n   - `contact_form` → **Handle Contact Form Lead**\n   - `checkout_created` → **Handle Abandoned Cart**\n   - `order_paid` → **Handle Paid Order**\n   - `winback_run` → **Run Win-Back Campaign**\n\n## Inside each handler (separate workflows, event-handlers/ folder)\nEvery handler follows the same shape: update the CRM, then message the customer. The two are **independent, parallel calls** — one does not call the other:\n- **CRM update** → calls the adapter chosen by `adapter_config.mode` in Store Settings: `mock` = **GHL Adapter (Mock)** (data tables only), `live` = **GHL Adapter (Live)** (real GoHighLevel). Action `upsert_stage` moves the contact through New Lead → Contacted → Cart Created → Purchased → Repeat Customer and merges tags; action `send_sms` sends (or, in mock, logs) an SMS.\n- **Email** → calls **Email Sender** (`email_sender_id`), which checks `email_mode` and sends via Gmail, Mailpit, or both.\n- **Test copy:** when this runs on the n8n named in `test_instance_host`, `Normalise Event` overrides both settings to `mock` and `mailpit` (flag `test_instance`), so store events that reach the local copy never touch the real GoHighLevel or send real email.\n\nSpecifically: leads get an auto-reply; abandoned carts get a reminder (SMS if there's a phone, email if not) after a wait; paid orders move the contact to Purchased/Repeat Customer; win-back finds dormant customers and sends a first email round, then a follow-up SMS/email round.\n\n## Verifying a run (Demo Simulator only)\n8. After posting the event, the Simulator waits, then reads **Mailpit** (`Read Mailpit Messages (Mailpit API)`) and either the mock data tables (`Read Mock Log Rows`) or, in live mode, the real GoHighLevel contact, opportunity and notes, to see what actually happened, compares it to what *should* have happened for that scenario (`Assert Scenario Outcomes`), and shows PASS/FAIL.\n\n## Services this system shares\n- **GHL Adapter (Mock/Live)** and **Email Sender** live in `ghl-store-automation/services/` and are called the same way by all four handlers.\n- Every workflow in this system reports failures to the central **Error Handling** workflow.",
+        "height": 2300,
+        "width": 984,
+        "color": 6
+      }
+    }
+  ],
+  "connections": {
+    "Receive Store Event": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Win-Back Schedule": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Win-Back Manually": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Detect Event Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Event Source": {
+      "main": [
+        [
+          {
+            "node": "Route By Event Source",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route By Event Source": {
+      "main": [
+        [
+          {
+            "node": "Compute Shopify Signature",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Admin Token Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normalise Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Normalise Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Shopify Signature": {
+      "main": [
+        [
+          {
+            "node": "Shopify Signature Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Shopify Signature Valid?": {
+      "main": [
+        [
+          {
+            "node": "Normalise Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject Invalid Shopify Signature P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Admin Token Valid?": {
+      "main": [
+        [
+          {
+            "node": "Normalise Event",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Reject Unauthorized Admin Call P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalise Event": {
+      "main": [
+        [
+          {
+            "node": "Event Can Be Processed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route By Event Type": {
+      "main": [
+        [
+          {
+            "node": "Run Contact Form Lead Handler (via Handle Contact Form Lead)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Run Abandoned Cart Handler (via Handle Abandoned Cart)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Run Paid Order Handler (via Handle Paid Order)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Run Win-Back Campaign Handler (via Run Win-Back Campaign)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Event Can Be Processed?": {
+      "main": [
+        [
+          {
+            "node": "Route By Event Type",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Drop Ignored Or Emailless Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "binaryMode": "separate"
+  },
+  "active": false
+}

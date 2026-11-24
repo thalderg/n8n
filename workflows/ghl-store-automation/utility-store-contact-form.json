@@ -1,0 +1,131 @@
+{
+  "id": "a4gG2iFlMRH4Ee5i",
+  "name": "[GHL Store Automation] | Store Contact Form",
+  "nodes": [
+    {
+      "id": "scfTitle",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -360
+      ],
+      "parameters": {
+        "width": 760,
+        "height": 330,
+        "content": "# Store Contact Form\n\nThe store's real contact form. It is embedded in the Shopify page **Contact** (`/pages/contact`), so a visitor fills it in on the shop itself.\n\n**What it does:** sends each submission to the main workflow (WF1) as a `contact_form` event. WF1 then creates the GoHighLevel contact as New Lead, sends the auto-reply and moves it to Contacted (handler: Handle Contact Form Lead).\n\n**Embed in Shopify:** Online Store → Pages → Contact → Theme template 'Default page' → content in HTML: `<iframe src=\"https://YOUR_N8N_HOST/form/store-contact\" width=\"100%\" height=\"760\" style=\"border:0\"></iframe>`\n\nNot a test tool: the Demo Simulator is separate and deletes its own contacts; this form never does."
+      }
+    },
+    {
+      "id": "scfSec1",
+      "name": "Section 1 Note - Receive And Forward The Message",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "width": 760,
+        "height": 560,
+        "content": "## Receive and forward the message\n\nTriggered by: a visitor submitting the form on the shop's Contact page.\n\n1. Shows the form (first name, last name, email, phone, message) and thanks the visitor at once.\n2. Posts the answers to WF1's intake (`/webhook/ghl-store-intake`) as `event_type: contact_form`, the same event a website form sends. Retries 3 times; a final failure goes to the central error handler."
+      }
+    },
+    {
+      "id": "scfForm",
+      "name": "Store Contact Form",
+      "webhookId": "store-contact",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        64,
+        400
+      ],
+      "parameters": {
+        "formTitle": "Contact us",
+        "formDescription": "Questions about a product, an order or sizes? Write to us and we will reply within one business day.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "First name",
+              "placeholder": "Maria",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Last name",
+              "placeholder": "Rossi"
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "placeholder": "you@example.com",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Phone",
+              "placeholder": "+48 500 000 000"
+            },
+            {
+              "fieldLabel": "Message",
+              "fieldType": "textarea",
+              "placeholder": "Is the blue jacket available in size M?",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "options": {
+          "appendAttribution": false,
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "text",
+              "formSubmittedText": "Thank you! We received your message and will reply within one business day."
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "scfPost",
+      "name": "Send Contact Form To Store Workflow (WF1 Webhook)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000,
+      "position": [
+        304,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5678/webhook/ghl-store-intake",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ event_type: 'contact_form', first_name: $json['First name'] || '', last_name: $json['Last name'] || '', email: String($json['Email'] || '').trim().toLowerCase(), phone: String($json['Phone'] || '').trim(), message: $json['Message'] || '' }) }}",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Store Contact Form": {
+      "main": [
+        [
+          {
+            "node": "Send Contact Form To Store Workflow (WF1 Webhook)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "executionOrder": "v1"
+  },
+  "active": false
+}

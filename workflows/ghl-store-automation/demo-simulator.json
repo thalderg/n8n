@@ -1,0 +1,1093 @@
+{
+  "id": "zvuUsfLMeZeU4S4a",
+  "name": "[GHL Store Automation] | Demo Simulator",
+  "nodes": [
+    {
+      "id": "d-title",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -384
+      ],
+      "parameters": {
+        "content": "# GHL Store Automation - Demo Simulator\n\nPlays a customer against the store workflow and then CHECKS what happened, so the demo proves the automation works. Nothing here touches real customers, GoHighLevel, Shopify or a real mailbox.\n\n**How to use:** open the 'Choose Customer Scenario' form (Test URL from the trigger node, or the Production URL when this workflow is active). Every field is pre-filled with a realistic customer; change only what you want (clear the phone to test the no-phone path). Or press 'Run All Scenarios' to play all five scenarios in a row.\n\n**Sections on this canvas:**\n1. Form and scenario setup - turns the form (or the run-all list) into the events a store would send\n2. Post events to the store workflow - signs each event like Shopify does and posts it to the WF1 intake webhook, spaced 3 seconds apart\n3. Verify the outcome - reads the Mailpit inbox and the Gmail sent mail (an email counts when it is in either), the GoHighLevel result (the mock log, or in live mode the real contact, stage, tags and notes), checks each scenario against what should have happened, shows PASS / FAIL, and in live mode deletes the test contacts and opportunities in GoHighLevel\n\nRequires: WF1 active, the adapter chosen by its 'adapter_config.mode' (mock or live) and Email Sender active, and Mailpit running (http://localhost:8025) for the local test copy; on the server the emails are checked in the Gmail account's sent mail ('Gmail account' credential).",
+        "height": 360,
+        "width": 5440,
+        "color": 7
+      }
+    },
+    {
+      "id": "d-s1",
+      "name": "Section 1 Note - Form And Scenario Setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "## Form and scenario setup\n\nTriggered by: a submission of the customer form, or the 'Run All Scenarios' button.\n\nWhat it does, step by step:\n1. Adds the simulator settings (intake URL, demo secrets, Mailpit URL, settle time, GoHighLevel location ID), then reads the first product of the Shopify store (its title and price fill the simulated carts) and the GoHighLevel pipelines (stage names for the live checks).\n2. Builds one run per scenario with a unique run id and the store events it needs (contact form, checkout created, order paid, or an admin win-back run).\n3. For the dormant-customer scenario, first inserts a customer row whose last order date is the number of days ago you chose.",
+        "height": 860,
+        "width": 1780,
+        "color": 4
+      }
+    },
+    {
+      "id": "d-s2",
+      "name": "Section 2 Note - Post Events To The Store Workflow",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1808,
+        0
+      ],
+      "parameters": {
+        "content": "## Post events to the store workflow\n\nTriggered by: runs inline after 'Form and scenario setup'.\n\nWhat it does, step by step:\n1. Signs each event body with the demo Shopify secret (HMAC SHA256, base64), exactly as Shopify would.\n2. Posts each event to the WF1 intake webhook, one every 3 seconds, so a checkout always arrives before its order.\n3. Waits for the store workflow to finish (cart wait plus a margin).",
+        "height": 860,
+        "width": 900,
+        "color": 3
+      }
+    },
+    {
+      "id": "d-s3",
+      "name": "Section 3 Note - Verify The Outcome",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2720,
+        0
+      ],
+      "parameters": {
+        "content": "## Verify the outcome\n\nTriggered by: runs inline after 'Post events to the store workflow'.\n\nWhat it does, step by step:\n1. Collects one record per scenario run.\n2. Reads the Mailpit inbox for each customer email, the real GoHighLevel contact, opportunity and notes, and the mock GoHighLevel log rows for that customer, then the Gmail account's sent mail of the last hour (once). An email check passes when the email is in Mailpit (local test copy) or in the Gmail sent mail (server). A scenario is checked in live mode when its contact exists in GoHighLevel, otherwise against the mock log. After the checks, the live test contacts and their opportunities are deleted in GoHighLevel.\n3. Checks each scenario against what should have happened (stage moves, tags, emails, SMS, no reminder for a buyer) and builds a PASS / FAIL table.\n4. When started from the form, shows the table as the form's result page; when started with 'Run All Scenarios', the table is the workflow output.",
+        "height": 860,
+        "width": 2760,
+        "color": 5
+      }
+    },
+    {
+      "id": "d-form",
+      "name": "Choose Customer Scenario",
+      "webhookId": "ghl-demo-simulator",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        48,
+        464
+      ],
+      "parameters": {
+        "formTitle": "GHL Store Automation - Demo Customer",
+        "formDescription": "Pick a scenario. Every field is pre-filled with a realistic customer; change only what you want. Clear the phone to test the no-phone path.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Scenario",
+              "fieldType": "dropdown",
+              "defaultValue": "Form filler",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Form filler"
+                  },
+                  {
+                    "option": "Cart abandoner"
+                  },
+                  {
+                    "option": "Buyer"
+                  },
+                  {
+                    "option": "Repeat buyer"
+                  },
+                  {
+                    "option": "Dormant customer"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "First name",
+              "placeholder": "Maria",
+              "defaultValue": "Maria"
+            },
+            {
+              "fieldLabel": "Last name",
+              "placeholder": "Rossi",
+              "defaultValue": "Rossi"
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "placeholder": "demo-customer@example.test",
+              "defaultValue": "demo-customer@example.test"
+            },
+            {
+              "fieldLabel": "Phone",
+              "placeholder": "+15550100",
+              "defaultValue": "+15550100"
+            },
+            {
+              "fieldLabel": "Message",
+              "fieldType": "textarea",
+              "placeholder": "Hi, is the blue jacket available in size M?",
+              "defaultValue": "Hi, is the blue jacket available in size M?"
+            },
+            {
+              "fieldLabel": "Cart items",
+              "placeholder": "Blue jacket",
+              "defaultValue": "Blue jacket"
+            },
+            {
+              "fieldLabel": "Cart total",
+              "fieldType": "number",
+              "placeholder": "89",
+              "defaultValue": "89"
+            },
+            {
+              "fieldLabel": "Previous orders",
+              "fieldType": "number",
+              "placeholder": "1",
+              "defaultValue": "1"
+            },
+            {
+              "fieldLabel": "Days since last order",
+              "fieldType": "number",
+              "placeholder": "61",
+              "defaultValue": "61"
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "d-manual",
+      "name": "Run All Scenarios",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        48,
+        752
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "d-settings",
+      "name": "Simulator Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        304,
+        608
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "z1",
+              "name": "intake_url",
+              "value": "http://localhost:5678/webhook/ghl-store-intake",
+              "type": "string"
+            },
+            {
+              "id": "z3",
+              "name": "admin_token",
+              "value": "ADMIN_TOKEN",
+              "type": "string"
+            },
+            {
+              "id": "z4",
+              "name": "mailpit_url",
+              "value": "http://mailpit:8025",
+              "type": "string"
+            },
+            {
+              "id": "z5",
+              "name": "settle_seconds",
+              "value": 150,
+              "type": "number"
+            },
+            {
+              "id": "z6",
+              "name": "ghl_location_id",
+              "value": "YOUR_GHL_LOCATION_ID",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "d-prepare",
+      "name": "Prepare Scenario Runs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        608
+      ],
+      "parameters": {
+        "jsCode": "const s = $('Simulator Settings').first().json;\nconst fromForm = $('Choose Customer Scenario').isExecuted;\nconst KEYS = { 'Form filler': 'form_filler', 'Cart abandoner': 'cart_abandoner', 'Buyer': 'buyer', 'Repeat buyer': 'repeat_buyer', 'Dormant customer': 'dormant' };\nconst stamp = Date.now();\nconst base = { first_name: 'Maria', last_name: 'Rossi', email: 'demo-customer@example.test', phone: '+15550100', message: 'Hi, is the blue jacket available in size M?', cart_items: 'Blue jacket', cart_total: 89, previous_orders: 1, days_since_last_order: 61 };\n// Real store product: the first product in the Shopify store gives the cart item and price (falls back to the values above).\nconst product = $('Read Products (Shopify)').first().json || {};\nif (product.title) { base.cart_items = product.title; base.cart_total = Number(((product.variants || [])[0] || {}).price) || base.cart_total; }\nlet runs;\nif (fromForm) {\n  const f = $('Choose Customer Scenario').first().json;\n  runs = [{ scenario: KEYS[f['Scenario']] || 'form_filler', first_name: f['First name'] || base.first_name, last_name: f['Last name'] || base.last_name, email: String(f['Email'] || base.email).toLowerCase(), phone: f['Phone'] === undefined ? base.phone : String(f['Phone']).trim(), message: f['Message'] || base.message, cart_items: f['Cart items'] || base.cart_items, cart_total: Number(f['Cart total'] ?? base.cart_total), previous_orders: Number(f['Previous orders'] ?? base.previous_orders), days_since_last_order: Number(f['Days since last order'] ?? base.days_since_last_order) }];\n} else {\n  runs = Object.values(KEYS).map(k => ({ ...base, scenario: k, email: 'demo+' + k + '-' + stamp + '@example.test' }));\n}\nconst FAKE_PHONE = '+15550100'; // NANP's reserved fictional-number block (555-0100-0199) - treat it as no real phone so the demo exercises the email fallback instead of a fake SMS\nruns = runs.map(r => ({ ...r, phone: r.phone === FAKE_PHONE ? '' : r.phone }));\nconst events = [];\nlet idx = 0;\nfor (const r of runs) {\n  const runId = 'sim-' + stamp + '-' + idx++;\n  const startedAt = new Date().toISOString();\n  const ck = 'ck-' + runId;\n  const customer = orders => ({ first_name: r.first_name, last_name: r.last_name, email: r.email, orders_count: orders });\n  const push = ev => events.push({ run_id: runId, started_at: startedAt, scenario: r.scenario, email: r.email, phone: r.phone, first_name: r.first_name, days_since_last_order: r.days_since_last_order, intake_url: s.intake_url, ...ev });\n  const hdr = topic => ({ 'x-shopify-topic': topic, 'x-demo-run-id': runId });\n  const checkout = { token: ck, email: r.email, phone: r.phone, customer: customer(0), abandoned_checkout_url: 'https://your-store.example/checkouts/' + ck, line_items: [{ title: r.cart_items, quantity: 1 }], total_price: String(r.cart_total) };\n  const order = orders => ({ id: 'ord-' + runId, email: r.email, customer: customer(orders), total_price: String(r.cart_total), checkout_token: ck });\n  if (r.scenario === 'form_filler') {\n    push({ topic: '', headers_obj: { 'x-demo-run-id': runId }, raw_body: JSON.stringify({ event_type: 'contact_form', first_name: r.first_name, last_name: r.last_name, email: r.email, phone: r.phone, message: r.message, run_id: runId }) });\n  } else if (r.scenario === 'cart_abandoner') {\n    push({ topic: 'checkouts/create', headers_obj: hdr('checkouts/create'), raw_body: JSON.stringify(checkout) });\n  } else if (r.scenario === 'buyer') {\n    push({ topic: 'checkouts/create', headers_obj: hdr('checkouts/create'), raw_body: JSON.stringify(checkout) });\n    push({ topic: 'orders/paid', headers_obj: hdr('orders/paid'), raw_body: JSON.stringify(order(1)) });\n  } else if (r.scenario === 'repeat_buyer') {\n    push({ topic: 'orders/paid', headers_obj: hdr('orders/paid'), raw_body: JSON.stringify(order(r.previous_orders + 1)) });\n  } else if (r.scenario === 'dormant') {\n    push({ needs_seed: true, seed_last_order_date: new Date(Date.now() - r.days_since_last_order * 86400000).toISOString(), seed_first_name: r.first_name, seed_last_name: r.last_name, topic: '', headers_obj: { 'x-demo-run-id': runId, 'x-admin-token': s.admin_token }, raw_body: JSON.stringify({ event_type: 'winback_run', run_id: runId }) });\n  }\n}\nreturn events.map(e => ({ json: e }));"
+      }
+    },
+    {
+      "id": "d-ifseed",
+      "name": "Customer Needs Seeding?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1280,
+        480
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "k1",
+              "leftValue": "={{ $json.needs_seed === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d-seed",
+      "name": "Seed Dormant Customer Row",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1520,
+        400
+      ],
+      "parameters": {
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_CUSTOMERS_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "keyValue": "={{ $json.email }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $json.email }}",
+            "first_name": "={{ $json.seed_first_name }}",
+            "last_name": "={{ $json.seed_last_name }}",
+            "phone": "={{ $json.phone }}",
+            "order_count": 1,
+            "last_order_date": "={{ $json.seed_last_order_date }}",
+            "winback_state": ""
+          },
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": []
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d-sign",
+      "name": "Sign Event Body",
+      "type": "n8n-nodes-base.crypto",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        608
+      ],
+      "parameters": {
+        "action": "hmac",
+        "value": "={{ $json.raw_body }}",
+        "dataPropertyName": "signature",
+        "encoding": "base64"
+      },
+      "credentials": {
+        "crypto": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Shopify Webhook Signing Secret"
+        }
+      }
+    },
+    {
+      "id": "d-post",
+      "name": "Post Event To Store Workflow (WF1 Webhook)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        2080,
+        608
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.intake_url }}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={{ JSON.stringify({ ...$json.headers_obj, ...($json.topic ? { 'x-shopify-hmac-sha256': $json.signature } : {}) }) }}",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.raw_body }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 3000
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "d-wait",
+      "name": "Wait For Store Workflow",
+      "webhookId": "b3bb09bf-5be3-44dd-bd02-1f229cbb3f62",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2320,
+        608
+      ],
+      "parameters": {
+        "amount": "={{ $('Simulator Settings').first().json.settle_seconds }}"
+      }
+    },
+    {
+      "id": "d-collect",
+      "name": "Collect Scenario Runs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2768,
+        608
+      ],
+      "parameters": {
+        "jsCode": "const seen = new Map();\nfor (const it of $('Prepare Scenario Runs').all()) {\n  const j = it.json;\n  if (!seen.has(j.run_id)) seen.set(j.run_id, { run_id: j.run_id, scenario: j.scenario, email: j.email, phone: j.phone, days_since_last_order: j.days_since_last_order, started_at: j.started_at });\n}\nreturn [...seen.values()].map(j => ({ json: j }));"
+      }
+    },
+    {
+      "id": "d-mail",
+      "name": "Read Mailpit Messages (Mailpit API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        3008,
+        608
+      ],
+      "parameters": {
+        "url": "={{ $('Simulator Settings').first().json.mailpit_url }}/api/v1/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ 'to:' + $json.email }}"
+            },
+            {
+              "name": "limit",
+              "value": "50"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d-log",
+      "name": "Read Mock Log Rows",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "alwaysOutputData": true,
+      "position": [
+        3968,
+        608
+      ],
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_MOCK_LOG_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "email",
+              "keyValue": "={{ $('Collect Scenario Runs').item.json.email }}"
+            }
+          ]
+        },
+        "returnAll": true
+      }
+    },
+    {
+      "id": "d-assert",
+      "name": "Assert Scenario Outcomes",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4448,
+        608
+      ],
+      "parameters": {
+        "jsCode": "const runs = $('Collect Scenario Runs').all().map(i => i.json);\nconst mail = $('Read Mailpit Messages (Mailpit API)').all().map(i => i.json);\n// Real email: what the Gmail account sent in the last hour (the server sends through Gmail, the local test copy through Mailpit).\nconst sentMail = $('Read Sent Gmail Messages (Gmail)').all().map(i => i.json || {}).filter(m => m.id);\nconst logRows = $('Read Mock Log Rows').all().map(i => i.json).filter(r => r && r.email);\n// Live mode: the real GoHighLevel contact, opportunity and notes, one item per run (same order as the runs).\nconst ghlContacts = $('Read GHL Contact (GHL API)').all().map(i => ((i.json || {}).contacts || [])[0] || {});\nconst ghlOpps = $('Read GHL Opportunity (GHL API)').all().map(i => i.json || {});\nconst ghlNotes = $('Read GHL Contact Notes (GHL API)').all().map(i => i.json || {});\nconst STAGE_KEY = { 'New Lead': 'new_lead', 'Contacted': 'contacted', 'Cart Created': 'cart_created', 'Purchased': 'purchased', 'Repeat Customer': 'repeat_customer' };\nconst RANK = { new_lead: 1, contacted: 2, cart_created: 3, purchased: 4, repeat_customer: 5 };\nconst stageName = {};\n(($('Read GHL Pipelines (GHL API)').first().json || {}).pipelines || []).forEach(p => (p.stages || []).forEach(st => { stageName[st.id] = st.name; }));\nconst results = runs.map((run, i) => {\n  const started = new Date(run.started_at).getTime() - 2000;\n  const subjects = ((mail[i] && mail[i].messages) || []).filter(m => new Date(m.Created).getTime() >= started).map(m => m.Subject || '')\n    .concat(sentMail.filter(m => String(m.To || '').toLowerCase().includes(run.email) && Number(m.internalDate || 0) >= started).map(m => m.Subject || ''));\n  const rows = logRows.filter(r => r.email === run.email && new Date(r.ts).getTime() >= started);\n  const stageRows = rows.filter(r => r.kind === 'stage').map(r => { try { return JSON.parse(r.detail); } catch (e) { return {}; } });\n  const gc = ghlContacts[i] || {};\n  const live = !!gc.id && String(gc.email || '').toLowerCase() === run.email;\n  const opp = (((ghlOpps[i] || {}).opportunities) || [])[0] || {};\n  const liveStage = STAGE_KEY[stageName[opp.pipelineStageId]] || '';\n  const liveTags = (gc.tags || []).map(t => String(t).toLowerCase());\n  const smsTexts = live ? (((ghlNotes[i] || {}).notes) || []).map(n => n.body || '').filter(b => b.startsWith('SMS')) : rows.filter(r => r.kind === 'sms').map(r => r.detail || '');\n  // Live: GoHighLevel shows only the final stage, so a target counts when the contact reached it or a later stage.\n  const hasTarget = t => live ? (RANK[liveStage] || 0) >= (RANK[t] || 99) : stageRows.some(d => d.target_stage === t);\n  const hasTag = t => live ? liveTags.includes(t.toLowerCase()) : stageRows.some(d => (d.tags || []).includes(t));\n  const subjectStarts = s => subjects.some(x => x.startsWith(s));\n  const hasPhone = !!run.phone;\n  const checks = [];\n  const check = (name, ok, detail) => checks.push({ name, ok: !!ok, detail: detail || '' });\n  if (run.scenario === 'form_filler') {\n    check('Contact created as New Lead with tag source:contact-form', hasTarget('new_lead') && hasTag('source:contact-form'));\n    check('Auto-reply email sent (Mailpit or Gmail)', subjectStarts('Thanks for reaching out'), subjects.join(' | '));\n    check(hasPhone ? 'Reply SMS recorded' : 'No SMS (no phone number)', hasPhone ? smsTexts.some(t => t.includes('thanks for reaching out')) : smsTexts.length === 0, smsTexts.join(' | '));\n    check('Contact moved to Contacted', hasTarget('contacted'));\n  } else if (run.scenario === 'cart_abandoner') {\n    check('Contact set to Cart Created with tag cart-open', hasTarget('cart_created') && hasTag('cart-open'));\n    check(hasPhone ? 'Reminder SMS recorded' : 'Reminder email received', hasPhone ? smsTexts.some(t => t.includes('left')) : subjectStarts('You left something'), hasPhone ? smsTexts.join(' | ') : subjects.join(' | '));\n    check('Contact tagged cart-reminder-sent', hasTag('cart-reminder-sent'));\n  } else if (run.scenario === 'buyer') {\n    check('Contact moved to Purchased (or Repeat Customer if seen before)', hasTarget('purchased') || hasTarget('repeat_customer'));\n    check('No cart reminder sent', smsTexts.length === 0 && !subjectStarts('You left something'), smsTexts.concat(subjects).join(' | '));\n  } else if (run.scenario === 'repeat_buyer') {\n    check('Contact moved to Repeat Customer', hasTarget('repeat_customer'));\n  } else if (run.scenario === 'dormant') {\n    const due = Number(run.days_since_last_order) >= 60;\n    check(due ? 'Win-back email received' : 'No win-back email (last order not old enough)', due ? subjectStarts('We miss you') : !subjectStarts('We miss you'), subjects.join(' | '));\n    check(due ? 'Contact tagged winback-active' : 'Contact not tagged winback-active', due ? hasTag('winback-active') : !hasTag('winback-active'));\n  }\n  return { scenario: run.scenario, email: run.email, mode: live ? 'live' : 'mock', ghl_contact_id: live ? gc.id : '', ghl_opportunity_id: live ? (opp.id || '') : '', pass: checks.every(c => c.ok), checks };\n});\nreturn results.map(r => ({ json: r }));"
+      }
+    },
+    {
+      "id": "d-table",
+      "name": "Build Result Table",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4688,
+        608
+      ],
+      "parameters": {
+        "jsCode": "const rows = $('Assert Scenario Outcomes').all().map(i => i.json);\nconst esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');\nconst html = '<table style=\"border-collapse:collapse;width:100%\">' + rows.map(r => '<tr><td style=\"padding:6px;border:1px solid #ccc;vertical-align:top\"><b>' + esc(r.scenario) + '</b><br>' + esc(r.email) + '</td><td style=\"padding:6px;border:1px solid #ccc\"><b style=\"color:' + (r.pass ? 'green' : 'red') + '\">' + (r.pass ? 'PASS' : 'FAIL') + '</b><br>' + r.checks.map(c => (c.ok ? '&#10003; ' : '&#10007; ') + esc(c.name) + (c.ok || !c.detail ? '' : ' <i>(' + esc(c.detail) + ')</i>')).join('<br>') + '</td></tr>').join('') + '</table>';\nreturn [{ json: { all_pass: rows.every(r => r.pass), summary: rows.map(r => r.scenario + ' (' + r.mode + '): ' + (r.pass ? 'PASS' : 'FAIL')).join(', '), html } }];"
+      }
+    },
+    {
+      "id": "d-ifform",
+      "name": "Started From Form?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4928,
+        608
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "k2",
+              "leftValue": "={{ $('Choose Customer Scenario').isExecuted }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "d-show",
+      "name": "Show Scenario Result",
+      "webhookId": "a6f1e5bc-1029-4adb-aeb3-433bd95745f9",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        5152,
+        608
+      ],
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "={{ $json.all_pass ? 'All checks passed' : 'Some checks failed' }}",
+        "completionMessage": "={{ $json.html }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "simProd1",
+      "name": "Read Products (Shopify)",
+      "type": "n8n-nodes-base.shopify",
+      "typeVersion": 1,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        544,
+        608
+      ],
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "product",
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 1,
+        "additionalFields": {}
+      },
+      "credentials": {
+        "shopifyOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Shopify account"
+        }
+      }
+    },
+    {
+      "id": "simPipes1",
+      "name": "Read GHL Pipelines (GHL API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        784,
+        608
+      ],
+      "parameters": {
+        "url": "https://services.leadconnectorhq.com/opportunities/pipelines",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "highLevelOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "locationId",
+              "value": "={{ $('Simulator Settings').first().json.ghl_location_id }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "id": "simGhlO1",
+      "name": "Read GHL Opportunity (GHL API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        3488,
+        608
+      ],
+      "parameters": {
+        "url": "https://services.leadconnectorhq.com/opportunities/search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "highLevelOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "location_id",
+              "value": "={{ $('Simulator Settings').first().json.ghl_location_id }}"
+            },
+            {
+              "name": "contact_id",
+              "value": "={{ (($json.contacts || [])[0] || {}).id || 'none' }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "id": "simGhlN1",
+      "name": "Read GHL Contact Notes (GHL API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        3728,
+        608
+      ],
+      "parameters": {
+        "url": "=https://services.leadconnectorhq.com/contacts/{{ (($('Read GHL Contact (GHL API)').item.json.contacts || [])[0] || {}).id || 'none' }}/notes",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "highLevelOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "id": "simKeep1",
+      "name": "Keep Live Test Contacts",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        4688,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "kc1",
+              "leftValue": "={{ $json.ghl_contact_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "simDelO1",
+      "name": "Delete Test Opportunity (HighLevel)",
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "onError": "continueRegularOutput",
+      "position": [
+        4928,
+        400
+      ],
+      "parameters": {
+        "resource": "opportunity",
+        "operation": "delete",
+        "opportunityId": "={{ $json.ghl_opportunity_id || 'none' }}"
+      },
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "id": "simDelC1",
+      "name": "Delete Test Contact (HighLevel)",
+      "type": "n8n-nodes-base.highLevel",
+      "typeVersion": 2,
+      "onError": "continueRegularOutput",
+      "position": [
+        5152,
+        400
+      ],
+      "parameters": {
+        "resource": "contact",
+        "operation": "delete",
+        "contactId": "={{ $('Keep Live Test Contacts').item.json.ghl_contact_id }}"
+      },
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "id": "simGhlC2",
+      "name": "Read GHL Contact (GHL API)",
+      "notes": "HTTP, not the HighLevel node: the node returns no item when a search finds nothing, and the checks need exactly one item per scenario run.",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        3248,
+        608
+      ],
+      "parameters": {
+        "url": "https://services.leadconnectorhq.com/contacts/",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "highLevelOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "locationId",
+              "value": "={{ $('Simulator Settings').first().json.ghl_location_id }}"
+            },
+            {
+              "name": "query",
+              "value": "={{ $('Collect Scenario Runs').item.json.email }}"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Version",
+              "value": "2021-07-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "highLevelOAuth2Api": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "HighLevel account"
+        }
+      }
+    },
+    {
+      "id": "sim-gmail-sent",
+      "name": "Read Sent Gmail Messages (Gmail)",
+      "webhookId": "1ece4597-ef98-4563-80e2-f431617f7f24",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput",
+      "position": [
+        4208,
+        608
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "returnAll": false,
+        "limit": 100,
+        "simple": true,
+        "filters": {
+          "q": "in:sent newer_than:1h"
+        },
+        "options": {}
+      },
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Choose Customer Scenario": {
+      "main": [
+        [
+          {
+            "node": "Simulator Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run All Scenarios": {
+      "main": [
+        [
+          {
+            "node": "Simulator Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Scenario Runs": {
+      "main": [
+        [
+          {
+            "node": "Customer Needs Seeding?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Sign Event Body",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer Needs Seeding?": {
+      "main": [
+        [
+          {
+            "node": "Seed Dormant Customer Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign Event Body": {
+      "main": [
+        [
+          {
+            "node": "Post Event To Store Workflow (WF1 Webhook)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Event To Store Workflow (WF1 Webhook)": {
+      "main": [
+        [
+          {
+            "node": "Wait For Store Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait For Store Workflow": {
+      "main": [
+        [
+          {
+            "node": "Collect Scenario Runs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Scenario Runs": {
+      "main": [
+        [
+          {
+            "node": "Read Mailpit Messages (Mailpit API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assert Scenario Outcomes": {
+      "main": [
+        [
+          {
+            "node": "Build Result Table",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Keep Live Test Contacts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Result Table": {
+      "main": [
+        [
+          {
+            "node": "Started From Form?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Started From Form?": {
+      "main": [
+        [
+          {
+            "node": "Show Scenario Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simulator Settings": {
+      "main": [
+        [
+          {
+            "node": "Read Products (Shopify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Products (Shopify)": {
+      "main": [
+        [
+          {
+            "node": "Read GHL Pipelines (GHL API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read GHL Pipelines (GHL API)": {
+      "main": [
+        [
+          {
+            "node": "Prepare Scenario Runs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read GHL Opportunity (GHL API)": {
+      "main": [
+        [
+          {
+            "node": "Read GHL Contact Notes (GHL API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read GHL Contact Notes (GHL API)": {
+      "main": [
+        [
+          {
+            "node": "Read Mock Log Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep Live Test Contacts": {
+      "main": [
+        [
+          {
+            "node": "Delete Test Opportunity (HighLevel)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Test Opportunity (HighLevel)": {
+      "main": [
+        [
+          {
+            "node": "Delete Test Contact (HighLevel)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Mailpit Messages (Mailpit API)": {
+      "main": [
+        [
+          {
+            "node": "Read GHL Contact (GHL API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read GHL Contact (GHL API)": {
+      "main": [
+        [
+          {
+            "node": "Read GHL Opportunity (GHL API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Mock Log Rows": {
+      "main": [
+        [
+          {
+            "node": "Read Sent Gmail Messages (Gmail)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Sent Gmail Messages (Gmail)": {
+      "main": [
+        [
+          {
+            "node": "Assert Scenario Outcomes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "active": false
+}

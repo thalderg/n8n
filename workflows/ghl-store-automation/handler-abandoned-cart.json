@@ -1,0 +1,1006 @@
+{
+  "id": "ghlHandlerCart01",
+  "name": "[GHL Store Automation] | Handle Abandoned Cart",
+  "nodes": [
+    {
+      "id": "s2-prep",
+      "name": "Prepare Cart Created Update",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        784,
+        460
+      ],
+      "parameters": {
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "p1",
+              "name": "action",
+              "value": "upsert_stage",
+              "type": "string"
+            },
+            {
+              "id": "p2",
+              "name": "target_stage",
+              "value": "cart_created",
+              "type": "string"
+            },
+            {
+              "id": "p3",
+              "name": "add_tags",
+              "value": "={{ ['cart-open'] }}",
+              "type": "array"
+            },
+            {
+              "id": "p4",
+              "name": "remove_tags",
+              "value": "={{ [] }}",
+              "type": "array"
+            },
+            {
+              "id": "adcfg",
+              "name": "adapter_config",
+              "value": "={{ $('Store Settings').first().json.adapter_config }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "s2-stage",
+      "name": "Set Contact To Cart Created (via GHL Adapter)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "onError": "stopWorkflow",
+      "position": [
+        1024,
+        460
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Store Settings').first().json.ghl_adapter_id }}"
+        },
+        "workflowInputs": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "mode": "once",
+        "options": {}
+      }
+    },
+    {
+      "id": "s2-save",
+      "name": "Save Checkout Record",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "onError": "stopWorkflow",
+      "position": [
+        1264,
+        460
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_CHECKOUTS_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "checkout_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Prepare Cart Created Update').first().json.checkout_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "checkout_id": "={{ $('Prepare Cart Created Update').first().json.checkout_id }}",
+            "email": "={{ $('Prepare Cart Created Update').first().json.email }}",
+            "created_at": "={{ $now.toISO() }}",
+            "phone": "={{ $('Prepare Cart Created Update').first().json.phone }}",
+            "first_name": "={{ $('Prepare Cart Created Update').first().json.first_name }}",
+            "last_name": "={{ $('Prepare Cart Created Update').first().json.last_name }}",
+            "cart_items": "={{ $('Prepare Cart Created Update').first().json.cart_items }}",
+            "cart_total": "={{ Number($('Prepare Cart Created Update').first().json.cart_total || 0) }}",
+            "recovery_url": "={{ $('Prepare Cart Created Update').first().json.recovery_url }}"
+          },
+          "matchingColumns": [
+            "checkout_id"
+          ],
+          "schema": []
+        }
+      }
+    },
+    {
+      "id": "s2-wait",
+      "name": "Wait Before Cart Reminder",
+      "webhookId": "ghl-cart-handler-wait",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1504,
+        460
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $('Store Settings').first().json.cart_wait_seconds }}",
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "s2-get",
+      "name": "Get Checkout Record",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "alwaysOutputData": true,
+      "onError": "stopWorkflow",
+      "position": [
+        1744,
+        460
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_CHECKOUTS_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "checkout_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Prepare Cart Created Update').first().json.checkout_id }}"
+            }
+          ]
+        },
+        "returnAll": false,
+        "limit": 1
+      }
+    },
+    {
+      "id": "s2-still",
+      "name": "Cart Still Abandoned?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1984,
+        460
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "y1",
+              "leftValue": "={{ !!$json.checkout_id && !$json.converted_at && !$json.reminder_sent_at }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "s2-handled",
+      "name": "Cart Converted Or Already Handled",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        2224,
+        636
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "s2-phone",
+      "name": "Cart Contact Has Phone?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2704,
+        460
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "y2",
+              "leftValue": "={{ !!($('Get Checkout Record').first().json.phone || $('Prepare Cart Created Update').first().json.phone) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "s2-prep-sms",
+      "name": "Prepare Cart Reminder SMS",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2944,
+        380
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "q1",
+              "name": "action",
+              "value": "send_sms",
+              "type": "string"
+            },
+            {
+              "id": "q2",
+              "name": "email",
+              "value": "={{ $('Get Checkout Record').first().json.email || $('Prepare Cart Created Update').first().json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "q3",
+              "name": "phone",
+              "value": "={{ $('Get Checkout Record').first().json.phone || $('Prepare Cart Created Update').first().json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "q4",
+              "name": "sms_text",
+              "value": "=Hi {{ $('Get Checkout Record').first().json.first_name || $('Prepare Cart Created Update').first().json.first_name || 'there' }}, you left {{ $('Get Checkout Record').first().json.cart_items || $('Prepare Cart Created Update').first().json.cart_items || 'items' }} in your cart. Finish your order here: {{ $('Get Checkout Record').first().json.recovery_url || $('Prepare Cart Created Update').first().json.recovery_url }}",
+              "type": "string"
+            },
+            {
+              "id": "q5",
+              "name": "run_id",
+              "value": "={{ $('Prepare Cart Created Update').first().json.run_id }}",
+              "type": "string"
+            },
+            {
+              "id": "adcfg",
+              "name": "adapter_config",
+              "value": "={{ $('Store Settings').first().json.adapter_config }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "s2-send-sms",
+      "name": "Send Cart Reminder SMS (via GHL Adapter)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "onError": "continueRegularOutput",
+      "position": [
+        3184,
+        380
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Store Settings').first().json.ghl_adapter_id }}"
+        },
+        "workflowInputs": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "mode": "once",
+        "options": {}
+      }
+    },
+    {
+      "id": "s2-build-email",
+      "name": "Build Cart Reminder Email",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2224,
+        460
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "r1",
+              "name": "to",
+              "value": "={{ $('Get Checkout Record').first().json.email || $('Prepare Cart Created Update').first().json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "r2",
+              "name": "subject",
+              "value": "You left something in your cart",
+              "type": "string"
+            },
+            {
+              "id": "r3",
+              "name": "body",
+              "value": "=Hi {{ $('Get Checkout Record').first().json.first_name || $('Prepare Cart Created Update').first().json.first_name || 'there' }},\n\nYou left {{ $('Get Checkout Record').first().json.cart_items || $('Prepare Cart Created Update').first().json.cart_items || 'items' }} in your cart. Finish your order here: {{ $('Get Checkout Record').first().json.recovery_url || $('Prepare Cart Created Update').first().json.recovery_url }}\n\nBest regards",
+              "type": "string"
+            },
+            {
+              "id": "r4",
+              "name": "from_email",
+              "value": "={{ $('Store Settings').first().json.from_email }}",
+              "type": "string"
+            },
+            {
+              "id": "r5",
+              "name": "email_mode",
+              "value": "={{ $('Store Settings').first().json.email_mode }}",
+              "type": "string"
+            },
+            {
+              "id": "r6",
+              "name": "run_id",
+              "value": "={{ $('Prepare Cart Created Update').first().json.run_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "s2-send-email",
+      "name": "Send Cart Reminder Email (via Email Sender)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "onError": "continueRegularOutput",
+      "position": [
+        2464,
+        460
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Store Settings').first().json.email_sender_id }}"
+        },
+        "workflowInputs": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "mode": "once",
+        "options": {}
+      }
+    },
+    {
+      "id": "s2-mark",
+      "name": "Mark Reminder Sent In Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "onError": "stopWorkflow",
+      "position": [
+        3424,
+        460
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_CHECKOUTS_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "checkout_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Prepare Cart Created Update').first().json.checkout_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "reminder_sent_at": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        }
+      }
+    },
+    {
+      "id": "s2-prep-tag",
+      "name": "Prepare Reminder Sent Tag",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3424,
+        636
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "t1",
+              "name": "action",
+              "value": "upsert_stage",
+              "type": "string"
+            },
+            {
+              "id": "t2",
+              "name": "email",
+              "value": "={{ $('Get Checkout Record').first().json.email || $('Prepare Cart Created Update').first().json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "t3",
+              "name": "phone",
+              "value": "={{ $('Get Checkout Record').first().json.phone || $('Prepare Cart Created Update').first().json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "t4",
+              "name": "first_name",
+              "value": "={{ $('Get Checkout Record').first().json.first_name || $('Prepare Cart Created Update').first().json.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "t5",
+              "name": "last_name",
+              "value": "={{ $('Get Checkout Record').first().json.last_name || $('Prepare Cart Created Update').first().json.last_name }}",
+              "type": "string"
+            },
+            {
+              "id": "t6",
+              "name": "target_stage",
+              "value": "none",
+              "type": "string"
+            },
+            {
+              "id": "t7",
+              "name": "add_tags",
+              "value": "={{ ['cart-reminder-sent'] }}",
+              "type": "array"
+            },
+            {
+              "id": "t8",
+              "name": "remove_tags",
+              "value": "={{ [] }}",
+              "type": "array"
+            },
+            {
+              "id": "t9",
+              "name": "run_id",
+              "value": "={{ $('Prepare Cart Created Update').first().json.run_id }}",
+              "type": "string"
+            },
+            {
+              "id": "adcfg",
+              "name": "adapter_config",
+              "value": "={{ $('Store Settings').first().json.adapter_config }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "s2-tag",
+      "name": "Tag Contact Reminder Sent (via GHL Adapter)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "onError": "continueRegularOutput",
+      "position": [
+        3424,
+        812
+      ],
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Store Settings').first().json.ghl_adapter_id }}"
+        },
+        "workflowInputs": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "mode": "once",
+        "options": {}
+      }
+    },
+    {
+      "id": "cart-trigger",
+      "name": "Receive Handler Call",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        64,
+        460
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "cart-settings",
+      "name": "Store Settings",
+      "notes": "Settings and the event arrive from the main workflow (defined once in its 'Store Settings' node).",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        304,
+        460
+      ],
+      "parameters": {
+        "includeOtherFields": true,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "hs1",
+              "name": "handled_by",
+              "value": "[GHL Store Automation] | Handle Abandoned Cart",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "cart-title",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -380
+      ],
+      "parameters": {
+        "content": "# Handle Abandoned Cart\n\nHandler for one store event: a checkout was started (event 'checkout_created'). It tracks the cart in GoHighLevel and, if the customer has not ordered after the waiting time, sends ONE reminder. Shopify sends several events per checkout (the email arrives in a checkout update), so a checkout already tracked is skipped at once.\n\n**Called by:** the main workflow '[GHL Store Automation] | WF1 - Store Events & Win-Back' (its 'Run ... Handler' node, chosen by 'Route By Event Type'), which passes the normalised event together with the store settings. **Standalone-capable:** no.\n\n**Sections on this canvas:**\n1. Track The Cart And Remind\n\nGoHighLevel work is done by the GHL Adapter workflow (mock or live, chosen by 'ghl_adapter_id') and email by the Email Sender workflow (both called with Execute Workflow). Any failure is reported to the central error handler with THIS workflow's name and the failed node's name.",
+        "width": 3540,
+        "height": 340,
+        "color": 7
+      }
+    },
+    {
+      "id": "cart-sec",
+      "name": "Section 1 Note - Track The Cart And Remind",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "## Track the cart and remind\n\nTriggered by: the main workflow's 'Run ... Handler' node, event 'checkout_created'.\n\nWhat it does, step by step:\n1. Stops at once if the checkout is already in the ghl_store_checkouts table (Shopify sends one event per change of the same checkout; only the first one with an email goes on). The first one is claimed at once in the table ('Claim Checkout Record', upper branch, runs before the slow GoHighLevel call), so an event that arrives a second later already stops here. Those later events take the lower path instead: Find Tracked Checkout → Refresh Stored Checkout Details saves their newest email, phone, names, cart and recovery link (an empty field never erases a stored one).\n2. Puts the contact in stage Cart Created (never backwards) and tags it 'cart-open'.\n3. Records the checkout in the ghl_store_checkouts table, with every customer and cart field.\n4. Waits (cart_wait_seconds: 1 hour in production, 2 minutes in the demo, so a real Shopify checkout can finish before the reminder).\n5. Looks the checkout up again, now with the newest details. If it was converted to an order, or a reminder was already sent, it stops.\n6. Otherwise sends the reminder from the stored details: always an email, plus an SMS when there is a phone number (the email is the channel every customer has and the one a demo can show).\n7. Records the reminder in the table and tags the contact 'cart-reminder-sent', sending GoHighLevel the newest phone and names too.",
+        "width": 3540,
+        "height": 1000,
+        "color": 5
+      }
+    },
+    {
+      "id": "381a7318-913a-49c9-81de-0ad5f59266dd",
+      "name": "Stop If Checkout Already Tracked",
+      "notesInFlow": true,
+      "notes": "Only a checkout not in ghl_store_checkouts goes on",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "onError": "stopWorkflow",
+      "position": [
+        544,
+        460
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "rowNotExists",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_CHECKOUTS_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "checkout_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.checkout_id }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "1d8b8754-1c10-4dff-af80-588e7063118d",
+      "name": "Find Tracked Checkout",
+      "notesInFlow": true,
+      "notes": "A new checkout ends here",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "onError": "stopWorkflow",
+      "position": [
+        544,
+        636
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_CHECKOUTS_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "checkout_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.checkout_id }}"
+            }
+          ]
+        },
+        "returnAll": false,
+        "limit": 1
+      }
+    },
+    {
+      "id": "ca532717-0f0c-4c2e-bdbf-b68ad5704e58",
+      "name": "Refresh Stored Checkout Details",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "onError": "stopWorkflow",
+      "position": [
+        784,
+        636
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_CHECKOUTS_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "checkout_id",
+              "condition": "eq",
+              "keyValue": "={{ $('Store Settings').first().json.checkout_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $('Store Settings').first().json.email || $json.email || '' }}",
+            "phone": "={{ $('Store Settings').first().json.phone || $json.phone || '' }}",
+            "first_name": "={{ $('Store Settings').first().json.first_name || $json.first_name || '' }}",
+            "last_name": "={{ $('Store Settings').first().json.last_name || $json.last_name || '' }}",
+            "cart_items": "={{ $('Store Settings').first().json.cart_items || $json.cart_items || '' }}",
+            "cart_total": "={{ Number($('Store Settings').first().json.cart_total || $json.cart_total || 0) }}",
+            "recovery_url": "={{ $('Store Settings').first().json.recovery_url || $json.recovery_url || '' }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        }
+      }
+    },
+    {
+      "id": "claimCk1",
+      "name": "Claim Checkout Record",
+      "notes": "Upper branch on purpose: n8n runs it before the lower main path, so the row exists before the slow GoHighLevel call and a second event for the same checkout stops at the check.",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "onError": "continueRegularOutput",
+      "position": [
+        784,
+        300
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "YOUR_CHECKOUTS_DATA_TABLE_ID"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "checkout_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.checkout_id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "checkout_id": "={{ $json.checkout_id }}",
+            "email": "={{ $json.email }}",
+            "created_at": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "checkout_id"
+          ],
+          "schema": []
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Prepare Cart Created Update": {
+      "main": [
+        [
+          {
+            "node": "Set Contact To Cart Created (via GHL Adapter)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Contact To Cart Created (via GHL Adapter)": {
+      "main": [
+        [
+          {
+            "node": "Save Checkout Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Checkout Record": {
+      "main": [
+        [
+          {
+            "node": "Wait Before Cart Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Before Cart Reminder": {
+      "main": [
+        [
+          {
+            "node": "Get Checkout Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Checkout Record": {
+      "main": [
+        [
+          {
+            "node": "Cart Still Abandoned?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cart Still Abandoned?": {
+      "main": [
+        [
+          {
+            "node": "Build Cart Reminder Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cart Converted Or Already Handled",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Cart Reminder SMS": {
+      "main": [
+        [
+          {
+            "node": "Send Cart Reminder SMS (via GHL Adapter)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Cart Reminder Email": {
+      "main": [
+        [
+          {
+            "node": "Send Cart Reminder Email (via Email Sender)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Cart Reminder SMS (via GHL Adapter)": {
+      "main": [
+        [
+          {
+            "node": "Mark Reminder Sent In Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Reminder Sent In Table": {
+      "main": [
+        [
+          {
+            "node": "Prepare Reminder Sent Tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Reminder Sent Tag": {
+      "main": [
+        [
+          {
+            "node": "Tag Contact Reminder Sent (via GHL Adapter)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Handler Call": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Stop If Checkout Already Tracked",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Find Tracked Checkout",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stop If Checkout Already Tracked": {
+      "main": [
+        [
+          {
+            "node": "Prepare Cart Created Update",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Claim Checkout Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Tracked Checkout": {
+      "main": [
+        [
+          {
+            "node": "Refresh Stored Checkout Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Cart Reminder Email (via Email Sender)": {
+      "main": [
+        [
+          {
+            "node": "Cart Contact Has Phone?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cart Contact Has Phone?": {
+      "main": [
+        [
+          {
+            "node": "Prepare Cart Reminder SMS",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Reminder Sent In Table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "TJ3dFxrcGF3QEAkD"
+  },
+  "active": false
+}
