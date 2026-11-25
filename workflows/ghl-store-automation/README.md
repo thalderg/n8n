@@ -6,6 +6,8 @@ A store owner loses sales in the gaps: a contact-form question that waits a day 
 
 Built with n8n: 1 main workflow, 4 event handlers, 3 services, a contact form and a demo simulator; 4 n8n Data Tables.
 
+<p align="center"><a href="https://youtu.be/LlwX1hhlOW0"><img src="https://img.youtube.com/vi/LlwX1hhlOW0/maxresdefault.jpg" alt="Watch the 4-minute demo on YouTube" width="560"></a><br><b>▶ <a href="https://youtu.be/LlwX1hhlOW0">Watch the 4-minute demo on YouTube</a></b></p>
+
 > Tested end to end against a real Shopify development store and a real GoHighLevel sandbox. The names and emails in the images are test data.
 
 ---

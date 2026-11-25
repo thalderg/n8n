@@ -6,7 +6,7 @@ A company that has had a job open for weeks is struggling to hire. This system f
 
 Built with n8n: 4 workflows and one Google Sheet.
 
-<p align="center"><a href="https://youtu.be/DE-Y3OhYy2g"><img src="https://img.youtube.com/vi/DE-Y3OhYy2g/maxresdefault.jpg" alt="Watch the 5-minute demo on YouTube" width="560"></a><br><b>▶ <a href="https://youtu.be/DE-Y3OhYy2g">Watch the 5-minute demo on YouTube</a></b></p>
+<p align="center"><a href="https://youtu.be/CvmStWXNAgE"><img src="https://img.youtube.com/vi/CvmStWXNAgE/maxresdefault.jpg" alt="Watch the 4-minute demo on YouTube" width="560"></a><br><b>▶ <a href="https://youtu.be/CvmStWXNAgE">Watch the 4-minute demo on YouTube</a></b></p>
 
 ---
 
