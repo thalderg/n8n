@@ -76,7 +76,7 @@
         1720
       ],
       "parameters": {
-        "content": "## Hacker News\n\nTriggered by: Route By Source when source = hacker_news.\n\nWhat it does, step by step:\n1. One free Hacker News search per search term, stories of the last 7 days.\n2. Rank HN Stories removes duplicates and passes the 12 stories with the most points to the filter (cap of 4 per angle after the filter) (url = HN page, linked_url = the article).\n3. Continues in \"Shared: Reddit + Hacker News + X\".",
+        "content": "## Hacker News\n\nTriggered by: Route By Source when source = hacker_news.\n\nWhat it does, step by step:\n1. One free Hacker News search per search term: stories of the last 48 hours on daily runs, of the last 7 days on weekly runs (Hacker News moves slowly; WF3 marks a daily-run claim found only in Hacker News posts older than 24 hours).\n2. Rank HN Stories removes duplicates and passes the 12 stories with the most points to the filter (cap of 4 per angle after the filter) (url = HN page, linked_url = the article).\n3. Continues in \"Shared: Reddit + Hacker News + X\".",
         "width": 1340,
         "height": 480,
         "color": 2
@@ -565,7 +565,7 @@
             },
             {
               "name": "numericFilters",
-              "value": "={{ 'created_at_i>' + Math.floor(Date.now() / 1000 - 7 * 86400) }}"
+              "value": "={{ 'created_at_i>' + Math.floor(Date.now() / 1000 - ($('Store Settings').first().json.window > 1 ? 7 : 2) * 86400) }}"
             },
             {
               "name": "hitsPerPage",

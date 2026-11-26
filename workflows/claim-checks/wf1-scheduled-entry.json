@@ -28,7 +28,7 @@
         384
       ],
       "parameters": {
-        "content": "## Start Scheduled Runs\n\nTriggered by: Every Day At 7 (cron 0 7 * * *, Europe/Rome), or by hand with Test Run As Monday, which runs as on a Monday (every active keyword, both modes).\n\nWhat it does, step by step:\n1. Read Active Keywords (Airtable Keywords) reads the active rows of Keywords: on Mondays both modes, on other days mode \"today\" only.\n2. Group Into Runs makes one run per recipient and mode, with its run id (CC-yyyymmdd-hhmmss-xxxx), all its keywords, and check_duplicates on.\n3. Start Research Run (via WF3) calls \"WF3\" once per run and waits for it before starting the next. A failed run alerts from \"WF3\" and the next one still starts.",
+        "content": "## Start Scheduled Runs\n\nTriggered by: Every Day At 7 (cron 0 7 * * *, Europe/Rome), or by hand with Test Run As Monday, which runs as on a Monday (every active keyword, both modes).\n\nWhat it does, step by step:\n1. Read Active Keywords (Airtable Keywords) reads the active rows of Keywords: on Mondays both modes, on other days mode \"today\" only.\n2. Group Into Runs makes one run per recipient and mode, with its run id (CC-yyyymmdd-hhmmss-xxxx), all its keywords with their saved search plans (column plan), and check_duplicates on.\n3. Start Research Run (via WF3) calls \"WF3\" once per run and waits for it before starting the next. A failed run alerts from \"WF3\" and the next one still starts.",
         "height": 640,
         "width": 1120,
         "color": 4
@@ -134,7 +134,7 @@
         640
       ],
       "parameters": {
-        "jsCode": "const rows = ($input.first().json.records || []).map(r => r.fields).filter(f => f.keyword && f.recipient && f.mode);\nconst groups = {};\nfor (const f of rows) { const k = f.recipient + '|' + f.mode; (groups[k] = groups[k] || { recipient: f.recipient, mode: f.mode, keywords: [] }).keywords.push(f.keyword); }\nconst stamp = $now.setZone('Europe/Rome').toFormat('yyyyLLdd-HHmmss');\nreturn Object.values(groups).map(g => ({ json: { run_id: 'CC-' + stamp + '-' + Math.random().toString(36).slice(2, 6).toUpperCase(),\n  keywords: [...new Set(g.keywords)], mode: g.mode, recipient: g.recipient, requested_by: 'schedule', chat_id: '', check_duplicates: true } }));"
+        "jsCode": "const rows = ($input.first().json.records || []).map(r => r.fields).filter(f => f.keyword && f.recipient && f.mode);\nconst groups = {};\nfor (const f of rows) { const k = f.recipient + '|' + f.mode; const g = (groups[k] = groups[k] || { recipient: f.recipient, mode: f.mode, keywords: [], plans: {} }); g.keywords.push(f.keyword);\n  // Each topic's saved search plan (column plan, written by \"Plan Topic\"); WF3 uses it instead of planning again.\n  if (f.plan) g.plans[f.keyword] = f.plan; }\nconst stamp = $now.setZone('Europe/Rome').toFormat('yyyyLLdd-HHmmss');\nreturn Object.values(groups).map(g => ({ json: { run_id: 'CC-' + stamp + '-' + Math.random().toString(36).slice(2, 6).toUpperCase(),\n  keywords: [...new Set(g.keywords)], plans: g.plans, mode: g.mode, recipient: g.recipient, requested_by: 'schedule', chat_id: '', check_duplicates: true } }));"
       }
     },
     {

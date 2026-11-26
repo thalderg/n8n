@@ -17,7 +17,7 @@ Built with n8n: 13 workflows, one Airtable base, one Postgres database and one T
 ## In 30 seconds
 
 1. **You set the topics** in an Airtable table: keyword, daily or weekly, who gets the report. Or you send `search <topic>` to the bot, or a question: `search what are the best projects at the NEAR hackathon?`
-2. **Plan:** a language model gives every topic its own 6 search angles and writes, for each one, every way people phrase it. A topic written as a question also gets its answer looked up on the web.
+2. **Plan:** every topic keeps its own saved search plan: 6 search angles, each with every way people phrase it. The plans refresh by themselves every Monday from what the searches caught. A topic written as a question also gets its answer looked up on the web.
 3. **Collect:** Reddit, Hacker News and X are searched for the posts of the last 24 hours (or 7 days); Google Trends adds what people are searching for right now. Only posts with real engagement pass.
 4. **Group:** posts about the same thing become one claim.
 5. **Check:** each claim is searched on Google and Venice web search; every page found is read, dated and judged (supports, contradicts or only mentions the claim; official, reliable or other).
@@ -56,7 +56,7 @@ flowchart TD
 | **WF2** Telegram Bot | a message to the bot | allowed chats only; routes commands, searches and questions |
 | **WF3** Research Pipeline | WF1 or WF2 | one whole run: plan, collect, group, check, write, deliver, archive |
 | **Collect Findings** | WF3: Google Trends once per topic, then once per angle and source | searches one source, keeps the posts with real engagement, filters the rest with a model, saves everything to Airtable |
-| **Verify Story** | WF3, once per claim (up to 5 per topic) | finds and reads sources, judges them, gives the label, writes the explainer |
+| **Verify Story** | WF3, once per claim (up to 7 per topic) | finds and reads sources, judges them, gives the label, writes the explainer |
 | **Answer Question** | WF3, when a topic is a question | finds the answer on the web and marks each item confirmed, claimed or unverified |
 | **Read Web Pages** | Verify Story, Answer Question | reads pages and dates them; blocked pages through Bright Data, once more with the page's scripts run |
 | **Ask Venice** | every model step | asks the main model, and a backup model if the first one fails |
@@ -65,6 +65,9 @@ flowchart TD
 | **Story Chat** | WF2 | the research assistant: answers questions about a story, saves or forgets conversations |
 | **Follow Up Story** | Story Chat (`update`) | looks for reliable news published after the story and saves it as an update |
 | **Clean Old Records** | every day at 06:30, or by hand | deletes Airtable rows no workflow reads any more, to stay under the Free plan's 1,000 records |
+| **Plan Topic** | WF3 (a topic without a plan), Manage Topics, Refresh Topic Plans | writes the search plan of one topic and checks it by fixed rules; one more try with the backup model if the check fails |
+| **Manage Topics** | WF2 | the topic commands: `list ds`, `add`, `update`, `on`, `off` |
+| **Refresh Topic Plans** | every Monday at 06:15, or by hand | refreshes every topic's plan from last week's posts and tells you in Telegram what changed |
 
 ---
 
@@ -72,18 +75,19 @@ flowchart TD
 
 The scheduled topics live in one Airtable table. One row per topic:
 
-| keyword | active | mode | recipient |
-|---|---|---|---|
-| New discovery and breakthrough made using AI and LLM | ✅ | today | you@example.com |
-| crypto hacks and exploits | ✅ | today | you@example.com |
-| AI regulation in the EU | ✅ | 7days | team@example.com |
+| keyword | active | mode | recipient | plan | plan_updated |
+|---|---|---|---|---|---|
+| New discovery and breakthrough made using AI and LLM | ✅ | today | you@example.com | (written by the workflows) | 2026-11-26 |
+| crypto hacks and exploits | ✅ | today | you@example.com | (written by the workflows) | 2026-11-26 |
+| AI regulation in the EU | ✅ | 7days | team@example.com | (written by the workflows) | 2026-11-26 |
 
-- **mode `today`** runs every day at 07:00 and looks at the last 24 hours. **mode `7days`** runs on Mondays and looks at the last 7 days. Hacker News is always read over 7 days: it moves slowly.
+- **mode `today`** runs every day at 07:00 and looks at the last 24 hours. **mode `7days`** runs on Mondays and looks at the last 7 days. Hacker News moves slowly, so daily runs read it over 48 hours (and say so on a claim found only there); weekly runs read 7 days. Posts older than the window are never used.
 - Topics with the same recipient and mode go into **one run and one report**.
 - **active** off = paused, nothing deleted.
+- **plan** and **plan_updated** are written by the workflows: the topic's 6 search angles and when they last changed. You never fill them in.
 - **recipient** gets the PDF of weekly runs by email; the Telegram summary goes to the chat paired with that email in WF3's settings.
 
-Topics can be broad or narrow and written in plain words: the planner turns them into proper searches (next section). From the bot, `search <topic>` starts a one-off run on anything, with no row needed.
+Topics can be broad or narrow and written in plain words: "Plan Topic" turns them into proper searches (next section). You can manage them from the bot too: `list ds` (daily) or `list ws` (weekly) shows them numbered, ON or OFF, with their angles; `add ds "topic"`, `update ds 2 "new topic"`, `off ds 2` and `on ds 2` change them. From the bot, `search <topic>` starts a one-off run on anything, with no row needed.
 
 ---
 
@@ -91,7 +95,7 @@ Topics can be broad or narrow and written in plain words: the planner turns them
 
 ```mermaid
 flowchart LR
-    A["Plan 6 angles per topic<br/>(model)"] --> B["Google Trends<br/>once per topic, 7-day runs only"]
+    A["Saved plan: 6 angles per topic<br/>(refreshed every Monday)"] --> B["Google Trends<br/>once per topic, 7-day runs only"]
     B --> C["Reddit · Hacker News · X<br/>per angle"]
     C --> D["Keep posts with<br/>real engagement"]
     D --> E["Filter<br/>(model)"]
@@ -104,7 +108,7 @@ flowchart LR
     H --> I["PDF · Telegram ·<br/>email · archive"]
 ```
 
-A run with two topics takes about 20-30 minutes (29.5 in the test of 18 Nov: 69 posts kept and 10 claims checked, each check 1-3 minutes). Model and search costs grow with the number of topics, since each one gets its own 6 angles and up to 5 checks; a question adds 2 model calls, 6 Google searches and up to 8 page reads.
+A run with two topics takes about 20-30 minutes (29.5 in the test of 18 Nov: 69 posts kept and 10 claims checked, each check 1-3 minutes). Model and search costs grow with the number of topics, since each one gets its own 6 angles and up to 7 checks; a question adds 2 model calls, 6 Google searches and up to 8 page reads.
 
 ---
 
@@ -135,11 +139,13 @@ Why it matters: with one phrase per angle, X returned 0-5 posts per crypto searc
 
 ### 2. Every topic gets its own searches and checks
 
-The limits are per topic: each topic gets 6 angles and its 5 strongest claims are checked. With one shared limit, a busy topic (a big hack) took the searches and checks of a quiet one (AI research), which then got 2 narrow angles and almost no stories.
+The limits are per topic: each topic gets 6 angles and its 7 most impactful claims are checked. With one shared limit, a busy topic (a big hack) took the searches and checks of a quiet one (AI research), which then got 2 narrow angles and almost no stories.
+
+**Each topic keeps its own plan, and the plan learns.** Planning all topics in one model call every morning dropped whole topics on three days of one week. Now each topic's plan is written once, checked by fixed rules (a wide angle first, at least 4 usable angles, no one-letter words), and saved. Every Monday "Refresh Topic Plans" looks at what each angle caught last week: angles that found posts stay, angles that found nothing are replaced, and a sub-topic that only the wide angle kept finding gets its own angle. You get one Telegram message with what changed. A plan that fails the check is never used: the model gets one more try with the backup model, and the old plan stays if that fails too.
 
 ### 3. Yesterday's story is not today's news
 
-Hacker News is searched over 7 days, and a fresh article can be about an old event, so a daily report could present a week-old story as news (it did: a model release of 12 Nov in the report of 18 Nov). Now every checked claim gets the date it **first appeared**: the earliest date of its posts and of the pages that back it. If that is before the run's window:
+Hacker News used to be searched over 7 days even for daily runs, and a fresh article can be about an old event, so a daily report could present a week-old story as news (it did: a model release of 12 Nov in the report of 18 Nov). Now every checked claim gets the date it **first appeared**: the earliest date of its posts and of the pages that back it. If that is before the run's window:
 
 - the model must name a **new fact** about the event (a new figure, decision, ruling, seizure, result, release, a statement by the party involved), with its date and the page that reports it. New coverage, a social post, commentary or a recap is not new;
 - code then checks it: the fact's date and the page's own date must be inside the window, the page must have been read, and it must not be a social platform;
@@ -157,7 +163,7 @@ flowchart LR
 
 In a test on 18 Nov this left out a CERN result of 9 Nov, a claim about a Maya site of 12 Nov and an FBI seizure of 12 Nov, and kept an LLM benchmark of July as an update, because its author published new results on 17 Nov.
 
-The claims to check are also chosen fairly: the best claim of every angle first, then the rest by the number of independent sources, so a security story is not pushed out by product launches.
+**Only today's news, the most important first.** Posts published before the run's window are never used. The grouping model gives every claim an impact score from 1 to 10: how much it matters for people in general (safety, health, money, rights, many people affected); rumours, opinions and self-promotion score low. Each topic's 7 highest scores are checked. **Nothing fresh is thrown away:** every claim over the check limit is listed, highest impact first, under "Also discussed (not checked)" with its first post, in the PDF, in the Telegram summary (up to 8) and in the saved briefing.
 
 ### 4. A question gets an answer, not just a check
 
@@ -273,6 +279,9 @@ Commands work with or without a symbol in front: `search`, `/search` and `#searc
 | `search <question>` | the same run, plus an answer from the web at the top of the summary and the PDF, e.g. `search what are the most revolutionary projects submitted to the NEAR hackathon?` |
 | `list` | the stories of the last 7 days, by day: number, label, title |
 | `list <dates>` | the stories in a date range, e.g. `list 13 October - 21 October 2026` (dates read by fixed rules, not a model) |
+| `list ds` / `list ws` | your daily (ds) or weekly (ws) topics, numbered, each ON or OFF, with its search angles |
+| `add ds "topic"`, `update ds 2 "new topic"` | a new topic, or topic 2 replaced; both get a fresh search plan and are ON (`create` = add, `change` = update) |
+| `off ds 2`, `on ds 2` | stop topic 2 or start it again; nothing is deleted (`remove` and `stop` = off) |
 | `dig <number>` or `dig <words>` | the full story: where it came from (the original posts, with dates), what happened, what is confirmed and what is not, why it matters, every source with its date, every update, your saved conversations |
 | `update <number>` | looks for reliable news published since the story or its last update, and saves what it finds |
 | `reports` | the reports of the last 14 days; a number alone opens one |
@@ -361,7 +370,7 @@ Create a base with four tables. Field names exactly as written (snake_case); sel
 
 | Table | Fields |
 |---|---|
-| **Keywords** | keyword (text), active (checkbox), mode (single select: today, 7days), recipient (email) |
+| **Keywords** | keyword (text), active (checkbox), mode (single select: today, 7days), recipient (email), plan (long text), plan_updated (date with time) |
 | **Runs** | run_id (text), started_at (date-time), status (single select: started, collecting, merging, verifying, delivered, failed), keywords (long text), mode (single select: today, 7days), recipient (email), pdf_link (url), last_opened_at (date-time), briefing (long text) |
 | **Findings** | title (text), run_id (text), angle (text), source (single select: reddit, hacker_news, x), url (url), linked_url (url), published_at (date-time), summary (long text), kept (checkbox), drop_reason (text), cluster_id (text) |
 | **Clusters** | title (text), run_id (text), cluster_id (text), sources (multiple select: reddit, hacker_news, x), independent_domains (number), label (single select: Corroborated, Single source, Disputed, Unverified, Opinion), official_links (long text), supporting_links (long text), evidence (long text), reason (long text), gist (long text), explainer (long text), story_number (number, 0 decimals) |
@@ -421,7 +430,7 @@ Hacker News needs no key.
 
 ### 4. Import and link the workflows
 
-Import the ten JSON files. Every node that calls another workflow is named `… (via <Workflow Name>)`: open each one and choose that workflow from the list (imported workflows get new ids). In the settings of each called workflow, "This workflow can be called by" lists its callers: add the new ids of its callers there.
+Import the sixteen JSON files. Every node that calls another workflow is named `… (via <Workflow Name>)`: open each one and choose that workflow from the list (imported workflows get new ids). In the settings of each called workflow, "This workflow can be called by" lists its callers: add the new ids of its callers there.
 
 ### 5. Placeholders
 
@@ -449,7 +458,7 @@ Import the ten JSON files. Every node that calls another workflow is named `… 
 |---|---|---|
 | reliable outlets (the newsroom list) | Verify Story · Store Settings | Reuters, AP, BBC, Guardian, NYT, FT, Bloomberg, The Verge, TechCrunch, Nature, Science and others |
 | angles per topic | WF3 · Store Settings `max_angles` | 6 |
-| claims checked per topic | WF3 · Store Settings `max_verify` | 5 |
+| claims checked per topic | WF3 · Store Settings `max_verify` | 7 |
 | pages read for an answer | Answer Question · Store Settings `max_pages` | 8 |
 | days Airtable rows are kept | Clean Old Records · Store Settings | dropped posts 1, kept posts 7, Clusters 14, Runs 14 |
 | posts kept per angle | Collect Findings · Store Settings | Reddit 5, Hacker News 4, X 5 (from a pool of 12 per source) |

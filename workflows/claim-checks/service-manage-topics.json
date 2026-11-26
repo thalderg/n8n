@@ -1,0 +1,528 @@
+{
+  "id": "pKSN3PgpfSGos2eL",
+  "name": "Claim Checks | Manage Topics",
+  "nodes": [
+    {
+      "id": "091f92ab-0d45-4eb1-a31d-dc4995c5b9ff",
+      "name": "When Called By Bot",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        760
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    },
+    {
+      "id": "a5fe4cb4-a0a6-4b8a-987c-f52a38fd297a",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        280,
+        760
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d8c9eba6-91b5-4783-bba0-56caf25338d6",
+              "name": "airtable_base",
+              "type": "string",
+              "value": "YOUR_AIRTABLE_BASE_ID"
+            },
+            {
+              "id": "124ea26d-7ede-4ce3-989b-fafb0a3b29e3",
+              "name": "keywords_table",
+              "type": "string",
+              "value": "YOUR_AIRTABLE_KEYWORDS_TABLE_ID"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "00708a60-52ba-455a-bea2-831534bab193",
+      "name": "Read Topics (Airtable Keywords)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        500,
+        760
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.airtable.com/v0/{{ $json.airtable_base }}/{{ $json.keywords_table }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "pageSize",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "5b2d8cb5-2585-4744-8725-10a1318b0603",
+      "name": "Decide Topic Change",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: reads the command against the numbered topic list and decides the one change to make (or the reply when nothing changes).\nconst c = $('When Called By Bot').first().json;\nconst s = $('Store Settings').first().json;\nconst kind = c.topic_kind === 'ws' ? 'ws' : 'ds';\nconst mode = kind === 'ws' ? '7days' : 'today';\nconst name = kind === 'ws' ? 'weekly searches' : 'daily searches';\nconst rows = $input.all().flatMap(i => i.json.records || []).filter(r => r.fields.mode === mode)\n  .sort((a, b) => String(a.createdTime).localeCompare(String(b.createdTime)));\nconst planOf = (r) => { try { return (JSON.parse(r.fields.plan || '[]') || []).map(a => a.angle); } catch (e) { return []; } };\nconst list = () => rows.length ? rows.map((r, i) => `${i + 1}. ${r.fields.active === true ? 'ON' : 'OFF'} ${r.fields.keyword}` + (planOf(r).length ? `\\n   angles: ${planOf(r).join('; ')}` : '\\n   angles: not written yet (written on the next Monday refresh, or with update)')).join('\\n') : `No ${name} yet. Add one: add ${kind} \"your topic\"`;\nconst topic = String(c.topic_text || '').replace(/^[\"'“”‘’]+|[\"'“”‘’]+$/g, '').trim();\nconst isQuestion = /^\\s*(what|why|how|which|who|whom|whose|when|where|is|are|was|were|does|do|did|can|could|should|will|would)\\b/i.test(topic) || /\\?\\s*$/.test(topic);\nconst n = Number(c.topic_number || 0);\nconst row = n >= 1 && n <= rows.length ? rows[n - 1] : null;\nconst base = { chat_id: c.chat_id, email: c.email, kind, mode, name, keyword: topic, is_question: isQuestion, number: n };\nlet out;\nif (c.topic_action === 'list') out = { route: 'reply', text: `## Your ${name}\\n${list()}` };\nelse if (c.topic_action === 'add' && !topic) out = { route: 'reply', text: `Write the topic after the command, for example: add ${kind} \"AI industry news\"` };\nelse if (c.topic_action === 'add' && rows.some(r => String(r.fields.keyword).toLowerCase() === topic.toLowerCase())) { const k = rows.findIndex(r => String(r.fields.keyword).toLowerCase() === topic.toLowerCase());\n  out = { route: 'reply', text: `\"${topic}\" is already number ${k + 1} of your ${name} (${rows[k].fields.active === true ? `ON; to stop it: off ${kind} ${k + 1}` : `OFF; to start it: on ${kind} ${k + 1}`}).` }; }\nelse if (c.topic_action === 'add') out = { route: 'plan', action: 'add' };\nelse if (!row) out = { route: 'reply', text: `There is no number ${n || '(missing)'} in your ${name}. Write the number from this list:\\n${list()}` };\nelse if (c.topic_action === 'on' || c.topic_action === 'off') out = { route: 'write', action: c.topic_action, record_id: row.id, keyword: row.fields.keyword };\nelse if (!topic) out = { route: 'reply', text: `Write the new topic after the number, for example: update ${kind} ${n} \"AI industry news\"` };\nelse out = { route: 'plan', action: 'update', record_id: row.id, old_keyword: row.fields.keyword };\nreturn [{ json: { ...base, ...out } }];"
+      }
+    },
+    {
+      "id": "193f8186-6a15-4b2e-833d-0d9cbf112028",
+      "name": "Route Topic Change",
+      "notesInFlow": true,
+      "notes": "reply: list or a hint. plan: add or update. write: on or off.",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        940,
+        760
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "9e104b93-6bc0-4cb2-8b75-279aec4bb553",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "reply",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "reply"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "f8bb1a07-6a3d-40e7-88ad-b5330ba38a46",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "plan",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "plan"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "becc69f7-bbb7-4f3f-839b-4c8df5c69c09",
+                    "leftValue": "={{ $json.route }}",
+                    "rightValue": "write",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "write"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "none"
+        }
+      }
+    },
+    {
+      "id": "9149b40d-19d8-48fd-9bb6-1ed251746be4",
+      "name": "Plan Topic (via Plan Topic)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1160,
+        760
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "7l2AxDhUWQpRQqC3",
+          "cachedResultName": "Claim Checks | Plan Topic"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "keyword": "={{ $json.keyword }}",
+            "is_question": "={{ $json.is_question }}",
+            "current_plan": "",
+            "caught": "={{ [] }}"
+          },
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "schema": [
+            {
+              "id": "keyword",
+              "displayName": "keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "is_question",
+              "displayName": "is_question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean"
+            },
+            {
+              "id": "current_plan",
+              "displayName": "current_plan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "caught",
+              "displayName": "caught",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "f563e615-9617-4aff-8aa9-9bc543ec6f90",
+      "name": "Plan Passed?",
+      "notesInFlow": true,
+      "notes": "Passed the check: save it. Failed: nothing changes.",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1380,
+        760
+      ],
+      "parameters": {
+        "looseTypeValidation": true,
+        "options": {},
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "fef31af9-7df2-43d9-b640-2f3738e600e9",
+              "leftValue": "={{ $json.ok === true }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "2c503d9a-0558-475e-840a-5cf920caa47b",
+      "name": "Build Topic Write",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        1000
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: one Airtable request for the change: a new row (add), the new topic and plan (update), switched on or off. Added and updated topics are on.\nconst d = $('Decide Topic Change').first().json;\nconst s = $('Store Settings').first().json;\nconst p = $('Plan Topic (via Plan Topic)').isExecuted ? $('Plan Topic (via Plan Topic)').first().json : {};\nconst now = new Date().toISOString();\nconst url = `https://api.airtable.com/v0/${s.airtable_base}/${s.keywords_table}`;\nconst fields = d.action === 'on' || d.action === 'off' ? { active: d.action === 'on' }\n  : { keyword: d.keyword, plan: JSON.stringify(p.angles || []), plan_updated: now, active: true, ...(d.action === 'add' ? { mode: d.mode, recipient: d.email } : {}) };\nconst record = d.action === 'add' ? { fields } : { id: d.record_id, fields };\nreturn [{ json: { method: d.action === 'add' ? 'POST' : 'PATCH', url, body: { records: [record], typecast: true } } }];"
+      }
+    },
+    {
+      "id": "54931e3b-6303-4606-b2ec-776e9b8c211d",
+      "name": "Save Topic (Airtable)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1820,
+        1000
+      ],
+      "parameters": {
+        "method": "={{ $json.method }}",
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "4216589b-0a4e-4398-8295-8cc3224c16b7",
+      "name": "Build Topic Reply",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2040,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: the one reply for every path: the list or a usage hint, a plan that failed the check, or what was saved.\nconst d = $('Decide Topic Change').first().json;\nconst p = $('Plan Topic (via Plan Topic)').isExecuted ? $('Plan Topic (via Plan Topic)').first().json : null;\nconst saved = $('Save Topic (Airtable)').isExecuted && !$('Save Topic (Airtable)').first().json.error;\nconst when = d.mode === '7days' ? 'every Monday at 07:00 (last 7 days, PDF by email)' : 'every day at 07:00 (last 24 hours)';\nlet text;\nif (d.route === 'reply') text = d.text;\nelse if (p && !p.ok) text = `I could not write a good search plan for \"${d.keyword}\": ${p.reason || p.error || 'the planner did not answer'}. Nothing changed. Try again, or word the topic differently.`;\nelse if (!saved) text = `I could not save the change in Airtable. Nothing changed. Try again in a minute.`;\nelse if (d.action === 'off') text = `OFF: \"${d.keyword}\". It no longer runs. To start it again: on ${d.kind} ${d.number}`;\nelse if (d.action === 'on') text = `ON: \"${d.keyword}\". It runs ${when}. To stop it: off ${d.kind} ${d.number}`;\nelse text = `${d.action === 'add' ? 'Added' : 'Updated'} and ON: \"${d.keyword}\"${d.action === 'update' ? ` (was \"${d.old_keyword}\")` : ''}. It runs ${when}${d.is_question ? '; it is a question, so the answer is also looked up on the web' : ''}.\\nSearch angles:\\n` + (p.angles || []).map(a => `- ${a.angle}`).join('\\n');\nreturn [{ json: { chat_id: d.chat_id, text } }];"
+      }
+    },
+    {
+      "id": "e407f5f4-b23c-449a-ab47-04f1227ef536",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "width": 2220,
+        "height": 340,
+        "color": 5,
+        "content": "# Claim Checks | Manage Topics\n\nYour daily and weekly search topics, managed from the bot: add, update, on, off, list. Added and updated topics are on; off keeps the row so on can start it again. ds = daily search (every day, last 24 hours), ws = weekly search (Mondays, last 7 days, PDF by email). The topics are the rows of Airtable table Keywords; each row keeps its search plan in the column plan.\n\n**Called by:** \"WF2 — Telegram Bot\" for add / create, update / change, on, off / remove / stop and list followed by ds or ws. \"WF2\" waits and sends the reply.\n**Alerts:** none here; a failure becomes a plain reply (\"nothing changed\").\nstructure-ok: no error workflow on purpose; the user gets the reply.\n**Services called:** Airtable (Keywords) · \"Plan Topic\" (the search plan of a new or changed topic)."
+      }
+    },
+    {
+      "id": "b989e28d-ae7a-4293-a4c5-e402c39bbc1c",
+      "name": "Change Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        410
+      ],
+      "parameters": {
+        "width": 2220,
+        "height": 760,
+        "color": 4,
+        "content": "## Read, Change And Reply\n\nTriggered by: \"WF2\" (When Called By Bot), with the action, ds or ws, the number and the topic text.\n\n1. Read Topics (Airtable Keywords) reads every row; Decide Topic Change numbers all rows of that kind, on and off, by creation date (the numbers and the ON / OFF marks list ds / list ws shows) and decides: reply only (list, or a hint), plan (add, update) or write (on, off).\n2. Plan Topic (via Plan Topic) writes the topic's search plan; Plan Passed? saves it only if it passed the check.\n3. Build Topic Write and Save Topic (Airtable): a new row (add) or the new topic and plan (update), both with active on; or active on / off (on, off).\n4. Build Topic Reply: the list, the hint, the failure, or what was saved with its angles."
+      }
+    }
+  ],
+  "connections": {
+    "When Called By Bot": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Read Topics (Airtable Keywords)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Topics (Airtable Keywords)": {
+      "main": [
+        [
+          {
+            "node": "Decide Topic Change",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decide Topic Change": {
+      "main": [
+        [
+          {
+            "node": "Route Topic Change",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Topic Change": {
+      "main": [
+        [
+          {
+            "node": "Build Topic Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Plan Topic (via Plan Topic)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Topic Write",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Topic (via Plan Topic)": {
+      "main": [
+        [
+          {
+            "node": "Plan Passed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Passed?": {
+      "main": [
+        [
+          {
+            "node": "Build Topic Write",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Topic Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Topic Write": {
+      "main": [
+        [
+          {
+            "node": "Save Topic (Airtable)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Topic (Airtable)": {
+      "main": [
+        [
+          {
+            "node": "Build Topic Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "",
+    "timezone": "Europe/Rome",
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "ccTelegramBot001"
+  },
+  "active": false
+}

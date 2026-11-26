@@ -12,8 +12,8 @@
         0
       ],
       "parameters": {
-        "content": "# Claim Checks | WF3 — Research Pipeline\n\nOne run of Claim Checks: keywords → search angles → posts from Reddit, Hacker News and X (searches widened by Google Trends) → for a question, the answer looked up on the web → posts grouped into claims → each claim checked and explained → one flagged briefing → PDF in Drive, every story archived with a permanent number, a summary in Telegram, and the PDF by email for weekly runs.\n\n**Called by:** \"WF1 — Scheduled Entry\" (daily and Monday runs) and \"WF2 — Telegram Bot\" (search). Locked to \"WF1\" and \"WF2\".\n**Calls:** \"Collect Findings\" (Google Trends once per keyword, then once per angle and source), \"Answer Question\" (once, question runs only), \"Verify Story\" (once per claim), \"Report Run Problems\" (once, at the end).\n**Sections, left to right:** Start And Plan Angles → Collect Posts → Read Posts And Answer The Question → Group Into Claims → Check Claims → Write And Deliver. \"The Flow\" (far right) traces a whole run.\n**Alerts, all in the main chat:** if WF3 itself stops, the central error handler alerts with the failed node. Failures the run survives (a source, a claim) are listed together in ONE alert at the end.\n**Services called:** Airtable (Runs, Findings, Clusters) · Postgres (story archive, claim_checks.stories) · Venice (Kimi K2.6: planner and writer) · Google Drive · Gmail (weekly runs) · Telegram · \"Collect Findings\", \"Answer Question\", \"Verify Story\", \"Report Run Problems\" · \"Ask Venice\" (every model step; backup model GPT-6 Luna).",
-        "width": 10520,
+        "content": "# Claim Checks | WF3 — Research Pipeline\n\nOne run of Claim Checks: keywords → their saved search plans (angles) → posts from Reddit, Hacker News and X (searches widened by Google Trends) → for a question, the answer looked up on the web → posts grouped into claims → each claim checked and explained → one flagged briefing → PDF in Drive, every story archived with a permanent number, a summary in Telegram, and the PDF by email for weekly runs.\n\n**Called by:** \"WF1 — Scheduled Entry\" (daily and Monday runs) and \"WF2 — Telegram Bot\" (search). Locked to \"WF1\" and \"WF2\".\n**Calls:** \"Plan Topic\" (only for a keyword without a saved plan, e.g. a bot search), \"Collect Findings\" (Google Trends once per keyword, then once per angle and source), \"Answer Question\" (once, question runs only), \"Verify Story\" (once per claim), \"Report Run Problems\" (once, at the end).\n**Sections, left to right:** Start And Search Plans → Collect Posts → Read Posts And Answer The Question → Group Into Claims → Check Claims → Write And Deliver. \"The Flow\" (far right) traces a whole run.\n**Alerts, all in the main chat:** if WF3 itself stops, the central error handler alerts with the failed node. Failures the run survives (a source, a claim) are listed together in ONE alert at the end.\n**Services called:** Airtable (Runs, Findings, Clusters) · Postgres (story archive, claim_checks.stories) · Venice (Kimi K2.6: grouping and writer) · Google Drive · Gmail (weekly runs) · Telegram · \"Plan Topic\", \"Collect Findings\", \"Answer Question\", \"Verify Story\", \"Report Run Problems\" · \"Ask Venice\" (every model step; backup model GPT-6 Luna).",
+        "width": 11180,
         "height": 300,
         "color": 5
       }
@@ -28,8 +28,8 @@
         380
       ],
       "parameters": {
-        "content": "## Start And Plan Angles\n\nTriggered by: \"WF1\" or \"WF2\" (When Called By Entry).\n\nWhat it does, step by step:\n1. Store Settings holds the run (id, keywords, mode, recipient, chat) and the settings (caps, Drive folder, workflow ids).\n2. Create Run Row (Airtable Runs) writes the run to Airtable Runs.\n3. Plan Angles (via Ask Venice, planner model), gives EVERY keyword its own 6 search angles (the cap is per keyword, so one keyword never takes searches from another; a question keyword gets angles aimed at its answer): the first one per keyword is its wide angle (\"All news on <keyword>\"). Each angle has 2-3 word groups (one idea each, in all the ways people write it: e.g. hack, hacked, exploit, drained...), a short Trends term of 1-2 common words (Google Trends has no data for long phrases), and a phrase used only as a fallback.",
-        "width": 1120,
+        "content": "## Start And Search Plans\n\nTriggered by: \"WF1\" or \"WF2\" (When Called By Entry).\n\nWhat it does, step by step:\n1. Store Settings holds the run (id, keywords, mode, recipient, chat, the saved plans sent by \"WF1\") and the settings (caps, Drive folder, workflow ids).\n2. Create Run Row (Airtable Runs) writes the run to Airtable Runs.\n3. Build Plan Requests gives one item per keyword with its saved plan (Airtable Keywords, column plan; refreshed every Monday by \"Refresh Topic Plans\").\n4. Has Saved Plan? true → the saved plan is used as it is. false (a bot search, or a topic without a plan yet) → Plan Topic (via Plan Topic) writes one now.\n5. Merge Plans → Split Angles keeps up to 6 angles per keyword (the first is the wide angle \"All news on <keyword>\") and gives one item per keyword. A keyword whose plan could not be written is searched with one simple wide angle and is named in the end-of-run alert.",
+        "width": 1780,
         "height": 800,
         "color": 4
       }
@@ -40,7 +40,7 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        1180,
+        1840,
         380
       ],
       "parameters": {
@@ -56,11 +56,11 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        3140,
+        3800,
         380
       ],
       "parameters": {
-        "content": "## Group Into Claims\n\nTriggered by: runs inline after Collect Posts.\n\nWhat it does, step by step:\n1. Read Recent Claims (Airtable Clusters) reads the stories reported in the last 7 days (used on scheduled runs only).\n2. Group Findings (via Ask Venice, planner model), groups the posts into claims; Build Cluster Rows picks, per keyword, up to 5: first the best claim of every angle, then the rest by independent sources.\n3. Any Claims? no → No Claims To Check goes straight to the report (\"nothing checkable\"). Yes → the claims are saved to Clusters and their posts get the claim id.",
+        "content": "## Group Into Claims\n\nTriggered by: runs inline after Collect Posts.\n\nWhat it does, step by step:\n1. Read Recent Claims (Airtable Clusters) reads the stories reported in the last 7 days (used on scheduled runs only).\n2. Build Grouping Input keeps only the posts published inside the window (24 hours or 7 days; Hacker News 48 hours on daily runs): old news is left out completely. Group Findings (via Ask Venice, planner model) groups the posts into claims and gives each an impact score (1-10: how much it matters for people in general). Build Cluster Rows checks, per keyword, the 7 with the highest impact (ties: more independent sources); a daily-run claim found only in Hacker News posts older than 24 hours says so. Every claim not picked is kept for the report as \"Also discussed (not checked)\".\n3. Any Claims? no → No Claims To Check goes straight to the report (\"nothing checkable\"). Yes → the claims are saved to Clusters and their posts get the claim id.",
         "width": 2000,
         "height": 800,
         "color": 3
@@ -72,7 +72,7 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        5200,
+        5860,
         380
       ],
       "parameters": {
@@ -88,11 +88,11 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        6020,
+        6680,
         380
       ],
       "parameters": {
-        "content": "## Write And Deliver\n\nTriggered by: runs inline after Check Claims (or from No Claims To Check).\n\nWhat it does, step by step:\n1. Build Writer Input leaves out earlier news with nothing new (listed in the footer) and marks earlier news with something new as an update; it collects every claim with its label, its evidence and its original posts, each with its publication date; Write Briefing (via Ask Venice, writer model), writes one briefing by topic.\n2. Check Briefing Flags puts each label on its paragraph (flags come from the labels, never from the writer) and lists the stories to archive, each with its original posts.\n3. Save Or Update Stories In Archive (Postgres, claim_checks.stories) saves each story with its original posts. A story that shares a post or a linked article with a story archived by an earlier run is the same story: it keeps its number, gets the new label and a dated \"checked again\" entry (story_updates); every other checked story gets a new permanent number. Save Claim Summaries (Airtable Clusters) writes the gist and the story number.\n4. Build Report HTML (for a question, the Answer first, each item with its status and dated links; the briefing; one explainer per story, its original posts first; every link with its date, older pages marked background; and the Telegram summary) → Google Doc → PDF in Drive \"Claim Checks Reports\" → Add PDF Link To Archive (Postgres) → Weekly Run? sends Email Report only for \"7days\" runs → Mark Run Delivered (Airtable Runs).\n5. List Run Problems → Send Problem Alert (via Report Run Problems) sends ONE alert if anything failed → Chat Known? → Send Summary To Chat (Telegram): the Answer (question runs), In short, one line per story with its number, the PDF link.",
+        "content": "## Write And Deliver\n\nTriggered by: runs inline after Check Claims (or from No Claims To Check).\n\nWhat it does, step by step:\n1. Build Writer Input leaves out earlier news with nothing new (listed in the footer) and marks earlier news with something new as an update; it collects every claim with its label, its evidence and its original posts, each with its publication date; Write Briefing (via Ask Venice, writer model), writes one briefing by topic.\n2. Check Briefing Flags puts each label on its paragraph (flags come from the labels, never from the writer) and lists the stories to archive, each with its original posts.\n3. Save Or Update Stories In Archive (Postgres, claim_checks.stories) saves each story with its original posts. A story that shares a post or a linked article with a story archived by an earlier run is the same story: it keeps its number, gets the new label and a dated \"checked again\" entry (story_updates); every other checked story gets a new permanent number. Save Claim Summaries (Airtable Clusters) writes the gist and the story number.\n4. Build Report HTML (for a question, the Answer first, each item with its status and dated links; the briefing; one explainer per story, its original posts first; \"Also discussed (not checked)\", every claim the cap left out with its first post; every link with its date, older pages marked background; and the Telegram summary) → Google Doc → PDF in Drive \"Claim Checks Reports\" → Add PDF Link To Archive (Postgres) → Weekly Run? sends Email Report only for \"7days\" runs → Mark Run Delivered (Airtable Runs).\n5. List Run Problems → Send Problem Alert (via Report Run Problems) sends ONE alert if anything failed → Chat Known? → Send Summary To Chat (Telegram): the Answer (question runs), In short, one line per story with its number, up to 8 \"Also discussed\" lines, the PDF link.",
         "width": 4500,
         "height": 800,
         "color": 7
@@ -104,11 +104,11 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        10580,
+        11240,
         0
       ],
       "parameters": {
-        "content": "## The Flow\n\n1. A run starts in \"WF1 — Scheduled Entry\" (07:00 daily for \"today\" keywords, Mondays also \"7days\") or in \"WF2 — Telegram Bot\" with search <topic> (# in front is optional).\n2. Start: the run goes to Airtable Runs; the planner gives every keyword its own 6 angles. Every model step in the run goes through \"Ask Venice\": the main model, then GPT-6 Luna if it gives no complete answer.\n3. Collect: per keyword, \"Collect Findings\" gets Google Trends terms; per angle, it searches Reddit, Hacker News and X (engagement minimums), drops trash and repeats, saves to Findings.\n4. Question runs: \"Answer Question\" looks the answer up on the web (Google, then the pages), each item confirmed, claimed or unverified; it opens the report and the Telegram summary.\n5. Group: the kept posts become claims; per keyword up to 5 go to Clusters (the best of every angle first). Earlier news is reported only when the window adds something new, as an update.\n6. Check: \"Verify Story\" checks each claim against the web and gives the label: Corroborated, Single source, Disputed, Unverified or Opinion.\n7. Deliver: one flagged briefing → every checked story saved to the archive (Postgres) with its permanent number and its original posts (a story found again through the same post or linked article keeps its number and gets a \"checked again\" entry) → PDF in Drive (every link with its date) → email for weekly (\"7days\") runs only → Runs \"delivered\" → a Telegram summary with the story numbers and the PDF link, to the bot chat that asked or to the chat paired with the recipient's email.\n8. Alerts in the main chat: a crash of WF3 alerts at once; failures the run survives come together in one \"Report Run Problems\" alert at the end.\n9. In the bot afterwards: dig or update on a story opens a conversation in \"Story Chat\": a reasoning model (Kimi K2.6, backup GPT-6 Luna) with web search answers follow-up questions; update runs \"Follow Up Story\" and adds its result to the conversation. save / close keeps a summary that dig and update use later; forget drops it; replying to any old message saves, forgets or continues that conversation.",
+        "content": "## The Flow\n\n1. A run starts in \"WF1 — Scheduled Entry\" (07:00 daily for \"today\" keywords, Mondays also \"7days\") or in \"WF2 — Telegram Bot\" with search <topic> (# in front is optional).\n2. Start: the run goes to Airtable Runs; every keyword uses its saved search plan (6 angles, refreshed every Monday by \"Refresh Topic Plans\"); \"Plan Topic\" writes one only for a keyword without a plan (a bot search). Every model step in the run goes through \"Ask Venice\": the main model, then GPT-6 Luna if it gives no complete answer.\n3. Collect: per keyword, \"Collect Findings\" gets Google Trends terms; per angle, it searches Reddit, Hacker News and X (engagement minimums), drops trash and repeats, saves to Findings.\n4. Question runs: \"Answer Question\" looks the answer up on the web (Google, then the pages), each item confirmed, claimed or unverified; it opens the report and the Telegram summary.\n5. Group: only posts inside the window are used (Hacker News 48 hours on daily runs); they become claims with an impact score; per keyword the 7 with the highest impact go to Clusters; the rest are listed as \"Also discussed (not checked)\", highest impact first. Earlier news is reported only when the window adds something new, as an update.\n6. Check: \"Verify Story\" checks each claim against the web and gives the label: Corroborated, Single source, Disputed, Unverified or Opinion.\n7. Deliver: one flagged briefing → every checked story saved to the archive (Postgres) with its permanent number and its original posts (a story found again through the same post or linked article keeps its number and gets a \"checked again\" entry) → PDF in Drive (every link with its date) → email for weekly (\"7days\") runs only → Runs \"delivered\" → a Telegram summary with the story numbers and the PDF link, to the bot chat that asked or to the chat paired with the recipient's email.\n8. Alerts in the main chat: a crash of WF3 alerts at once; failures the run survives come together in one \"Report Run Problems\" alert at the end.\n9. In the bot afterwards: dig or update on a story opens a conversation in \"Story Chat\": a reasoning model (Kimi K2.6, backup GPT-6 Luna) with web search answers follow-up questions; update runs \"Follow Up Story\" and adds its result to the conversation. save / close keeps a summary that dig and update use later; forget drops it; replying to any old message saves, forgets or continues that conversation.",
         "width": 1300,
         "height": 700,
         "color": 3
@@ -162,7 +162,7 @@
               "id": "06890f27-e162-5f3c-a79b-0303e821579d",
               "name": "max_verify",
               "type": "number",
-              "value": 5
+              "value": 7
             },
             {
               "id": "844d72af-c734-5824-a819-a109e1018b65",
@@ -256,13 +256,13 @@
       "typeVersion": 2,
       "onError": "stopWorkflow",
       "position": [
-        940,
+        1600,
         760
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const s = $('Store Settings').first().json;\nconst kws = [].concat(s.keywords || []);\nconst all = (($input.first().json.output || {}).angles || []).filter(a => a && a.search_phrase);\n// The angle cap is per keyword: each keyword keeps up to max_angles of its own angles.\nconst byKw = new Map();\nfor (const a of all) {\n  const k = kws.find(x => x.toLowerCase() === String(a.keyword || '').toLowerCase()) || a.keyword || kws[0];\n  if (!byKw.has(k)) byKw.set(k, []);\n  if (byKw.get(k).length < s.max_angles) byKw.get(k).push(a);\n}\nif (!byKw.size) throw new Error('The planner returned no angles');\n// One item per keyword: Google Trends is asked once per keyword, with its wide angle's short term (the first angle).\nreturn [...byKw.entries()].map(([keyword, angles]) => ({ json: { run_id: s.run_id, keywords: kws, keyword, angle: keyword,\n  search_phrase: angles[0].search_phrase, trends_term: angles[0].trends_term || '',\n  angles: angles.map(a => ({ angle: a.angle, search_phrase: a.search_phrase, word_groups: a.word_groups || [] })),\n  source: 'google_trends', mode: s.mode, window_days: s.window_days, trend_terms: [], check_duplicates: s.check_duplicates } }));"
+        "jsCode": "// Why Code: joins the saved plans and the plans written now, keeps max_angles per keyword, and gives one item per keyword. A keyword whose plan could not be written is searched with one simple wide angle (its own words).\nconst s = $('Store Settings').first().json;\nconst kws = [].concat(s.keywords || []);\nconst planOf = {};\nfor (const i of $input.all()) { const j = i.json || {}; if (j.keyword && j.ok !== false && Array.isArray(j.angles) && j.angles.length) planOf[String(j.keyword).toLowerCase()] = j.angles; }\nconst STOP = new Set(['the', 'and', 'for', 'with', 'about', 'what', 'which', 'how', 'why', 'who', 'when', 'where', 'does', 'did', 'are', 'was', 'were', 'from', 'that', 'this', 'into', 'news', 'new', 'all', 'way', 'ways', 'can', 'will']);\nconst wide = (kw) => { const w = [...new Set(String(kw).toLowerCase().replace(/[^\\p{L}\\p{N}\\s-]/gu, ' ').split(/\\s+/).filter(x => x.length > 2 && !STOP.has(x)))];\n  return [{ angle: 'All news on ' + kw, search_phrase: w.slice(0, 5).join(' ') || String(kw), trends_term: '', word_groups: [] }]; };\nconst plans = kws.map(keyword => ({ keyword, angles: (planOf[String(keyword).toLowerCase()] || wide(keyword)).filter(a => a && a.search_phrase).slice(0, s.max_angles) })).filter(x => x.angles.length);\nif (!plans.length) throw new Error('No keyword has a search plan');\n// One item per keyword: Google Trends is asked once per keyword, with its wide angle's short term (the first angle).\nreturn plans.map(({ keyword, angles }) => ({ json: { run_id: s.run_id, keywords: kws, keyword, angle: keyword,\n  search_phrase: angles[0].search_phrase, trends_term: angles[0].trends_term || '',\n  angles: angles.map(a => ({ angle: a.angle, search_phrase: a.search_phrase, word_groups: a.word_groups || [] })),\n  source: 'google_trends', mode: s.mode, window_days: s.window_days, trend_terms: [], check_duplicates: s.check_duplicates } }));"
       }
     },
     {
@@ -272,7 +272,7 @@
       "typeVersion": 1.2,
       "onError": "continueRegularOutput",
       "position": [
-        1240,
+        1900,
         760
       ],
       "parameters": {
@@ -295,7 +295,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1900,
+        2560,
         760
       ],
       "parameters": {
@@ -313,7 +313,7 @@
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "position": [
-        2200,
+        2860,
         760
       ],
       "parameters": {
@@ -372,7 +372,7 @@
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "position": [
-        3420,
+        4080,
         760
       ],
       "parameters": {
@@ -410,13 +410,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        3640,
+        4300,
         760
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const recs = $('Read Kept Findings (Airtable Findings)').all().flatMap(i => i.json.records || []) || [];\nconst findings = recs.map((r, i) => ({ id: 'f' + (i + 1), record_id: r.id, ...r.fields }));\n// Stories reported in the last 7 days are only used on scheduled runs (check_duplicates).\nconst s = $('Store Settings').first().json;\nconst recent = s.check_duplicates ? ($('Read Recent Claims (Airtable Clusters)').first().json.records || []).map(r => r.fields.title).filter(Boolean) : [];\nconst lines = findings.map(f => JSON.stringify({ id: f.id, title: f.title, summary: f.summary, source: f.source, angle: f.angle, links_to: f.linked_url || null })).join('\\n');\nreturn [{ json: { findings, lines, recent: recent.slice(0, 40), trend_terms: $('Summarise Collection').first().json.trend_terms } }];"
+        "jsCode": "// Why Code: keeps only the posts published inside the run's window (Hacker News: 48 hours on daily runs), then builds the grouping input.\nconst s = $('Store Settings').first().json;\nconst now = Date.now();\nconst maxAge = (src) => (Number(s.window_days) === 1 && src === 'hacker_news' ? 48 : Number(s.window_days) * 24) * 36e5;\nconst recs = $('Read Kept Findings (Airtable Findings)').all().flatMap(i => i.json.records || []) || [];\nconst all = recs.map((r, i) => ({ id: 'f' + (i + 1), record_id: r.id, ...r.fields }));\n// Old news is not this run's news: a post outside the window is left out of grouping, checks and the report.\nconst findings = all.filter(f => now - Date.parse(f.published_at) <= maxAge(f.source));\n// Stories reported in the last 7 days are only used on scheduled runs (check_duplicates).\nconst recent = s.check_duplicates ? ($('Read Recent Claims (Airtable Clusters)').first().json.records || []).map(r => r.fields.title).filter(Boolean) : [];\nconst lines = findings.map(f => JSON.stringify({ id: f.id, title: f.title, summary: f.summary, source: f.source, angle: f.angle, links_to: f.linked_url || null })).join('\\n');\nreturn [{ json: { findings, lines, recent: recent.slice(0, 40), trend_terms: $('Summarise Collection').first().json.trend_terms, dropped_old: all.length - findings.length } }];"
       }
     },
     {
@@ -425,13 +425,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4080,
+        4740,
         760
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const host = (u) => { const m = String(u || '').match(/^https?:\\/\\/([^\\/?#:]+)/i); return m ? m[1].replace(/^www\\./, '').toLowerCase() : ''; };\nconst s = $('Store Settings').first().json;\nconst gi = $('Build Grouping Input').first().json;\nconst byId = Object.fromEntries(gi.findings.map(f => [f.id, f]));\nconst used = new Set();\nconst groups = [];\nfor (const g of ($json.output.groups || [])) {\n  const ids = (g.finding_ids || []).filter(id => byId[id] && !used.has(id));\n  ids.forEach(id => used.add(id));\n  if (ids.length) groups.push({ title: g.title, ids, repeat: g.repeat_of_recent === true, trend_terms: g.trend_terms || [] });\n}\nfor (const f of gi.findings) if (!used.has(f.id)) groups.push({ title: f.title, ids: [f.id], repeat: false, trend_terms: [] });\nconst isPlatform = (h) => /(^|\\.)(reddit\\.com|redd\\.it|news\\.ycombinator\\.com|x\\.com|twitter\\.com)$/i.test(h);\nconst weigh = (g) => {\n  const doms = new Set();\n  for (const id of g.ids) { const h = host(byId[id].linked_url); if (h && !isPlatform(h)) doms.add(h); else doms.add('platform:' + byId[id].source); }\n  return doms.size;\n};\nconst fresh = groups.filter(g => !g.repeat).map(g => ({ ...g, weight: weigh(g) }));\nconst repeats = groups.length - fresh.length;\nfresh.sort((a, b) => b.weight - a.weight || b.ids.length - a.ids.length);\n// The check cap is per keyword: each keyword's claims with the most sources are checked, so one keyword never takes the checks of another.\nconst kwOf = {};\n$('Split Angles').all().forEach(i => (i.json.angles || []).forEach(a => { kwOf[a.angle] = i.json.keyword; }));\nconst kwOfGroup = (g) => { const n = {}; for (const id of g.ids) { const k = kwOf[byId[id].angle] || ''; n[k] = (n[k] || 0) + 1; } return Object.entries(n).sort((a, b) => b[1] - a[1])[0][0]; };\n// First the best claim of every angle (so a quieter angle, such as a security story, is not pushed out by product launches), then the rest by weight.\nconst angleOfGroup = (g) => { const n = {}; for (const id of g.ids) { const a = byId[id].angle || ''; n[a] = (n[a] || 0) + 1; } return Object.entries(n).sort((a, b) => b[1] - a[1])[0][0]; };\nconst perKw = {}, picked = new Set(), angleDone = new Set();\nconst take = (g) => { const k = kwOfGroup(g); if ((perKw[k] || 0) >= s.max_verify) return; perKw[k] = (perKw[k] || 0) + 1; picked.add(g); };\nfor (const g of fresh) { const a = angleOfGroup(g); if (angleDone.has(a)) continue; angleDone.add(a); take(g); }\nfor (const g of fresh) if (!picked.has(g)) take(g);\nconst keep = fresh.filter(g => picked.has(g)).map((g, i) => ({ ...g, cluster_id: 'c' + (i + 1) }));\nconst plan = { clusters: keep.map(g => ({ cluster_id: g.cluster_id, title: g.title, trend_terms: g.trend_terms,\n  finding_record_ids: g.ids.map(id => byId[id].record_id), sources: [...new Set(g.ids.map(id => byId[id].source))] })),\n  repeats, not_checked_small: Math.max(0, fresh.length - keep.length) };\nconst recs = keep.map(g => ({ fields: { title: g.title.slice(0, 200), run_id: s.run_id, cluster_id: g.cluster_id,\n  sources: [...new Set(g.ids.map(id => byId[id].source))], independent_domains: 0 } }));\nconst out = [];\nfor (let i = 0; i < recs.length; i += 10) out.push({ json: { records: recs.slice(i, i + 10), plan } });\nif (!out.length) out.push({ json: { records: [], plan } });\nreturn out;"
+        "jsCode": "// Why Code: turns the model's groups into claims, ranks them by impact and picks up to max_verify per keyword to check; every other claim is listed as \"Also discussed\".\nconst host = (u) => { const m = String(u || '').match(/^https?:\\/\\/([^\\/?#:]+)/i); return m ? m[1].replace(/^www\\./, '').toLowerCase() : ''; };\nconst s = $('Store Settings').first().json;\nconst gi = $('Build Grouping Input').first().json;\nconst byId = Object.fromEntries(gi.findings.map(f => [f.id, f]));\nconst used = new Set();\nconst groups = [];\nfor (const g of ($json.output.groups || [])) {\n  const ids = (g.finding_ids || []).filter(id => byId[id] && !used.has(id));\n  ids.forEach(id => used.add(id));\n  if (ids.length) groups.push({ title: g.title, ids, repeat: g.repeat_of_recent === true, trend_terms: g.trend_terms || [], impact: Math.max(0, Math.min(10, Number(g.impact) || 0)) });\n}\nfor (const f of gi.findings) if (!used.has(f.id)) groups.push({ title: f.title, ids: [f.id], repeat: false, trend_terms: [], impact: 0 });\nconst isPlatform = (h) => /(^|\\.)(reddit\\.com|redd\\.it|news\\.ycombinator\\.com|x\\.com|twitter\\.com)$/i.test(h);\nconst weigh = (g) => {\n  const doms = new Set();\n  for (const id of g.ids) { const h = host(byId[id].linked_url); if (h && !isPlatform(h)) doms.add(h); else doms.add('platform:' + byId[id].source); }\n  return doms.size;\n};\n// Every post here is inside the run's window (Build Grouping Input left the rest out). Highest impact first; ties go to more independent sources, then more posts.\nconst fresh = groups.filter(g => !g.repeat).map(g => ({ ...g, weight: weigh(g) }));\nconst repeats = groups.length - fresh.length;\nfresh.sort((a, b) => b.impact - a.impact || b.weight - a.weight || b.ids.length - a.ids.length);\n// Daily runs read Hacker News over 48 hours: a claim whose posts are all Hacker News posts older than 24 hours says so, so it does not look like old news by mistake.\nconst dayAgo = Date.now() - 24 * 36e5;\nconst noteOf = (g) => {\n  if (Number(s.window_days) !== 1 || !g.ids.every(id => byId[id].source === 'hacker_news' && Date.parse(byId[id].published_at) < dayAgo)) return '';\n  const h = Math.round((Date.now() - Math.max(...g.ids.map(id => Date.parse(byId[id].published_at)))) / 36e5);\n  return `from Hacker News, ${h} h ago (daily runs read Hacker News over 48 hours)`;\n};\n// The check cap is per keyword, so one keyword never takes the checks of another.\nconst kwOf = {};\n$('Split Angles').all().forEach(i => (i.json.angles || []).forEach(a => { kwOf[a.angle] = i.json.keyword; }));\nconst kwOfGroup = (g) => { const n = {}; for (const id of g.ids) { const k = kwOf[byId[id].angle] || ''; n[k] = (n[k] || 0) + 1; } return Object.entries(n).sort((a, b) => b[1] - a[1])[0][0]; };\nconst perKw = {}, picked = new Set();\nfor (const g of fresh) { const k = kwOfGroup(g); if ((perKw[k] || 0) >= s.max_verify) continue; perKw[k] = (perKw[k] || 0) + 1; picked.add(g); }\nconst keep = fresh.filter(g => picked.has(g)).map((g, i) => ({ ...g, cluster_id: 'c' + (i + 1) }));\nconst plan = { clusters: keep.map(g => ({ cluster_id: g.cluster_id, title: g.title, trend_terms: g.trend_terms,\n  finding_record_ids: g.ids.map(id => byId[id].record_id), sources: [...new Set(g.ids.map(id => byId[id].source))], impact: g.impact, note: noteOf(g) })),\n  repeats, not_checked_small: Math.max(0, fresh.length - keep.length),\n  // Every claim the cap leaves out is still listed in the report (\"Also discussed\"), highest impact first, never thrown away.\n  unchecked: fresh.filter(g => !picked.has(g)).map(g => ({ title: g.title, posts: g.ids.length, url: byId[g.ids[0]].url || '', impact: g.impact, note: noteOf(g), keyword: kwOfGroup(g) })) };\nconst recs = keep.map(g => ({ fields: { title: g.title.slice(0, 200), run_id: s.run_id, cluster_id: g.cluster_id,\n  sources: [...new Set(g.ids.map(id => byId[id].source))], independent_domains: 0 } }));\nconst out = [];\nfor (let i = 0; i < recs.length; i += 10) out.push({ json: { records: recs.slice(i, i + 10), plan } });\nif (!out.length) out.push({ json: { records: [], plan } });\nreturn out;"
       }
     },
     {
@@ -440,7 +440,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        4300,
+        4960,
         760
       ],
       "parameters": {
@@ -477,7 +477,7 @@
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "position": [
-        4520,
+        5180,
         760
       ],
       "parameters": {
@@ -505,7 +505,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        4740,
+        5400,
         760
       ],
       "parameters": {
@@ -523,7 +523,7 @@
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "position": [
-        4960,
+        5620,
         760
       ],
       "parameters": {
@@ -557,7 +557,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        5260,
+        5920,
         760
       ],
       "parameters": {
@@ -573,7 +573,7 @@
       "typeVersion": 1.2,
       "onError": "continueRegularOutput",
       "position": [
-        5480,
+        6140,
         760
       ],
       "parameters": {
@@ -600,7 +600,7 @@
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "position": [
-        6080,
+        6740,
         760
       ],
       "parameters": {
@@ -638,7 +638,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6300,
+        6960,
         760
       ],
       "parameters": {
@@ -653,13 +653,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        6740,
+        7400,
         760
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const s = $('Store Settings').first().json;\nconst wi = $('Build Writer Input').first().json;\nconst col = $('Summarise Collection').first().json;\nconst plan = $('Build Cluster Rows').first().json.plan;\nconst out = $json.output || {};\n// What Verify Story returned for each claim (explainer, links, search words), by cluster id.\nconst verified = Object.fromEntries($('Check Each Claim (via Verify Story)').all().map(i => i.json).filter(j => j && j.cluster_id && !j.error).map(j => [j.cluster_id, j]));\nconst byId = Object.fromEntries(wi.claims.map(c => [c.cluster_id, c]));\nconst maxN = wi.sources.length;\nconst doubt = ['Disputed', 'Unverified', 'Not checked', 'Opinion', 'Single source', 'Corroborated'];\nconst cleanCites = (t) => String(t || '').replace(/\\[(\\d+)\\]/g, (m, n) => (Number(n) >= 1 && Number(n) <= maxN) ? m : '');\nconst flagOf = (ids) => { const labels = ids.map(id => byId[id].label); return doubt.find(l => labels.includes(l)); };\nconst sections = (out.sections || []).map(sec => {\n  const paragraphs = (sec.paragraphs || []).map(p => {\n    const ids = (p.cluster_ids || []).filter(id => byId[id]);\n    if (!ids.length) return null;\n    const flag = flagOf(ids);\n    const src = flag === 'Single source' ? (ids.map(id => byId[id].single_source).find(Boolean) || '') : '';\n    return { text: cleanCites(p.text), flag, flag_source: src, cluster_ids: ids };\n  }).filter(Boolean);\n  const os = sec.other_side || {};\n  return { topic: sec.topic, paragraphs, search_interest: sec.search_interest || [],\n    other_side: { text: cleanCites(os.text) || 'No contradicting source found.' } };\n}).filter(sec => sec.paragraphs.length);\nconst gists = Object.fromEntries((out.gists || []).filter(g => byId[g.cluster_id]).map(g => [g.cluster_id, g.gist]));\nconst d = new Date();\nconst report = { run_id: s.run_id, title: wi.topic, date_text: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),\n  window_text: s.mode === 'today' ? 'last 24 hours (Hacker News: last 7 days)' : 'last 7 days', keywords: [].concat(s.keywords || []),\n  search_terms: col.search_terms, briefing: { in_short: cleanCites(out.in_short), sections },\n  claims: wi.claims.map(c => ({ cluster_id: c.cluster_id, title: c.title, label: c.label, independent_domains: c.independent_domains, gist: gists[c.cluster_id] || '',\n    explainer: (verified[c.cluster_id] || {}).explainer || null,\n    origin_links: c.origin_links, backing_links: c.backing_links, contradicting_links: c.contradicting_links, page_dates: c.page_dates })),\n  sources: wi.sources,\n  footer: { empty_sources: col.empty_sources, failed_sources: col.failed_sources,\n    not_checked: wi.claims.filter(c => c.label === 'Not checked').map(c => c.title), already_reported: plan.repeats, smaller_claims: plan.not_checked_small, old_news: wi.old_news || [] } };\nconst md = ['## In short', report.briefing.in_short, ''];\nfor (const sec of sections) {\n  md.push('## ' + sec.topic);\n  for (const p of sec.paragraphs) md.push('[' + p.flag + (p.flag_source ? ': ' + p.flag_source : '') + '] ' + p.text, '');\n  if (sec.search_interest.length) md.push('Search interest: ' + sec.search_interest.join(', '), '');\n  md.push('### The other side', sec.other_side.text, '');\n}\nmd.push('## Sources', ...wi.sources.map(x => x.n + '. ' + x.url));\n// One archive row per checked story (Not checked claims are not archived); Save Or Update Stories In Archive gives each its number.\nconst today = $now.setZone('Europe/Rome').toISODate();\n// The claim's original posts, oldest first: dig shows them, and a later run that finds one of them (or the article it links to) again has found the same story.\nconst kept = Object.fromEntries(($('Read Kept Findings (Airtable Findings)').all().flatMap(i => i.json.records || []) || []).map(r => [r.id, r.fields]));\nconst postsOf = (cid) => { const p = plan.clusters.find(x => x.cluster_id === cid) || {};\n  return (p.finding_record_ids || []).map(id => kept[id]).filter(f => f && f.url)\n    .map(f => ({ source: f.source || '', url: f.url, linked_url: f.linked_url || '', published_at: f.published_at || '', title: f.title || '' }))\n    .sort((a, b) => a.published_at.localeCompare(b.published_at)); };\nconst archive_rows = wi.claims.filter(c => c.label !== 'Not checked' && verified[c.cluster_id]).map(c => { const v = verified[c.cluster_id];\n  return { run_id: s.run_id, cluster_id: c.cluster_id, found_on: today, mode: s.mode, keywords: [].concat(s.keywords || []).join(', '),\n    title: c.title, label: c.label, claim: v.claim || c.title, gist: gists[c.cluster_id] || '', explainer: v.explainer || null,\n    official_links: v.official_links || '', supporting_links: v.supporting_links || '', contradicting_links: v.contradicting_links || '',\n    evidence: v.evidence || '[]', search_terms: v.search_terms || '', posts: postsOf(c.cluster_id) }; });\nreturn [{ json: { report, markdown: md.join('\\n'), archive_rows,\n  cluster_updates: wi.claims.map(c => ({ id: c.record_id, cluster_id: c.cluster_id, fields: gists[c.cluster_id] ? { gist: gists[c.cluster_id] } : {} })) } }];"
+        "jsCode": "const s = $('Store Settings').first().json;\nconst wi = $('Build Writer Input').first().json;\nconst col = $('Summarise Collection').first().json;\nconst plan = $('Build Cluster Rows').first().json.plan;\nconst out = $json.output || {};\n// What Verify Story returned for each claim (explainer, links, search words), by cluster id.\nconst verified = Object.fromEntries($('Check Each Claim (via Verify Story)').all().map(i => i.json).filter(j => j && j.cluster_id && !j.error).map(j => [j.cluster_id, j]));\nconst byId = Object.fromEntries(wi.claims.map(c => [c.cluster_id, c]));\nconst maxN = wi.sources.length;\nconst doubt = ['Disputed', 'Unverified', 'Not checked', 'Opinion', 'Single source', 'Corroborated'];\nconst cleanCites = (t) => String(t || '').replace(/\\[(\\d+)\\]/g, (m, n) => (Number(n) >= 1 && Number(n) <= maxN) ? m : '');\nconst flagOf = (ids) => { const labels = ids.map(id => byId[id].label); return doubt.find(l => labels.includes(l)); };\nconst sections = (out.sections || []).map(sec => {\n  const paragraphs = (sec.paragraphs || []).map(p => {\n    const ids = (p.cluster_ids || []).filter(id => byId[id]);\n    if (!ids.length) return null;\n    const flag = flagOf(ids);\n    const src = flag === 'Single source' ? (ids.map(id => byId[id].single_source).find(Boolean) || '') : '';\n    return { text: cleanCites(p.text), flag, flag_source: src, cluster_ids: ids };\n  }).filter(Boolean);\n  const os = sec.other_side || {};\n  return { topic: sec.topic, paragraphs, search_interest: sec.search_interest || [],\n    other_side: { text: cleanCites(os.text) || 'No contradicting source found.' } };\n}).filter(sec => sec.paragraphs.length);\nconst gists = Object.fromEntries((out.gists || []).filter(g => byId[g.cluster_id]).map(g => [g.cluster_id, g.gist]));\nconst d = new Date();\nconst report = { run_id: s.run_id, title: wi.topic, date_text: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),\n  window_text: s.mode === 'today' ? 'last 24 hours (Hacker News: last 48 hours)' : 'last 7 days', keywords: [].concat(s.keywords || []),\n  search_terms: col.search_terms, briefing: { in_short: cleanCites(out.in_short), sections },\n  claims: wi.claims.map(c => ({ cluster_id: c.cluster_id, title: c.title, label: c.label, independent_domains: c.independent_domains, gist: gists[c.cluster_id] || '',\n    explainer: (verified[c.cluster_id] || {}).explainer || null,\n    origin_links: c.origin_links, backing_links: c.backing_links, contradicting_links: c.contradicting_links, page_dates: c.page_dates })),\n  sources: wi.sources,\n  footer: { empty_sources: col.empty_sources, failed_sources: col.failed_sources,\n    not_checked: wi.claims.filter(c => c.label === 'Not checked').map(c => c.title), already_reported: plan.repeats, smaller_claims: plan.not_checked_small, old_news: wi.old_news || [] } };\nconst md = ['## In short', report.briefing.in_short, ''];\nfor (const sec of sections) {\n  md.push('## ' + sec.topic);\n  for (const p of sec.paragraphs) md.push('[' + p.flag + (p.flag_source ? ': ' + p.flag_source : '') + '] ' + p.text, '');\n  if (sec.search_interest.length) md.push('Search interest: ' + sec.search_interest.join(', '), '');\n  md.push('### The other side', sec.other_side.text, '');\n}\nmd.push('## Sources', ...wi.sources.map(x => x.n + '. ' + x.url));\n// One archive row per checked story (Not checked claims are not archived); Save Or Update Stories In Archive gives each its number.\nconst today = $now.setZone('Europe/Rome').toISODate();\n// The claim's original posts, oldest first: dig shows them, and a later run that finds one of them (or the article it links to) again has found the same story.\nconst kept = Object.fromEntries(($('Read Kept Findings (Airtable Findings)').all().flatMap(i => i.json.records || []) || []).map(r => [r.id, r.fields]));\nconst postsOf = (cid) => { const p = plan.clusters.find(x => x.cluster_id === cid) || {};\n  return (p.finding_record_ids || []).map(id => kept[id]).filter(f => f && f.url)\n    .map(f => ({ source: f.source || '', url: f.url, linked_url: f.linked_url || '', published_at: f.published_at || '', title: f.title || '' }))\n    .sort((a, b) => a.published_at.localeCompare(b.published_at)); };\nconst archive_rows = wi.claims.filter(c => c.label !== 'Not checked' && verified[c.cluster_id]).map(c => { const v = verified[c.cluster_id];\n  return { run_id: s.run_id, cluster_id: c.cluster_id, found_on: today, mode: s.mode, keywords: [].concat(s.keywords || []).join(', '),\n    title: c.title, label: c.label, claim: v.claim || c.title, gist: gists[c.cluster_id] || '', explainer: v.explainer || null,\n    official_links: v.official_links || '', supporting_links: v.supporting_links || '', contradicting_links: v.contradicting_links || '',\n    evidence: v.evidence || '[]', search_terms: v.search_terms || '', posts: postsOf(c.cluster_id) }; });\nreturn [{ json: { report, markdown: md.join('\\n'), archive_rows,\n  cluster_updates: wi.claims.map(c => ({ id: c.record_id, cluster_id: c.cluster_id, fields: gists[c.cluster_id] ? { gist: gists[c.cluster_id] } : {} })) } }];"
       }
     },
     {
@@ -672,7 +672,7 @@
       "waitBetweenTries": 2000,
       "onError": "continueRegularOutput",
       "position": [
-        7180,
+        7840,
         760
       ],
       "parameters": {
@@ -700,13 +700,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7180,
+        7840,
         960
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const s = $('Store Settings').first().json;\nconst col = $('Summarise Collection').first().json;\nconst plan = $('Build Cluster Rows').isExecuted ? $('Build Cluster Rows').first().json.plan : { repeats: 0, not_checked_small: 0 };\nconst d = new Date();\nconst msg = plan.repeats ? 'Every story found in this run was already reported in the last 7 days.' : 'No usable posts were found for these keywords in this window.';\nreturn [{ json: { markdown: '## In short\\n' + msg, report: { run_id: s.run_id, title: [].concat(s.keywords || []).join(', '),\n  date_text: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),\n  window_text: s.mode === 'today' ? 'last 24 hours (Hacker News: last 7 days)' : 'last 7 days', keywords: [].concat(s.keywords || []),\n  search_terms: col.search_terms, briefing: { in_short: msg, sections: [] }, claims: [], sources: [],\n  footer: { empty_sources: col.empty_sources, failed_sources: col.failed_sources, not_checked: [], already_reported: plan.repeats, smaller_claims: 0 } } } }];"
+        "jsCode": "const s = $('Store Settings').first().json;\nconst col = $('Summarise Collection').first().json;\nconst plan = $('Build Cluster Rows').isExecuted ? $('Build Cluster Rows').first().json.plan : { repeats: 0, not_checked_small: 0 };\nconst d = new Date();\nconst msg = plan.repeats ? 'Every story found in this run was already reported in the last 7 days.' : 'No usable posts were found for these keywords in this window.';\nreturn [{ json: { markdown: '## In short\\n' + msg, report: { run_id: s.run_id, title: [].concat(s.keywords || []).join(', '),\n  date_text: d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),\n  window_text: s.mode === 'today' ? 'last 24 hours (Hacker News: last 48 hours)' : 'last 7 days', keywords: [].concat(s.keywords || []),\n  search_terms: col.search_terms, briefing: { in_short: msg, sections: [] }, claims: [], sources: [],\n  footer: { empty_sources: col.empty_sources, failed_sources: col.failed_sources, not_checked: [], already_reported: plan.repeats, smaller_claims: 0 } } } }];"
       }
     },
     {
@@ -715,13 +715,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        7400,
+        8060,
         760
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "// Build Report HTML: turns the checked briefing + claims into one HTML page that Google Drive converts to a Doc.\nconst r = ($('Check Briefing Flags').isExecuted ? $('Check Briefing Flags') : $('Build Empty Report')).first().json.report;\nconst s = $('Store Settings').first().json;\n// Permanent story numbers from the archive (none for an empty run).\nconst nums = Object.fromEntries((($('Save Or Update Stories In Archive').isExecuted ? $('Save Or Update Stories In Archive').first().json.saved : null) || []).map(x => [x.cluster_id, x.story_number]));\n\n// The answer to a question keyword (from \"Answer Question\"), shown before In short.\nconst ans = $('Answer The Question (via Answer Question)').isExecuted ? ($('Answer The Question (via Answer Question)').first().json.answer || null) : null;\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst FLAG = {\n  'Corroborated':  { bg: '#E3F1E1', fg: '#1E5A1A', text: 'Corroborated' },\n  'Single source': { bg: '#E3ECF8', fg: '#1C3F73', text: 'Single source' },\n  'Disputed':      { bg: '#FBE3DF', fg: '#8A2416', text: 'Disputed' },\n  'Unverified':    { bg: '#F6EDD6', fg: '#6B4E0B', text: 'Unverified' },\n  'Opinion':       { bg: '#ECE9F5', fg: '#43376E', text: 'Opinion' },\n  'Not checked':   { bg: '#EEEEEE', fg: '#444444', text: 'Not checked' },\n};\nconst srcByN = Object.fromEntries((r.sources || []).map(s => [String(s.n), s]));\nconst badge = (label, extra) => {\n  const f = FLAG[label] || FLAG['Not checked'];\n  return `<span style=\"background-color:${f.bg};color:${f.fg};font-weight:bold;font-size:9pt;\">&nbsp;${esc(f.text)}${extra ? ': ' + esc(extra) : ''}&nbsp;</span>`;\n};\n// Escape the text, then turn [n] into a link to source n.\nconst cite = (text) => esc(text).replace(/\\[(\\d+)\\]/g, (m, n) => srcByN[n] ? `<a href=\"${esc(srcByN[n].url)}\">[${n}]</a>` : m);\nconst linkList = (arr) => (arr && arr.length)\n  ? arr.slice(0, 4).map(u => `<a href=\"${esc(u)}\">${esc((String(u).match(/^https?:\\/\\/(?:www\\.)?([^\\/?#:]+)/i) || [, u])[1])}</a>`).join('<br>') + (arr.length > 4 ? `<br>+${arr.length - 4} more` : '')\n  : '<span style=\"color:#888888;\">none</span>';\n\nconst h = [];\nh.push('<html><head><meta charset=\"utf-8\"></head><body style=\"font-family:Arial;font-size:11pt;color:#222222;\">');\n\n// Front page\nh.push(`<h1 style=\"font-size:22pt;\">Claim Checks: ${esc(r.title)}</h1>`);\nh.push(`<p style=\"color:#555555;\">${esc(r.date_text)} &middot; window: ${esc(r.window_text)} &middot; run ${esc(r.run_id)}</p>`);\nh.push(`<p><b>Keywords:</b> ${esc((r.keywords || []).join(', '))}<br><b>Search terms used:</b> ${esc((r.search_terms || []).join(', '))}</p>`);\nh.push('<h3>How to read the labels</h3><table style=\"border-collapse:collapse;width:100%;\" border=\"1\" cellpadding=\"6\">');\nconst legend = [\n  ['Corroborated', 'At least two independent sources back it, one of them official or a reliable outlet, and nothing trustworthy contradicts it. Backed, not proven.'],\n  ['Single source', 'One official source or reliable outlet has stated it so far. Typical for fresh news.'],\n  ['Disputed', 'An official source or reliable outlet says otherwise. Both sides are shown.'],\n  ['Unverified', 'Being discussed, but no trustworthy source confirms it.'],\n  ['Opinion', 'A view, not a checkable fact.'],\n];\nfor (const [l, d] of legend) h.push(`<tr><td style=\"width:24%;\">${badge(l)}</td><td>${esc(d)}</td></tr>`);\nh.push('</table>');\n\n// Answer (question runs only): code-built from the answer object, each item with its status and dated links.\nif (ans) {\n  const ASTATUS = { confirmed: ['Corroborated', 'Confirmed'], claimed: ['Single source', 'Claimed by its team'], unverified: ['Unverified', 'Unverified'] };\n  const abadge = (st) => { const [l, t] = ASTATUS[st] || ASTATUS.unverified; const f = FLAG[l]; return `<span style=\"background-color:${f.bg};color:${f.fg};font-weight:bold;font-size:9pt;\">&nbsp;${esc(t)}&nbsp;</span>`; };\n  const aday = (d) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : 'date unknown';\n  h.push('<h2 style=\"font-size:16pt;\">Answer</h2>');\n  h.push(`<p><i>${esc(ans.question)}</i></p>`);\n  h.push(`<p>${esc(ans.summary || 'No answer was found on the web.')}</p>`);\n  if ((ans.items || []).length) {\n    h.push('<table style=\"border-collapse:collapse;width:100%;\" border=\"1\" cellpadding=\"6\"><tr><th style=\"width:56%;\">Answer</th><th style=\"width:18%;\">Status</th><th>Sources</th></tr>');\n    for (const it of ans.items) h.push(`<tr><td><b>${esc(it.name)}</b><br>${esc(it.what)}</td><td>${abadge(it.status)}</td><td style=\"font-size:9pt;\">${(it.links || []).map(l => `<a href=\"${esc(l.url)}\">${esc(l.domain)}</a> (${esc(aday(l.date))})`).join('<br>') || 'none'}</td></tr>`);\n    h.push('</table>');\n  }\n  if (ans.gaps) h.push(`<p><b>Not found:</b> ${esc(ans.gaps)}</p>`);\n  h.push(`<p style=\"font-size:9pt;color:#555555;\">Looked up on the web: ${esc(ans.pages_read)} of ${esc(ans.pages_total)} pages read. Confirmed: the organiser, an official source or a news outlet states it. Claimed: only its own team says so. Unverified: blogs, forums or a search snippet only.</p>`);\n}\n\n// Briefing\nh.push('<h2 style=\"font-size:16pt;\">In short</h2>');\nh.push(`<p>${cite(r.briefing.in_short)}</p>`);\nfor (const s of r.briefing.sections || []) {\n  h.push(`<h2 style=\"font-size:16pt;\">${esc(s.topic)}</h2>`);\n  for (const p of s.paragraphs || []) {\n    h.push(`<p style=\"margin:0 0 10pt 0;\">${badge(p.flag, p.flag === 'Single source' ? p.flag_source : '')} ${cite(p.text)}</p>`);\n  }\n  if (s.search_interest && s.search_interest.length) {\n    h.push(`<p style=\"color:#555555;\"><i>Search interest (Google Trends, not evidence): people are searching for ${esc(s.search_interest.map(t => '\"' + t + '\"').join(', '))}.</i></p>`);\n  }\n  h.push('<h3 style=\"font-size:12pt;\">The other side</h3>');\n  h.push(`<p>${cite(s.other_side.text)}</p>`);\n}\n\n// Appendix: every story checked, with its number, its explainer and its links.\nconst STATUS = { confirmed: 'Confirmed', stated_only: 'Stated by the source only', not_disclosed: 'Not disclosed', contradicted: 'Contradicted' };\nconst domainOf = (u) => (String(u).match(/^https?:\\/\\/(?:www\\.)?([^\\/?#:]+)/i) || [, u])[1];\n// Every link shows its publication date; pages older than the run's recent window are marked background.\nconst day = (d) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : 'date unknown';\nconst dated = (l) => { l = typeof l === 'string' ? { url: l } : (l || {}); return `<a href=\"${esc(l.url)}\">${esc(l.who || domainOf(l.url))}</a> (${esc(day(l.date))}${l.when === 'background' ? ', background' : ''})`; };\nconst linkLine = (arr) => (arr && arr.length) ? arr.slice(0, 4).map(dated).join(', ') + (arr.length > 4 ? ` +${arr.length - 4} more` : '') : 'none';\nh.push('<h2 style=\"font-size:16pt;\">Stories checked</h2>');\nfor (const c of r.claims || []) {\n  const num = nums[c.cluster_id];\n  h.push(`<h3 style=\"font-size:12pt;margin:16pt 0 4pt 0;\">${num ? '#' + num + ' &middot; ' : ''}${esc(c.title)} ${badge(c.label)}</h3>`);\n  if ((c.origin_links || []).length) h.push(`<p style=\"font-size:9pt;\"><b>Where it came from:</b> ${(c.origin_links || []).map(dated).join(', ')}</p>`);\n  const x = c.explainer;\n  if (x && x.older_event) h.push(`<p><b>Earlier news</b>, first seen ${esc(day(x.first_seen))}. <b>What is new:</b> ${esc(x.whats_new)}</p>`);\n  if (x) {\n    h.push(`<p><b>What happened.</b> ${esc(x.what_happened)}</p>`);\n    if ((x.status_points || []).length) h.push('<ul>' + x.status_points.map(p => `<li><b>${esc(STATUS[p.status] || p.status)}:</b> ${esc(p.point)}${p.source ? ` (${dated({ url: p.source, ...((c.page_dates || {})[p.source] || {}) })})` : ''}</li>`).join('') + '</ul>');\n    if (c.label === 'Disputed' && x.two_sides && (x.two_sides.side_a || x.two_sides.side_b)) h.push(`<p><b>One side.</b> ${esc(x.two_sides.side_a)}</p><p><b>The other side.</b> ${esc(x.two_sides.side_b)}</p>`);\n    h.push(`<p><b>Why it matters.</b> ${esc(x.why_it_matters)}</p><p><b>Open question.</b> ${esc(x.open_question)}</p>`);\n  } else h.push(`<p>${esc(c.gist)}</p>`);\n  h.push(`<p style=\"font-size:9pt;color:#555555;\"><b>Independent sources:</b> ${esc(c.independent_domains)} &middot; <b>What backs it:</b> ${linkLine(c.backing_links)} &middot; <b>What contradicts it:</b> ${linkLine(c.contradicting_links)}</p>`);\n}\n\n// Sources\nh.push('<h2 style=\"font-size:16pt;\">Sources</h2><p style=\"font-size:9pt;\">');\nh.push((r.sources || []).map(s => `[${esc(s.n)}] <a href=\"${esc(s.url)}\">${esc(s.title || s.url)}</a> (${esc(day(s.date))}${s.when === 'background' ? ', background' : ''})`).join('<br>'));\nh.push('</p>');\n\n// Footer\nconst f = r.footer || {};\nconst line = (label, arr) => `<b>${label}:</b> ${arr && arr.length ? esc(arr.join('; ')) : 'none'}`;\nh.push('<hr><p style=\"font-size:9pt;color:#555555;\">');\nh.push([line('Sources with nothing usable', f.empty_sources), line('Sources that failed', f.failed_sources), line('Claims not checked', f.not_checked), line('Earlier news with nothing new, left out', f.old_news), `<b>Claims skipped as already reported this week:</b> ${esc(f.already_reported || 0)}`, `<b>Smaller claims not checked (cap of ${esc(s.max_verify)} per keyword):</b> ${esc(f.smaller_claims || 0)}`].join('<br>'));\nh.push('<br>Claim Checks labels say how far a claim could be backed by independent sources at the time of the run. They do not prove a claim true or false.</p>');\nh.push('</body></html>');\n\nconst html = h.join('\\n');\nconst title = `Claim Checks - ${r.title} - ${r.date_text}`;\n// Upload body: Google Drive turns the HTML into a Google Doc in the reports folder.\nconst folder = $('Store Settings').first().json.reports_folder_id;\nconst meta = { name: title, mimeType: 'application/vnd.google-apps.document', parents: [folder] };\nconst b = 'cc_report_boundary';\nconst body = `--${b}\\r\\nContent-Type: application/json; charset=UTF-8\\r\\n\\r\\n${JSON.stringify(meta)}\\r\\n--${b}\\r\\nContent-Type: text/html; charset=UTF-8\\r\\n\\r\\n${html}\\r\\n--${b}--`;\n// Telegram summary (HTML, under Telegram's 4,096 characters): In short, then one line per story with its number.\nconst tEsc = (t) => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst short = (t, n) => { t = String(t || '').replace(/\\s*\\[\\d+\\]/g, '').replace(/\\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1).replace(/\\s+\\S*$/, '') + '…' : t; };\nconst EMOJI = { 'Corroborated': '✅', 'Single source': '🔹', 'Disputed': '⚠️', 'Unverified': '❔', 'Opinion': '💬', 'Not checked': '⏸️' };\nconst AEMOJI = { confirmed: '✅', claimed: '🔹', unverified: '❔' };\nconst ansLines = ans ? ['', '<b>Answer</b>', tEsc(short(ans.summary, 600)), ...(ans.items || []).slice(0, 6).map(it => `${AEMOJI[it.status] || '•'} ${(it.links || [])[0] ? '<a href=\"' + tEsc(it.links[0].url) + '\">' + tEsc(it.name) + '</a>' : tEsc(it.name)} <i>(${tEsc(it.status)})</i> ${tEsc(short(it.what, 130))}`)] : [];\nconst head = [`<b>Claim Checks · ${tEsc(r.title)}</b>`, `${tEsc(r.date_text)} · ${tEsc(r.window_text)}`, ...ansLines, '', '<b>In short</b>', tEsc(short(r.briefing.in_short, 900))];\nconst storyLines = (r.claims || []).map(c => { const num = nums[c.cluster_id];\n  return { top: `${EMOJI[c.label] || '•'} ${num ? '<b>#' + num + '</b> ' : ''}${tEsc(c.title)} <i>(${tEsc(c.label)})</i>`, gist: tEsc(short(c.explainer && c.explainer.older_event ? 'Update on news first seen ' + c.explainer.first_seen + ': ' + c.explainer.whats_new : (c.explainer ? c.explainer.what_happened : c.gist), 220)) }; });\nconst tail = Object.keys(nums).length ? ['', 'Send <code>dig</code> and a number for the full story with its sources, then ask me anything about it here.'] : [];\nlet telegram_text = [...head, ...(storyLines.length ? ['', '<b>Stories</b>', ...storyLines.map(l => l.top + (l.gist ? '\\n' + l.gist : ''))] : []), ...tail].join('\\n');\nif (telegram_text.length > 3600) telegram_text = [...head, '', '<b>Stories</b>', ...storyLines.map(l => l.top), ...tail].join('\\n');\n// Chat for the summary: the bot chat that asked, or the chat paired with the recipient's email.\nconst telegram_chat_id = String(s.chat_id || (s.recipient_chats || {})[s.recipient] || '');\n// The briefing saved on the run (read by the bot): the answer goes at the top of In short.\nconst md0 = String(($('Check Briefing Flags').isExecuted ? $('Check Briefing Flags') : $('Build Empty Report')).first().json.markdown || '');\nconst ansMd = ans ? ['**Answer:** ' + (ans.summary || 'No answer was found on the web.'), ...(ans.items || []).map(it => `- ${it.name} (${it.status}): ${it.what}${(it.links || [])[0] ? ' ' + it.links[0].url : ''}`), ans.gaps ? 'Not found: ' + ans.gaps : ''].filter(Boolean).join('\\n') : '';\nconst briefing_markdown = !ansMd ? md0 : (md0.includes('## In short\\n') ? md0.replace('## In short\\n', '## In short\\n' + ansMd + '\\n\\n') : '## In short\\n' + ansMd + '\\n\\n' + md0);\nreturn [{ json: { html, title, body, boundary: b, folder_id: folder, telegram_text, telegram_chat_id, briefing_markdown } }];\n"
+        "jsCode": "// Build Report HTML: turns the checked briefing + claims into one HTML page that Google Drive converts to a Doc.\nconst r = ($('Check Briefing Flags').isExecuted ? $('Check Briefing Flags') : $('Build Empty Report')).first().json.report;\nconst s = $('Store Settings').first().json;\n// Permanent story numbers from the archive (none for an empty run).\nconst nums = Object.fromEntries((($('Save Or Update Stories In Archive').isExecuted ? $('Save Or Update Stories In Archive').first().json.saved : null) || []).map(x => [x.cluster_id, x.story_number]));\n\n// Impact score and the Hacker News note of each checked claim (from Build Cluster Rows).\nconst clusterOf = Object.fromEntries((($('Build Cluster Rows').isExecuted ? $('Build Cluster Rows').first().json.plan.clusters : null) || []).map(c => [c.cluster_id, c]));\n// The answer to a question keyword (from \"Answer Question\"), shown before In short.\nconst ans = $('Answer The Question (via Answer Question)').isExecuted ? ($('Answer The Question (via Answer Question)').first().json.answer || null) : null;\nconst esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst FLAG = {\n  'Corroborated':  { bg: '#E3F1E1', fg: '#1E5A1A', text: 'Corroborated' },\n  'Single source': { bg: '#E3ECF8', fg: '#1C3F73', text: 'Single source' },\n  'Disputed':      { bg: '#FBE3DF', fg: '#8A2416', text: 'Disputed' },\n  'Unverified':    { bg: '#F6EDD6', fg: '#6B4E0B', text: 'Unverified' },\n  'Opinion':       { bg: '#ECE9F5', fg: '#43376E', text: 'Opinion' },\n  'Not checked':   { bg: '#EEEEEE', fg: '#444444', text: 'Not checked' },\n};\nconst srcByN = Object.fromEntries((r.sources || []).map(s => [String(s.n), s]));\nconst badge = (label, extra) => {\n  const f = FLAG[label] || FLAG['Not checked'];\n  return `<span style=\"background-color:${f.bg};color:${f.fg};font-weight:bold;font-size:9pt;\">&nbsp;${esc(f.text)}${extra ? ': ' + esc(extra) : ''}&nbsp;</span>`;\n};\n// Escape the text, then turn [n] into a link to source n.\nconst cite = (text) => esc(text).replace(/\\[(\\d+)\\]/g, (m, n) => srcByN[n] ? `<a href=\"${esc(srcByN[n].url)}\">[${n}]</a>` : m);\nconst linkList = (arr) => (arr && arr.length)\n  ? arr.slice(0, 4).map(u => `<a href=\"${esc(u)}\">${esc((String(u).match(/^https?:\\/\\/(?:www\\.)?([^\\/?#:]+)/i) || [, u])[1])}</a>`).join('<br>') + (arr.length > 4 ? `<br>+${arr.length - 4} more` : '')\n  : '<span style=\"color:#888888;\">none</span>';\n\nconst h = [];\nh.push('<html><head><meta charset=\"utf-8\"></head><body style=\"font-family:Arial;font-size:11pt;color:#222222;\">');\n\n// Front page\nh.push(`<h1 style=\"font-size:22pt;\">Claim Checks: ${esc(r.title)}</h1>`);\nh.push(`<p style=\"color:#555555;\">${esc(r.date_text)} &middot; window: ${esc(r.window_text)} &middot; run ${esc(r.run_id)}</p>`);\nh.push(`<p><b>Keywords:</b> ${esc((r.keywords || []).join(', '))}<br><b>Search terms used:</b> ${esc((r.search_terms || []).join(', '))}</p>`);\nh.push('<h3>How to read the labels</h3><table style=\"border-collapse:collapse;width:100%;\" border=\"1\" cellpadding=\"6\">');\nconst legend = [\n  ['Corroborated', 'At least two independent sources back it, one of them official or a reliable outlet, and nothing trustworthy contradicts it. Backed, not proven.'],\n  ['Single source', 'One official source or reliable outlet has stated it so far. Typical for fresh news.'],\n  ['Disputed', 'An official source or reliable outlet says otherwise. Both sides are shown.'],\n  ['Unverified', 'Being discussed, but no trustworthy source confirms it.'],\n  ['Opinion', 'A view, not a checkable fact.'],\n];\nfor (const [l, d] of legend) h.push(`<tr><td style=\"width:24%;\">${badge(l)}</td><td>${esc(d)}</td></tr>`);\nh.push('</table>');\n\n// Answer (question runs only): code-built from the answer object, each item with its status and dated links.\nif (ans) {\n  const ASTATUS = { confirmed: ['Corroborated', 'Confirmed'], claimed: ['Single source', 'Claimed by its team'], unverified: ['Unverified', 'Unverified'] };\n  const abadge = (st) => { const [l, t] = ASTATUS[st] || ASTATUS.unverified; const f = FLAG[l]; return `<span style=\"background-color:${f.bg};color:${f.fg};font-weight:bold;font-size:9pt;\">&nbsp;${esc(t)}&nbsp;</span>`; };\n  const aday = (d) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : 'date unknown';\n  h.push('<h2 style=\"font-size:16pt;\">Answer</h2>');\n  h.push(`<p><i>${esc(ans.question)}</i></p>`);\n  h.push(`<p>${esc(ans.summary || 'No answer was found on the web.')}</p>`);\n  if ((ans.items || []).length) {\n    h.push('<table style=\"border-collapse:collapse;width:100%;\" border=\"1\" cellpadding=\"6\"><tr><th style=\"width:56%;\">Answer</th><th style=\"width:18%;\">Status</th><th>Sources</th></tr>');\n    for (const it of ans.items) h.push(`<tr><td><b>${esc(it.name)}</b><br>${esc(it.what)}</td><td>${abadge(it.status)}</td><td style=\"font-size:9pt;\">${(it.links || []).map(l => `<a href=\"${esc(l.url)}\">${esc(l.domain)}</a> (${esc(aday(l.date))})`).join('<br>') || 'none'}</td></tr>`);\n    h.push('</table>');\n  }\n  if (ans.gaps) h.push(`<p><b>Not found:</b> ${esc(ans.gaps)}</p>`);\n  h.push(`<p style=\"font-size:9pt;color:#555555;\">Looked up on the web: ${esc(ans.pages_read)} of ${esc(ans.pages_total)} pages read. Confirmed: the organiser, an official source or a news outlet states it. Claimed: only its own team says so. Unverified: blogs, forums or a search snippet only.</p>`);\n}\n\n// Briefing\nh.push('<h2 style=\"font-size:16pt;\">In short</h2>');\nh.push(`<p>${cite(r.briefing.in_short)}</p>`);\nfor (const s of r.briefing.sections || []) {\n  h.push(`<h2 style=\"font-size:16pt;\">${esc(s.topic)}</h2>`);\n  for (const p of s.paragraphs || []) {\n    h.push(`<p style=\"margin:0 0 10pt 0;\">${badge(p.flag, p.flag === 'Single source' ? p.flag_source : '')} ${cite(p.text)}</p>`);\n  }\n  if (s.search_interest && s.search_interest.length) {\n    h.push(`<p style=\"color:#555555;\"><i>Search interest (Google Trends, not evidence): people are searching for ${esc(s.search_interest.map(t => '\"' + t + '\"').join(', '))}.</i></p>`);\n  }\n  h.push('<h3 style=\"font-size:12pt;\">The other side</h3>');\n  h.push(`<p>${cite(s.other_side.text)}</p>`);\n}\n\n// Appendix: every story checked, with its number, its explainer and its links.\nconst STATUS = { confirmed: 'Confirmed', stated_only: 'Stated by the source only', not_disclosed: 'Not disclosed', contradicted: 'Contradicted' };\nconst domainOf = (u) => (String(u).match(/^https?:\\/\\/(?:www\\.)?([^\\/?#:]+)/i) || [, u])[1];\n// Every link shows its publication date; pages older than the run's recent window are marked background.\nconst day = (d) => d ? new Date(String(d).slice(0, 10) + 'T12:00:00Z').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }) : 'date unknown';\nconst dated = (l) => { l = typeof l === 'string' ? { url: l } : (l || {}); return `<a href=\"${esc(l.url)}\">${esc(l.who || domainOf(l.url))}</a> (${esc(day(l.date))}${l.when === 'background' ? ', background' : ''})`; };\nconst linkLine = (arr) => (arr && arr.length) ? arr.slice(0, 4).map(dated).join(', ') + (arr.length > 4 ? ` +${arr.length - 4} more` : '') : 'none';\nh.push('<h2 style=\"font-size:16pt;\">Stories checked</h2>');\nfor (const c of r.claims || []) {\n  const num = nums[c.cluster_id];\n  h.push(`<h3 style=\"font-size:12pt;margin:16pt 0 4pt 0;\">${num ? '#' + num + ' &middot; ' : ''}${esc(c.title)} ${badge(c.label)}</h3>`);\n  const cm = clusterOf[c.cluster_id] || {};\n  if (cm.impact || cm.note) h.push(`<p style=\"font-size:9pt;color:#555555;margin:0 0 6pt 0;\">${cm.impact ? 'Impact ' + esc(cm.impact) + '/10' : ''}${cm.impact && cm.note ? ' &middot; ' : ''}${cm.note ? esc(cm.note) : ''}</p>`);\n  if ((c.origin_links || []).length) h.push(`<p style=\"font-size:9pt;\"><b>Where it came from:</b> ${(c.origin_links || []).map(dated).join(', ')}</p>`);\n  const x = c.explainer;\n  if (x && x.older_event) h.push(`<p><b>Earlier news</b>, first seen ${esc(day(x.first_seen))}. <b>What is new:</b> ${esc(x.whats_new)}</p>`);\n  if (x) {\n    h.push(`<p><b>What happened.</b> ${esc(x.what_happened)}</p>`);\n    if ((x.status_points || []).length) h.push('<ul>' + x.status_points.map(p => `<li><b>${esc(STATUS[p.status] || p.status)}:</b> ${esc(p.point)}${p.source ? ` (${dated({ url: p.source, ...((c.page_dates || {})[p.source] || {}) })})` : ''}</li>`).join('') + '</ul>');\n    if (c.label === 'Disputed' && x.two_sides && (x.two_sides.side_a || x.two_sides.side_b)) h.push(`<p><b>One side.</b> ${esc(x.two_sides.side_a)}</p><p><b>The other side.</b> ${esc(x.two_sides.side_b)}</p>`);\n    h.push(`<p><b>Why it matters.</b> ${esc(x.why_it_matters)}</p><p><b>Open question.</b> ${esc(x.open_question)}</p>`);\n  } else h.push(`<p>${esc(c.gist)}</p>`);\n  h.push(`<p style=\"font-size:9pt;color:#555555;\"><b>Independent sources:</b> ${esc(c.independent_domains)} &middot; <b>What backs it:</b> ${linkLine(c.backing_links)} &middot; <b>What contradicts it:</b> ${linkLine(c.contradicting_links)}</p>`);\n}\n\n// Also discussed: every claim the check cap left out, with its first post, so nothing found is thrown away.\nconst unchecked = ($('Build Cluster Rows').isExecuted ? $('Build Cluster Rows').first().json.plan.unchecked : null) || [];\nif (unchecked.length) {\n  h.push('<h2 style=\"font-size:16pt;\">Also discussed (not checked)</h2><p style=\"font-size:9pt;color:#555555;\">Found in this run but not checked against sources (the check cap is per keyword). Highest impact first.</p><ul>');\n  for (const u of unchecked) h.push(`<li>${u.url ? `<a href=\"${esc(u.url)}\">${esc(u.title)}</a>` : esc(u.title)} <span style=\"color:#555555;\">(impact ${esc(u.impact)}/10, ${esc(u.posts)} post${u.posts === 1 ? '' : 's'}${u.note ? ', ' + esc(u.note) : ''})</span></li>`);\n  h.push('</ul>');\n}\n\n// Sources\nh.push('<h2 style=\"font-size:16pt;\">Sources</h2><p style=\"font-size:9pt;\">');\nh.push((r.sources || []).map(s => `[${esc(s.n)}] <a href=\"${esc(s.url)}\">${esc(s.title || s.url)}</a> (${esc(day(s.date))}${s.when === 'background' ? ', background' : ''})`).join('<br>'));\nh.push('</p>');\n\n// Footer\nconst f = r.footer || {};\nconst line = (label, arr) => `<b>${label}:</b> ${arr && arr.length ? esc(arr.join('; ')) : 'none'}`;\nh.push('<hr><p style=\"font-size:9pt;color:#555555;\">');\nh.push([line('Sources with nothing usable', f.empty_sources), line('Sources that failed', f.failed_sources), line('Claims not checked', f.not_checked), line('Earlier news with nothing new, left out', f.old_news), `<b>Claims skipped as already reported this week:</b> ${esc(f.already_reported || 0)}`, `<b>Smaller claims not checked (cap of ${esc(s.max_verify)} per keyword):</b> ${esc(f.smaller_claims || 0)}`].join('<br>'));\nh.push('<br>Claim Checks labels say how far a claim could be backed by independent sources at the time of the run. They do not prove a claim true or false.</p>');\nh.push('</body></html>');\n\nconst html = h.join('\\n');\nconst title = `Claim Checks - ${r.title} - ${r.date_text}`;\n// Upload body: Google Drive turns the HTML into a Google Doc in the reports folder.\nconst folder = $('Store Settings').first().json.reports_folder_id;\nconst meta = { name: title, mimeType: 'application/vnd.google-apps.document', parents: [folder] };\nconst b = 'cc_report_boundary';\nconst body = `--${b}\\r\\nContent-Type: application/json; charset=UTF-8\\r\\n\\r\\n${JSON.stringify(meta)}\\r\\n--${b}\\r\\nContent-Type: text/html; charset=UTF-8\\r\\n\\r\\n${html}\\r\\n--${b}--`;\n// Telegram summary (HTML, under Telegram's 4,096 characters): In short, then one line per story with its number.\nconst tEsc = (t) => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst short = (t, n) => { t = String(t || '').replace(/\\s*\\[\\d+\\]/g, '').replace(/\\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1).replace(/\\s+\\S*$/, '') + '…' : t; };\nconst EMOJI = { 'Corroborated': '✅', 'Single source': '🔹', 'Disputed': '⚠️', 'Unverified': '❔', 'Opinion': '💬', 'Not checked': '⏸️' };\nconst AEMOJI = { confirmed: '✅', claimed: '🔹', unverified: '❔' };\nconst ansLines = ans ? ['', '<b>Answer</b>', tEsc(short(ans.summary, 600)), ...(ans.items || []).slice(0, 6).map(it => `${AEMOJI[it.status] || '•'} ${(it.links || [])[0] ? '<a href=\"' + tEsc(it.links[0].url) + '\">' + tEsc(it.name) + '</a>' : tEsc(it.name)} <i>(${tEsc(it.status)})</i> ${tEsc(short(it.what, 130))}`)] : [];\nconst head = [`<b>Claim Checks · ${tEsc(r.title)}</b>`, `${tEsc(r.date_text)} · ${tEsc(r.window_text)}`, ...ansLines, '', '<b>In short</b>', tEsc(short(r.briefing.in_short, 900))];\nconst storyLines = (r.claims || []).map(c => { const num = nums[c.cluster_id];\n  return { top: `${EMOJI[c.label] || '•'} ${num ? '<b>#' + num + '</b> ' : ''}${tEsc(c.title)} <i>(${tEsc(c.label)})</i>` + ((clusterOf[c.cluster_id] || {}).note ? ` <i>· ${tEsc(clusterOf[c.cluster_id].note)}</i>` : ''), gist: tEsc(short(c.explainer && c.explainer.older_event ? 'Update on news first seen ' + c.explainer.first_seen + ': ' + c.explainer.whats_new : (c.explainer ? c.explainer.what_happened : c.gist), 220)) }; });\nconst tail = Object.keys(nums).length ? ['', 'Send <code>dig</code> and a number for the full story with its sources, then ask me anything about it here.'] : [];\nconst also = unchecked.length ? ['', '<b>Also discussed (not checked)</b>', ...unchecked.slice(0, 8).map(u => '• ' + (u.url ? '<a href=\"' + tEsc(u.url) + '\">' + tEsc(short(u.title, 110)) + '</a>' : tEsc(short(u.title, 110))) + ` <i>(${tEsc(u.impact)}/10${u.note ? ', ' + tEsc(u.note) : ''})</i>`), ...(unchecked.length > 8 ? [`+${unchecked.length - 8} more in the PDF`] : [])] : [];\nlet telegram_text = [...head, ...(storyLines.length ? ['', '<b>Stories</b>', ...storyLines.map(l => l.top + (l.gist ? '\\n' + l.gist : ''))] : []), ...also, ...tail].join('\\n');\nif (telegram_text.length > 3600) telegram_text = [...head, '', '<b>Stories</b>', ...storyLines.map(l => l.top), ...also, ...tail].join('\\n');\nif (telegram_text.length > 4000) telegram_text = [...head, '', '<b>Stories</b>', ...storyLines.map(l => l.top), ...tail].join('\\n');\n// Chat for the summary: the bot chat that asked, or the chat paired with the recipient's email.\nconst telegram_chat_id = String(s.chat_id || (s.recipient_chats || {})[s.recipient] || '');\n// The briefing saved on the run (read by the bot): the answer goes at the top of In short.\nconst md0 = String(($('Check Briefing Flags').isExecuted ? $('Check Briefing Flags') : $('Build Empty Report')).first().json.markdown || '');\nconst ansMd = ans ? ['**Answer:** ' + (ans.summary || 'No answer was found on the web.'), ...(ans.items || []).map(it => `- ${it.name} (${it.status}): ${it.what}${(it.links || [])[0] ? ' ' + it.links[0].url : ''}`), ans.gaps ? 'Not found: ' + ans.gaps : ''].filter(Boolean).join('\\n') : '';\nconst briefing_markdown = !ansMd ? md0 : (md0.includes('## In short\\n') ? md0.replace('## In short\\n', '## In short\\n' + ansMd + '\\n\\n') : '## In short\\n' + ansMd + '\\n\\n' + md0);\nconst alsoMd = unchecked.length ? '\\n\\n## Also discussed (not checked)\\n' + unchecked.map(u => `- ${u.title}${u.url ? ' ' + u.url : ''}`).join('\\n') : '';\nreturn [{ json: { html, title, body, boundary: b, folder_id: folder, telegram_text, telegram_chat_id, briefing_markdown: briefing_markdown + alsoMd } }];\n"
       }
     },
     {
@@ -734,7 +734,7 @@
       "waitBetweenTries": 3000,
       "onError": "stopWorkflow",
       "position": [
-        7620,
+        8280,
         760
       ],
       "parameters": {
@@ -767,7 +767,7 @@
       "waitBetweenTries": 3000,
       "onError": "stopWorkflow",
       "position": [
-        7840,
+        8500,
         760
       ],
       "parameters": {
@@ -808,7 +808,7 @@
       "typeVersion": 3,
       "onError": "stopWorkflow",
       "position": [
-        8060,
+        8720,
         760
       ],
       "parameters": {
@@ -843,7 +843,7 @@
       "typeVersion": 4.2,
       "onError": "continueRegularOutput",
       "position": [
-        8280,
+        8940,
         760
       ],
       "parameters": {
@@ -871,7 +871,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        8720,
+        9380,
         760
       ],
       "parameters": {
@@ -892,7 +892,7 @@
       "waitBetweenTries": 3000,
       "onError": "stopWorkflow",
       "position": [
-        9160,
+        9820,
         760
       ],
       "parameters": {
@@ -929,7 +929,7 @@
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "position": [
-        9380,
+        10040,
         760
       ],
       "parameters": {
@@ -957,7 +957,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        10040,
+        10700,
         760
       ],
       "parameters": {
@@ -993,7 +993,7 @@
       "typeVersion": 1.2,
       "onError": "continueRegularOutput",
       "position": [
-        10260,
+        10920,
         760
       ],
       "parameters": {
@@ -1020,7 +1020,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1460,
+        2120,
         760
       ],
       "parameters": {
@@ -1036,7 +1036,7 @@
       "typeVersion": 1.2,
       "onError": "continueRegularOutput",
       "position": [
-        1680,
+        2340,
         760
       ],
       "parameters": {
@@ -1059,7 +1059,7 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        4520,
+        5180,
         960
       ],
       "parameters": {}
@@ -1070,13 +1070,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        9600,
+        10260,
         760
       ],
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const errText = (e) => String(typeof e === 'string' ? e : (e && (e.message || e.description || JSON.stringify(e))) || 'unknown error').replace(/\\s+/g, ' ').slice(0, 160);\nconst at = (it, idx) => (it.pairedItem && typeof it.pairedItem.item === 'number') ? it.pairedItem.item : idx;\n// Everything the run survived (failed sources, claims that could not be checked), for ONE alert.\nconst s = $('Store Settings').first().json;\nconst problems = [...($('Summarise Collection').first().json.problems || [])];\nif ($('Check Each Claim (via Verify Story)').isExecuted) {\n  const checks = $('Split Claims').all().map(i => i.json);\n  const plan = $('Build Cluster Rows').first().json.plan;\n  $('Check Each Claim (via Verify Story)').all().forEach((it, idx) => {\n    if (!it.json.error) return;\n    const c = checks[at(it, idx)] || {};\n    const cl = (plan.clusters || []).find(x => x.cluster_id === c.cluster_id) || {};\n    problems.push(`Claim not checked \"${String(cl.title || c.cluster_id).slice(0, 80)}\": ${errText(it.json.error)}`);\n  });\n}\nif ($('Answer The Question (via Answer Question)').isExecuted) {\n  const a = $('Answer The Question (via Answer Question)').first().json;\n  if (a.error || !a.answer) problems.push(`Question not answered \"${String((s.questions || [])[0] || '').slice(0, 80)}\": ${errText(a.error || 'no answer returned')}`);\n}\nreturn [{ json: { run_id: s.run_id, keywords: [].concat(s.keywords || []), problems } }];"
+        "jsCode": "const errText = (e) => String(typeof e === 'string' ? e : (e && (e.message || e.description || JSON.stringify(e))) || 'unknown error').replace(/\\s+/g, ' ').slice(0, 160);\nconst at = (it, idx) => (it.pairedItem && typeof it.pairedItem.item === 'number') ? it.pairedItem.item : idx;\n// Everything the run survived (failed sources, claims that could not be checked), for ONE alert.\nconst s = $('Store Settings').first().json;\nconst problems = [...($('Summarise Collection').first().json.problems || [])];\n// A keyword without a saved plan whose new plan failed was searched with a simple wide angle only.\nif ($('Plan Topic (via Plan Topic)').isExecuted) {\n  const res = $('Plan Topic (via Plan Topic)').all().map(i => i.json);\n  const ok = new Set(res.filter(j => j.ok === true).map(j => String(j.keyword).toLowerCase()));\n  const why = res.filter(j => j.ok !== true).map(j => errText(j.reason || j.error || 'no plan returned'));\n  $('Build Plan Requests').all().map(i => i.json).filter(j => !j.has_plan && !ok.has(String(j.keyword).toLowerCase()))\n    .forEach((j, n) => problems.push(`No search plan for \"${String(j.keyword).slice(0, 80)}\", searched with a simple wide angle only: ${why[n] || 'no plan returned'}`));\n}\nif ($('Check Each Claim (via Verify Story)').isExecuted) {\n  const checks = $('Split Claims').all().map(i => i.json);\n  const plan = $('Build Cluster Rows').first().json.plan;\n  $('Check Each Claim (via Verify Story)').all().forEach((it, idx) => {\n    if (!it.json.error) return;\n    const c = checks[at(it, idx)] || {};\n    const cl = (plan.clusters || []).find(x => x.cluster_id === c.cluster_id) || {};\n    problems.push(`Claim not checked \"${String(cl.title || c.cluster_id).slice(0, 80)}\": ${errText(it.json.error)}`);\n  });\n}\nif ($('Answer The Question (via Answer Question)').isExecuted) {\n  const a = $('Answer The Question (via Answer Question)').first().json;\n  if (a.error || !a.answer) problems.push(`Question not answered \"${String((s.questions || [])[0] || '').slice(0, 80)}\": ${errText(a.error || 'no answer returned')}`);\n}\nreturn [{ json: { run_id: s.run_id, keywords: [].concat(s.keywords || []), problems } }];"
       }
     },
     {
@@ -1087,7 +1087,7 @@
       "typeVersion": 1.2,
       "onError": "continueRegularOutput",
       "position": [
-        9820,
+        10480,
         760
       ],
       "parameters": {
@@ -1115,7 +1115,7 @@
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "position": [
-        6960,
+        7620,
         760
       ],
       "parameters": {
@@ -1141,7 +1141,7 @@
       "maxTries": 3,
       "waitBetweenTries": 2000,
       "position": [
-        8500,
+        9160,
         760
       ],
       "parameters": {
@@ -1164,7 +1164,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        8940,
+        9600,
         760
       ],
       "parameters": {
@@ -1192,65 +1192,12 @@
       }
     },
     {
-      "id": "av-planangles",
-      "name": "Plan Angles (via Ask Venice)",
-      "type": "n8n-nodes-base.executeWorkflow",
-      "typeVersion": 1.2,
-      "position": [
-        720,
-        760
-      ],
-      "parameters": {
-        "source": "database",
-        "workflowId": {
-          "__rl": true,
-          "mode": "id",
-          "value": "RzRuzMVi64lHyHwy",
-          "cachedResultName": "Claim Checks | Ask Venice"
-        },
-        "mode": "each",
-        "options": {
-          "waitForSubWorkflow": true
-        },
-        "workflowInputs": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "step": "Plan Angles",
-            "body": "={{ { model: 'kimi-k2-6', temperature: 0, max_tokens: 3500, venice_parameters: { disable_thinking: true }, response_format: { type: 'json_schema', json_schema: { name: 'angles', strict: true, schema: {\"type\": \"object\", \"properties\": {\"angles\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"keyword\": {\"type\": \"string\"}, \"angle\": {\"type\": \"string\"}, \"search_phrase\": {\"type\": \"string\"}, \"trends_term\": {\"type\": \"string\"}, \"word_groups\": {\"type\": \"array\", \"items\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} } } }, \"additionalProperties\": false, \"required\": [\"keyword\", \"angle\", \"search_phrase\", \"trends_term\", \"word_groups\"]} } }, \"additionalProperties\": false, \"required\": [\"angles\"]} } }, messages: [{ role: 'system', content: \"<role>You plan a research run for a claim-checking report. You split the keywords into a few search angles that together cover what people are discussing about them right now.</role>\\n\\n<rules>\\n1. The number in <max_angles> is PER KEYWORD: give EVERY keyword exactly that many angles, so one keyword never takes searches from another. Only a keyword too narrow for that many different angles gets fewer, never fewer than 3.\\n2. angle: a short name for the sub-topic, 3-6 words.\\n3. search_phrase: 2-5 plain words that would find posts about the angle on Reddit and Hacker News. No quotes, no operators.\\n4. keyword: the input keyword the angle belongs to, copied exactly.\\n5. Prefer concrete angles (a product, a release, a company, an event, a rule) over vague ones (\\\"the future of AI\\\").\\n6. trends_term: 1-2 everyday words that many people type into Google about this angle's topic (for example: drug discovery, LLM, crypto hack). Broader than search_phrase: Google Trends has data only for common searches, never for a long or rare phrase.\\n7. word_groups: 2 or 3 groups of 4-16 words or short phrases, written the way people write them in posts: verbs in every form, nouns, abbreviations, well-known names in the field. A post is found when it contains one item from EVERY group, so each group is ONE idea in many wordings, for example the subject (crypto, DeFi, exchange, protocol, bridge, wallet, token) and the event (hack, hacks, hacked, hacker, hackers, exploit, exploited, drained, stolen, breach, attacker, attackers, attack, attacks, backdoor, backdoored, malware, compromised). Write every word form as its own item, because X matches whole words only: singular and plural, and every verb form (attack, attacks, attacked; hacker, hackers). Never put the same idea in two groups. No operators, no quotes, no hashtags.\\n8. The first angle of every keyword is its wide angle: angle \\\"All news on <keyword>\\\", with word_groups that cover everything the keyword means, so a post the narrower angles miss is still found. Then add the narrower angles; the wide angle counts toward its keyword's <max_angles>.\\n9. A keyword listed in <questions> is a question, not a topic. Its angles look for the posts that hold the ANSWER: the wide angle covers the question's subject (the event, product, project or body it names); the other angles name the kinds of answer (for example: submitted projects, demos, launches, winners, finalists, the tracks or categories), each with word_groups in the words such posts use.\\n</rules>\\n\\n<example>\\n<input>\\n<keywords>[\\\"AI coding agents\\\"]</keywords>\\n<window>last 7 days</window>\\n<max_angles>3</max_angles>\\n<questions>[]</questions>\\n</input>\\n<output>{\\\"angles\\\":[{\\\"keyword\\\":\\\"AI coding agents\\\",\\\"angle\\\":\\\"All news on AI coding agents\\\",\\\"search_phrase\\\":\\\"AI coding agent\\\",\\\"trends_term\\\":\\\"coding agent\\\",\\\"word_groups\\\":[[\\\"AI\\\",\\\"LLM\\\",\\\"Claude\\\",\\\"GPT\\\",\\\"Codex\\\",\\\"Copilot\\\",\\\"Cursor\\\"],[\\\"coding agent\\\",\\\"coding assistant\\\",\\\"code agent\\\",\\\"agentic coding\\\",\\\"AI coding\\\",\\\"writes code\\\"]]},{\\\"keyword\\\":\\\"AI coding agents\\\",\\\"angle\\\":\\\"New coding agent releases\\\",\\\"search_phrase\\\":\\\"coding agent release\\\",\\\"trends_term\\\":\\\"coding agent\\\",\\\"word_groups\\\":[[\\\"coding agent\\\",\\\"coding assistant\\\",\\\"Copilot\\\",\\\"Cursor\\\",\\\"Codex\\\",\\\"Claude Code\\\"],[\\\"release\\\",\\\"released\\\",\\\"launch\\\",\\\"launched\\\",\\\"announces\\\",\\\"new version\\\",\\\"update\\\"]]},{\\\"keyword\\\":\\\"AI coding agents\\\",\\\"angle\\\":\\\"Agent pricing and usage limits\\\",\\\"search_phrase\\\":\\\"coding agent pricing limits\\\",\\\"trends_term\\\":\\\"AI pricing\\\",\\\"word_groups\\\":[[\\\"coding agent\\\",\\\"Copilot\\\",\\\"Cursor\\\",\\\"Codex\\\",\\\"Claude Code\\\"],[\\\"price\\\",\\\"pricing\\\",\\\"cost\\\",\\\"subscription\\\",\\\"rate limit\\\",\\\"usage limit\\\",\\\"quota\\\"]]}]}</output>\\n</example>\" }, { role: 'user', content: '<keywords>' + JSON.stringify([].concat($('Store Settings').first().json.keywords || [])) + '</keywords>\\n<window>' + ($('Store Settings').first().json.mode === 'today' ? 'last 24 hours' : 'last 7 days') + '</window>\\n<max_angles>' + $('Store Settings').first().json.max_angles + '</max_angles>\\n<questions>' + JSON.stringify([].concat($('Store Settings').first().json.questions || [])) + '</questions>' }] } }}"
-          },
-          "matchingColumns": [],
-          "schema": [
-            {
-              "id": "step",
-              "displayName": "step",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "string"
-            },
-            {
-              "id": "body",
-              "displayName": "body",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "canBeUsedToMatch": true,
-              "type": "object"
-            }
-          ],
-          "attemptToConvertTypes": false,
-          "convertFieldsToString": false
-        }
-      }
-    },
-    {
       "id": "av-groupfindings",
       "name": "Group Findings (via Ask Venice)",
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
-        3860,
+        4520,
         760
       ],
       "parameters": {
@@ -1269,7 +1216,7 @@
           "mappingMode": "defineBelow",
           "value": {
             "step": "Group Findings",
-            "body": "={{ { model: 'kimi-k2-6', temperature: 0, max_tokens: 3000, venice_parameters: { disable_thinking: true }, response_format: { type: 'json_schema', json_schema: { name: 'groups', strict: true, schema: {\"type\": \"object\", \"properties\": {\"groups\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"title\": {\"type\": \"string\"}, \"finding_ids\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} }, \"repeat_of_recent\": {\"type\": \"boolean\"}, \"trend_terms\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} } }, \"additionalProperties\": false, \"required\": [\"title\", \"finding_ids\", \"repeat_of_recent\", \"trend_terms\"]} } }, \"additionalProperties\": false, \"required\": [\"groups\"]} } }, messages: [{ role: 'system', content: \"<role>You group social posts that make the same claim, so that each claim is checked only once.</role>\\n\\n<rules>\\n1. Put posts in one group only when they are about the same specific claim or event: the same release, announcement, incident, number or decision. The same broad topic is not enough.\\n2. Every finding id appears in exactly one group. A post with its own claim is a group of one.\\n3. title: a neutral headline of the claim, at most 12 words, no opinion words.\\n4. repeat_of_recent: true only if the group is the same story as one in <recent_stories>; otherwise false.\\n5. trend_terms: copy the terms from <trend_terms> that people would search for this exact story; [] if none fits.\\n</rules>\\n\\n<example>\\n<input>\\n<findings>\\n{\\\"id\\\":\\\"f1\\\",\\\"title\\\":\\\"Example Corp ships agent v5\\\",\\\"summary\\\":\\\"Example Corp released version 5 of its coding agent.\\\",\\\"source\\\":\\\"hacker_news\\\",\\\"angle\\\":\\\"New coding agent releases\\\",\\\"links_to\\\":\\\"https://example.com/blog/v5\\\"}\\n{\\\"id\\\":\\\"f2\\\",\\\"title\\\":\\\"Agent v5 is out, first impressions\\\",\\\"summary\\\":\\\"The author says Example Corp's agent v5 is now available and faster.\\\",\\\"source\\\":\\\"reddit\\\",\\\"angle\\\":\\\"New coding agent releases\\\",\\\"links_to\\\":null}\\n{\\\"id\\\":\\\"f3\\\",\\\"title\\\":\\\"Agents will replace junior devs\\\",\\\"summary\\\":\\\"The author believes coding agents will replace junior developers within two years.\\\",\\\"source\\\":\\\"reddit\\\",\\\"angle\\\":\\\"Agents and developer jobs\\\",\\\"links_to\\\":null}\\n</findings>\\n<recent_stories>[\\\"Example Corp raises prices for its Pro plan\\\"]</recent_stories>\\n<trend_terms>[\\\"example agent v5\\\", \\\"junior developer jobs\\\"]</trend_terms>\\n</input>\\n<output>{\\\"groups\\\":[{\\\"title\\\":\\\"Example Corp releases version 5 of its coding agent\\\",\\\"finding_ids\\\":[\\\"f1\\\",\\\"f2\\\"],\\\"repeat_of_recent\\\":false,\\\"trend_terms\\\":[\\\"example agent v5\\\"]},{\\\"title\\\":\\\"Coding agents will replace junior developers\\\",\\\"finding_ids\\\":[\\\"f3\\\"],\\\"repeat_of_recent\\\":false,\\\"trend_terms\\\":[\\\"junior developer jobs\\\"]}]}</output>\\n</example>\" }, { role: 'user', content: '<findings>\\n' + $json.lines + '\\n</findings>\\n<recent_stories>' + JSON.stringify($json.recent) + '</recent_stories>\\n<trend_terms>' + JSON.stringify($json.trend_terms) + '</trend_terms>' }] } }}"
+            "body": "={{ { model: 'kimi-k2-6', temperature: 0, max_tokens: 3000, venice_parameters: { disable_thinking: true }, response_format: { type: 'json_schema', json_schema: { name: 'groups', strict: true, schema: {\"type\": \"object\", \"properties\": {\"groups\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"title\": {\"type\": \"string\"}, \"finding_ids\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} }, \"repeat_of_recent\": {\"type\": \"boolean\"}, \"trend_terms\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} }, \"impact\": {\"type\": \"integer\"} }, \"additionalProperties\": false, \"required\": [\"title\", \"finding_ids\", \"repeat_of_recent\", \"trend_terms\", \"impact\"]} } }, \"additionalProperties\": false, \"required\": [\"groups\"]} } }, messages: [{ role: 'system', content: \"<role>You group social posts that make the same claim, so that each claim is checked only once.</role>\\n\\n<rules>\\n1. Put posts in one group only when they are about the same specific claim or event: the same release, announcement, incident, number or decision. The same broad topic is not enough.\\n2. Every finding id appears in exactly one group. A post with its own claim is a group of one.\\n3. title: a neutral headline of the claim, at most 12 words, no opinion words.\\n4. repeat_of_recent: true only if the group is the same story as one in <recent_stories>; otherwise false.\\n5. trend_terms: copy the terms from <trend_terms> that people would search for this exact story; [] if none fits.\\n6. impact: an integer from 1 to 10: how much the claim matters for people in general if it is true. 9-10: it affects the safety, health, money, rights or daily life of very many people (a large hack or theft, a major health or science finding, a new law, a service millions use goes down). 6-8: it matters for a whole field or a large group (a major release, a serious vulnerability, a large lawsuit or arrest). 3-5: of interest inside the field (a product update, a small study, a funding round). 1-2: a rumour, an opinion, a joke or self-promotion. Judge the claim itself, not how loud or how many the posts are.\\n</rules>\\n\\n<example>\\n<input>\\n<findings>\\n{\\\"id\\\":\\\"f1\\\",\\\"title\\\":\\\"Example Corp ships agent v5\\\",\\\"summary\\\":\\\"Example Corp released version 5 of its coding agent.\\\",\\\"source\\\":\\\"hacker_news\\\",\\\"angle\\\":\\\"New coding agent releases\\\",\\\"links_to\\\":\\\"https://example.com/blog/v5\\\"}\\n{\\\"id\\\":\\\"f2\\\",\\\"title\\\":\\\"Agent v5 is out, first impressions\\\",\\\"summary\\\":\\\"The author says Example Corp's agent v5 is now available and faster.\\\",\\\"source\\\":\\\"reddit\\\",\\\"angle\\\":\\\"New coding agent releases\\\",\\\"links_to\\\":null}\\n{\\\"id\\\":\\\"f3\\\",\\\"title\\\":\\\"Agents will replace junior devs\\\",\\\"summary\\\":\\\"The author believes coding agents will replace junior developers within two years.\\\",\\\"source\\\":\\\"reddit\\\",\\\"angle\\\":\\\"Agents and developer jobs\\\",\\\"links_to\\\":null}\\n</findings>\\n<recent_stories>[\\\"Example Corp raises prices for its Pro plan\\\"]</recent_stories>\\n<trend_terms>[\\\"example agent v5\\\", \\\"junior developer jobs\\\"]</trend_terms>\\n</input>\\n<output>{\\\"groups\\\":[{\\\"title\\\":\\\"Example Corp releases version 5 of its coding agent\\\",\\\"finding_ids\\\":[\\\"f1\\\",\\\"f2\\\"],\\\"repeat_of_recent\\\":false,\\\"trend_terms\\\":[\\\"example agent v5\\\"],\\\"impact\\\":6},{\\\"title\\\":\\\"Coding agents will replace junior developers\\\",\\\"finding_ids\\\":[\\\"f3\\\"],\\\"repeat_of_recent\\\":false,\\\"trend_terms\\\":[\\\"junior developer jobs\\\"],\\\"impact\\\":2}]}</output>\\n</example>\" }, { role: 'user', content: '<findings>\\n' + $json.lines + '\\n</findings>\\n<recent_stories>' + JSON.stringify($json.recent) + '</recent_stories>\\n<trend_terms>' + JSON.stringify($json.trend_terms) + '</trend_terms>' }] } }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -1303,7 +1250,7 @@
       "type": "n8n-nodes-base.executeWorkflow",
       "typeVersion": 1.2,
       "position": [
-        6520,
+        7180,
         760
       ],
       "parameters": {
@@ -1358,7 +1305,7 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
       "position": [
-        2420,
+        3080,
         760
       ],
       "parameters": {
@@ -1393,7 +1340,7 @@
       "typeVersion": 1.2,
       "onError": "continueRegularOutput",
       "position": [
-        2860,
+        3520,
         960
       ],
       "parameters": {
@@ -1476,7 +1423,7 @@
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
-        2140,
+        2800,
         380
       ],
       "parameters": {
@@ -1492,7 +1439,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2640,
+        3300,
         960
       ],
       "parameters": {
@@ -1500,6 +1447,142 @@
         "language": "javaScript",
         "jsCode": "// Why Code: picks the posts of the question's own angles from all kept posts, for \"Answer Question\".\nconst s = $('Store Settings').first().json;\nconst q = [].concat(s.questions || [])[0];\nconst k = $('Split Angles').all().map(i => i.json).find(x => x.keyword === q) || { angles: [] };\nconst mine = new Set((k.angles || []).map(a => a.angle));\nconst posts = $('Read Kept Findings (Airtable Findings)').all().flatMap(i => i.json.records || []).map(r => r.fields || {})\n  .filter(f => mine.has(f.angle)).slice(0, 12)\n  .map(f => ({ source: f.source || '', url: f.url || '', title: String(f.title || '').slice(0, 300), summary: String(f.summary || '').slice(0, 500), linked_url: f.linked_url || '', published_at: f.published_at || '' }));\nreturn [{ json: { run_id: s.run_id, question: q, mode: s.mode, window_days: s.window_days, posts } }];"
       }
+    },
+    {
+      "id": "cc-build-plan-requests",
+      "name": "Build Plan Requests",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: one item per keyword with its saved search plan (sent by \"WF1\" from Airtable Keywords); only keywords without one are planned now.\nconst s = $('Store Settings').first().json;\nlet plans = s.plans || {};\nif (typeof plans === 'string') { try { plans = JSON.parse(plans); } catch (e) { plans = {}; } }\nconst read = (p) => { try { const a = typeof p === 'string' ? JSON.parse(p) : p; return Array.isArray(a) ? a.filter(x => x && x.search_phrase) : []; } catch (e) { return []; } };\nconst questions = [].concat(s.questions || []);\nreturn [].concat(s.keywords || []).map(keyword => { const angles = read(plans[keyword]);\n  return { json: { keyword, is_question: questions.includes(keyword), angles, has_plan: angles.length > 0 } }; });"
+      }
+    },
+    {
+      "id": "cc-has-saved-plan",
+      "name": "Has Saved Plan?",
+      "notesInFlow": true,
+      "notes": "true: use the saved plan. false: write one now.",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        940,
+        760
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "6b1f0c52-3c1e-4b8e-9d0a-2f7c1e5a9b11",
+              "leftValue": "={{ $json.has_plan }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "cc-plan-topic-call",
+      "name": "Plan Topic (via Plan Topic)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1160,
+        960
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "7l2AxDhUWQpRQqC3",
+          "cachedResultName": "Claim Checks | Plan Topic"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "keyword": "={{ $json.keyword }}",
+            "is_question": "={{ $json.is_question }}",
+            "current_plan": "",
+            "caught": "={{ [] }}"
+          },
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "schema": [
+            {
+              "id": "keyword",
+              "displayName": "keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "is_question",
+              "displayName": "is_question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean"
+            },
+            {
+              "id": "current_plan",
+              "displayName": "current_plan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "caught",
+              "displayName": "caught",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cc-merge-plans",
+      "name": "Merge Plans",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1380,
+        760
+      ],
+      "parameters": {}
     }
   ],
   "connections": {
@@ -1869,28 +1952,6 @@
         ]
       ]
     },
-    "Create Run Row (Airtable Runs)": {
-      "main": [
-        [
-          {
-            "node": "Plan Angles (via Ask Venice)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Plan Angles (via Ask Venice)": {
-      "main": [
-        [
-          {
-            "node": "Split Angles",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
     "Build Grouping Input": {
       "main": [
         [
@@ -2002,6 +2063,68 @@
         [
           {
             "node": "Read Recent Claims (Airtable Clusters)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Run Row (Airtable Runs)": {
+      "main": [
+        [
+          {
+            "node": "Build Plan Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Plan Requests": {
+      "main": [
+        [
+          {
+            "node": "Has Saved Plan?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Saved Plan?": {
+      "main": [
+        [
+          {
+            "node": "Merge Plans",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Plan Topic (via Plan Topic)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Topic (via Plan Topic)": {
+      "main": [
+        [
+          {
+            "node": "Merge Plans",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Plans": {
+      "main": [
+        [
+          {
+            "node": "Split Angles",
             "type": "main",
             "index": 0
           }

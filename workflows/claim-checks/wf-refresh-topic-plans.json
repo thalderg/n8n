@@ -1,0 +1,540 @@
+{
+  "id": "xE85IM6zoJIj27SV",
+  "name": "Claim Checks | Refresh Topic Plans",
+  "nodes": [
+    {
+      "id": "rp-sched",
+      "name": "Run Every Monday At 06:15",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        60,
+        760
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 6,
+              "triggerAtMinute": 15
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "rp-manual",
+      "name": "Run Now By Hand",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        60,
+        960
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "rp-settings",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        300,
+        860
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "rp-a1",
+              "name": "airtable_base",
+              "type": "string",
+              "value": "YOUR_AIRTABLE_BASE_ID"
+            },
+            {
+              "id": "rp-a2",
+              "name": "keywords_table",
+              "type": "string",
+              "value": "YOUR_AIRTABLE_KEYWORDS_TABLE_ID"
+            },
+            {
+              "id": "rp-a3",
+              "name": "findings_table",
+              "type": "string",
+              "value": "YOUR_AIRTABLE_FINDINGS_TABLE_ID"
+            },
+            {
+              "id": "rp-a4",
+              "name": "chat_id",
+              "type": "string",
+              "value": "YOUR_TELEGRAM_CHAT_ID"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "rp-topics",
+      "name": "Read Topics (Airtable Keywords)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        860
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.airtable.com/v0/{{ $json.airtable_base }}/{{ $json.keywords_table }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "pageSize",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "rp-posts",
+      "name": "Read Last Week Posts (Airtable Findings)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "position": [
+        740,
+        860
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.airtable.com/v0/{{ $('Store Settings').first().json.airtable_base }}/{{ $('Store Settings').first().json.findings_table }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "filterByFormula",
+              "value": "AND({kept}, IS_AFTER(CREATED_TIME(), DATEADD(NOW(), -7, 'days')))"
+            },
+            {
+              "name": "fields[]",
+              "value": "angle"
+            },
+            {
+              "name": "fields[]",
+              "value": "title"
+            },
+            {
+              "name": "pageSize",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000,
+          "pagination": {
+            "pagination": {
+              "paginationMode": "updateAParameterInEachRequest",
+              "parameters": {
+                "parameters": [
+                  {
+                    "type": "qs",
+                    "name": "offset",
+                    "value": "={{ $response.body.offset }}"
+                  }
+                ]
+              },
+              "paginationCompleteWhen": "other",
+              "completeExpression": "={{ !$response.body.offset }}",
+              "limitPagesFetched": true,
+              "maxRequests": 20
+            }
+          }
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "rp-requests",
+      "name": "Build Refresh Requests",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        860
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: one refresh request per topic: its current plan and the titles of last week's posts its angles caught. Topics that are on are refreshed; a topic that is off is planned only when it has no plan yet, so \"on\" can start it at once.\nconst rows = $('Read Topics (Airtable Keywords)').all().flatMap(i => i.json.records || []).filter(r => r.fields.keyword && r.fields.mode)\n  .sort((a, b) => String(a.createdTime).localeCompare(String(b.createdTime)));\nconst posts = $input.all().flatMap(i => i.json.records || []).map(r => r.fields);\nconst namesOf = (p) => { try { return (JSON.parse(p || '[]') || []).map(a => a.angle).filter(Boolean); } catch (e) { return []; } };\nconst isQuestion = (k) => /^\\s*(what|why|how|which|who|whom|whose|when|where|is|are|was|were|does|do|did|can|could|should|will|would)\\b/i.test(k) || /\\?\\s*$/.test(k);\nconst count = {}, out = [];\nfor (const r of rows) {\n  // The same numbers as list ds / list ws: all rows of that kind, on and off, by creation date.\n  const kind = r.fields.mode === '7days' ? 'ws' : 'ds';\n  count[kind] = (count[kind] || 0) + 1;\n  const names = namesOf(r.fields.plan), mine = new Set(names), on = r.fields.active === true;\n  // The wide angle's posts first: they hold what the narrower angles missed.\n  const caught = [...new Set(posts.filter(p => mine.has(p.angle))\n    .sort((a, b) => Number(/^all news on/i.test(b.angle)) - Number(/^all news on/i.test(a.angle))).filter(p => p.title).map(p => `${p.angle}: ${p.title}`))].slice(0, 80); // each post with the angle that found it\n  if (names.length && (!on || !caught.length)) continue; // off with a plan, or nothing caught: the plan stays as it is\n  out.push({ json: { record_id: r.id, keyword: r.fields.keyword, is_question: isQuestion(r.fields.keyword), current_plan: names.length ? r.fields.plan : '',\n    caught, label: `${kind} ${count[kind]}`, on } });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "rp-plan",
+      "name": "Refresh Plan (via Plan Topic)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1180,
+        860
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "7l2AxDhUWQpRQqC3",
+          "cachedResultName": "Claim Checks | Plan Topic"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "keyword": "={{ $json.keyword }}",
+            "is_question": "={{ $json.is_question }}",
+            "current_plan": "={{ $json.current_plan }}",
+            "caught": "={{ $json.caught }}"
+          },
+          "matchingColumns": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "schema": [
+            {
+              "id": "keyword",
+              "displayName": "keyword",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "is_question",
+              "displayName": "is_question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "boolean"
+            },
+            {
+              "id": "current_plan",
+              "displayName": "current_plan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "caught",
+              "displayName": "caught",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "array"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "rp-updates",
+      "name": "Build Plan Updates",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        860
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: pairs each new plan with its topic, keeps only the plans that passed the check, and writes the one Telegram report of what changed.\nconst reqs = $('Build Refresh Requests').all().map(i => i.json);\nconst now = new Date().toISOString();\nconst records = [], lines = [];\n$input.all().forEach((it, idx) => {\n  const p = it.json || {}, q = reqs[(it.pairedItem && typeof it.pairedItem.item === 'number') ? it.pairedItem.item : idx] || {};\n  const head = `${q.label}${q.on ? '' : ' (off)'} \"${q.keyword}\"`;\n  if (p.ok !== true) { lines.push(`⚠️ ${head}: not refreshed, the old plan stays (${String(p.reason || (p.error && p.error.message) || p.error || 'no answer').slice(0, 120)})`); return; }\n  records.push({ id: q.record_id, fields: { plan: JSON.stringify(p.angles), plan_updated: now } });\n  const added = p.added || [], removed = p.removed || [];\n  if (!q.current_plan) lines.push(`🆕 ${head}: first plan: ${p.angles.map(a => a.angle).join('; ')}`);\n  else if (!added.length && !removed.length) lines.push(`= ${head}: same angles (word lists refreshed)`);\n  else lines.push(`🔄 ${head}: ` + [added.length ? '+ ' + added.join('; ') : '', removed.length ? '− ' + removed.join('; ') : ''].filter(Boolean).join(' | '));\n});\nconst text = ['Claim Checks · search plans refreshed', ...lines, '', 'Each topic\\'s angles: list ds / list ws'].join('\\n').slice(0, 4000);\nconst out = [];\nfor (let i = 0; i < records.length; i += 10) out.push({ json: { records: records.slice(i, i + 10), text } });\nreturn out.length ? out : [{ json: { records: [], text } }];"
+      }
+    },
+    {
+      "id": "rp-has",
+      "name": "Has Plans To Save?",
+      "notesInFlow": true,
+      "notes": "true: save the new plans. false: only report.",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1620,
+        860
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "rp-c1",
+              "leftValue": "={{ $json.records.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "rp-save",
+      "name": "Save Plans (Airtable Keywords)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "onError": "continueRegularOutput",
+      "position": [
+        1840,
+        760
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.airtable.com/v0/{{ $('Store Settings').first().json.airtable_base }}/{{ $('Store Settings').first().json.keywords_table }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "airtableTokenApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ records: $json.records, typecast: true }) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Airtable"
+        }
+      }
+    },
+    {
+      "id": "rp-send",
+      "name": "Send Plan Report",
+      "webhookId": "3f6a9c2e-7b41-4d8e-a5c0-9e1d2b7f4a63",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "executeOnce": true,
+      "position": [
+        2060,
+        860
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Store Settings').first().json.chat_id }}",
+        "text": "={{ $('Build Plan Updates').first().json.text + ($('Save Plans (Airtable Keywords)').isExecuted && $('Save Plans (Airtable Keywords)').all().some(i => i.json.error) ? '\\n\\n⚠️ Saving to Airtable failed: the old plans stay. Run Refresh Topic Plans again by hand.' : '') }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Claim Checks"
+        }
+      }
+    },
+    {
+      "id": "rp-title",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "content": "# Claim Checks | Refresh Topic Plans\n\nKeeps the search plan of every daily and weekly topic up to date, by itself. Each topic (a row of Airtable Keywords) keeps its plan in the column plan: 6 search angles, the first the wide angle \"All news on <topic>\". The daily and weekly runs use these saved plans instead of planning every day.\n\n**Started by:** its own schedule, every Monday at 06:15 (before the 07:00 runs), or by hand (Run Now By Hand) to write the first plans. Publish it on production only; the base is shared with the local copy.\n**What changes:** every topic that is on gets its plan refreshed by \"Plan Topic\" from its current angles and the titles of last week's posts they caught (the wide angle's first): angles are kept, dropped or added. A topic that is off gets a plan only when it has none. A topic whose angles caught nothing keeps its plan. A plan that fails the check is not saved; the old one stays.\n**Report:** one Telegram message (Claim Checks bot, main chat) with what changed per topic; none when no topic needed a refresh.\n**Alerts:** a failure goes to the central error handler (main chat). **Services called:** Airtable (Keywords, Findings) · \"Plan Topic\" · Telegram (Claim Checks bot).",
+        "width": 2280,
+        "height": 360,
+        "color": 5
+      }
+    },
+    {
+      "id": "rp-main",
+      "name": "Main Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        440
+      ],
+      "parameters": {
+        "content": "## Refresh The Plans\n\nTriggered by: Run Every Monday At 06:15, or Run Now By Hand.\n\nWhat it does, step by step:\n1. Store Settings: the base, the tables, the chat for the report.\n2. Read Topics (Airtable Keywords) reads every topic; Read Last Week Posts (Airtable Findings) reads the kept posts of the last 7 days (angle and title).\n3. Build Refresh Requests: one request per topic to refresh, numbered like list ds / list ws, with its current plan and the posts its angles caught.\n4. Refresh Plan (via Plan Topic), once per topic; a failure stays on its own topic.\n5. Build Plan Updates keeps the plans that passed the check and writes the report; Has Plans To Save? → Save Plans (Airtable Keywords): plan and plan_updated.\n6. Send Plan Report (Telegram): what changed, per topic.",
+        "width": 2280,
+        "height": 680,
+        "color": 4
+      }
+    }
+  ],
+  "connections": {
+    "Run Every Monday At 06:15": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Now By Hand": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Read Topics (Airtable Keywords)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Topics (Airtable Keywords)": {
+      "main": [
+        [
+          {
+            "node": "Read Last Week Posts (Airtable Findings)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Last Week Posts (Airtable Findings)": {
+      "main": [
+        [
+          {
+            "node": "Build Refresh Requests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Refresh Requests": {
+      "main": [
+        [
+          {
+            "node": "Refresh Plan (via Plan Topic)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Refresh Plan (via Plan Topic)": {
+      "main": [
+        [
+          {
+            "node": "Build Plan Updates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Plan Updates": {
+      "main": [
+        [
+          {
+            "node": "Has Plans To Save?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Plans To Save?": {
+      "main": [
+        [
+          {
+            "node": "Save Plans (Airtable Keywords)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Plan Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Plans (Airtable Keywords)": {
+      "main": [
+        [
+          {
+            "node": "Send Plan Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "YOUR_ERROR_WORKFLOW_ID",
+    "timezone": "Europe/Rome",
+    "executionOrder": "v1"
+  },
+  "active": false
+}

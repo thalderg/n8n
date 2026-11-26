@@ -1,0 +1,351 @@
+{
+  "id": "7l2AxDhUWQpRQqC3",
+  "name": "Claim Checks | Plan Topic",
+  "nodes": [
+    {
+      "id": "f5f783d1-5364-4028-b612-a71286a8b072",
+      "name": "When Called By Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        60,
+        760
+      ],
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "keyword"
+            },
+            {
+              "name": "is_question",
+              "type": "boolean"
+            },
+            {
+              "name": "current_plan"
+            },
+            {
+              "name": "caught",
+              "type": "array"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "86fc0410-d47a-498a-8bd3-0b3b0e7bff4f",
+      "name": "Store Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        380,
+        760
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "options": {},
+        "assignments": {
+          "assignments": [
+            {
+              "id": "cc742a91-75f6-4cc3-a8ac-cbc79fe37df8",
+              "name": "angles",
+              "type": "number",
+              "value": 6
+            },
+            {
+              "id": "b6b9302f-fc80-403c-b3cf-3711455e24ab",
+              "name": "min_angles",
+              "type": "number",
+              "value": 4
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "063311cf-9471-469c-a667-277eb84d1335",
+      "name": "Write Plan (via Ask Venice)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        760
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RzRuzMVi64lHyHwy",
+          "cachedResultName": "Claim Checks | Ask Venice"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "step": "Write Plan",
+            "body": "={{ { model: 'kimi-k2-6', temperature: 0, max_tokens: 2500, venice_parameters: { disable_thinking: true }, response_format: { type: 'json_schema', json_schema: { name: 'topic_plan', strict: true, schema: {\"type\": \"object\", \"properties\": {\"angles\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"angle\": {\"type\": \"string\"}, \"search_phrase\": {\"type\": \"string\"}, \"trends_term\": {\"type\": \"string\"}, \"word_groups\": {\"type\": \"array\", \"items\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} } } }, \"required\": [\"angle\", \"search_phrase\", \"trends_term\", \"word_groups\"], \"additionalProperties\": false} } }, \"required\": [\"angles\"], \"additionalProperties\": false} } }, messages: [{ role: 'system', content: \"<role>You plan the searches for ONE topic of a claim-checking report: a few search angles that together cover what people are discussing about it.</role>\\n\\n<rules>\\n1. Return exactly the number of angles in <angles>. Only a topic too narrow for that many different angles gets fewer, never fewer than 4.\\n2. The first angle is the wide angle: angle \\\"All news on <topic>\\\", with word_groups that cover everything the topic means, so a post the narrower angles miss is still found.\\n3. angle: a short name for the sub-topic, 3-6 words.\\n4. search_phrase: 2-5 plain words that would find posts about the angle. No quotes, no operators.\\n5. Prefer concrete angles (a product, a release, a company, an event, a rule) over vague ones (\\\"the future of AI\\\").\\n6. trends_term: 1-2 everyday words many people type into Google about the angle (for example: drug discovery, crypto hack).\\n7. word_groups: 2 or 3 groups of 4-16 words or short phrases, written the way people write them in posts: nouns, abbreviations, well-known names in the field. A post is found when it contains one item from EVERY group, so each group is ONE idea in many wordings, for example the subject (crypto, DeFi, exchange, protocol, bridge, wallet, token) and the event (hack, hacks, hacked, hacker, hackers, exploit, exploited, drained, stolen, breach, attacker, attackers, attack, attacks, backdoor, backdoored, malware, compromised). Write every word form as its own item, because X matches whole words only. Never put the same idea in two groups. No operators, no quotes, no hashtags.\\n8. When <is_question> is true, the topic is a question: the wide angle covers its subject (the event, product, project or body it names); the other angles name the kinds of answer (for example: submitted projects, demos, launches, winners, finalists).\\n9. When <current_angles> and <caught> are given, this is the weekly refresh. <caught> lists the posts the searches kept for this topic in the last 7 days, each with the angle that found it. Keep every current angle that found posts, with its name unchanged. Replace a narrow angle that found nothing. Add an angle for a sub-topic that appears in several caught posts and that no narrow angle covers (often posts found only by the wide angle). Never drop the wide angle.\\n</rules>\\n\\n<example>\\n<input>\\n<topic>AI coding agents</topic>\\n<angles>4</angles>\\n<is_question>false</is_question>\\n</input>\\n<output>{\\\"angles\\\":[{\\\"angle\\\":\\\"All news on AI coding agents\\\",\\\"search_phrase\\\":\\\"AI coding agent\\\",\\\"trends_term\\\":\\\"coding agent\\\",\\\"word_groups\\\":[[\\\"AI\\\",\\\"LLM\\\",\\\"Claude\\\",\\\"GPT\\\",\\\"Codex\\\",\\\"Copilot\\\",\\\"Cursor\\\"],[\\\"coding agent\\\",\\\"coding agents\\\",\\\"coding assistant\\\",\\\"code agent\\\",\\\"agentic coding\\\",\\\"AI coding\\\",\\\"writes code\\\"]]},{\\\"angle\\\":\\\"New coding agent releases\\\",\\\"search_phrase\\\":\\\"coding agent release\\\",\\\"trends_term\\\":\\\"coding agent\\\",\\\"word_groups\\\":[[\\\"coding agent\\\",\\\"coding assistant\\\",\\\"Copilot\\\",\\\"Cursor\\\",\\\"Codex\\\",\\\"Claude Code\\\"],[\\\"release\\\",\\\"released\\\",\\\"launch\\\",\\\"launched\\\",\\\"announces\\\",\\\"announced\\\",\\\"new version\\\",\\\"update\\\"]]},{\\\"angle\\\":\\\"Agent pricing and usage limits\\\",\\\"search_phrase\\\":\\\"coding agent pricing limits\\\",\\\"trends_term\\\":\\\"AI pricing\\\",\\\"word_groups\\\":[[\\\"coding agent\\\",\\\"Copilot\\\",\\\"Cursor\\\",\\\"Codex\\\",\\\"Claude Code\\\"],[\\\"price\\\",\\\"prices\\\",\\\"pricing\\\",\\\"cost\\\",\\\"costs\\\",\\\"subscription\\\",\\\"rate limit\\\",\\\"usage limit\\\",\\\"quota\\\"]]},{\\\"angle\\\":\\\"Agent security incidents\\\",\\\"search_phrase\\\":\\\"coding agent security\\\",\\\"trends_term\\\":\\\"AI security\\\",\\\"word_groups\\\":[[\\\"coding agent\\\",\\\"Copilot\\\",\\\"Cursor\\\",\\\"Codex\\\",\\\"Claude Code\\\",\\\"MCP\\\"],[\\\"vulnerability\\\",\\\"vulnerabilities\\\",\\\"backdoor\\\",\\\"backdoored\\\",\\\"prompt injection\\\",\\\"leak\\\",\\\"leaked\\\",\\\"malware\\\",\\\"exploit\\\",\\\"exploited\\\"]]}]}</output>\\n</example>\" }, { role: 'user', content: '<topic>' + $('When Called By Workflow').first().json.keyword + '</topic>\\n<angles>' + $('Store Settings').first().json.angles + '</angles>\\n<is_question>' + ($('When Called By Workflow').first().json.is_question === true) + '</is_question>' + (($('When Called By Workflow').first().json.current_plan || '') ? '\\n<current_angles>' + JSON.stringify((JSON.parse($('When Called By Workflow').first().json.current_plan || '[]') || []).map(a => a.angle)) + '</current_angles>\\n<caught>' + JSON.stringify([].concat($('When Called By Workflow').first().json.caught || []).slice(0, 80)) + '</caught>' : '') }] } }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "7ae13685-d2f1-46e8-a345-28293680d7d0",
+      "name": "Check Plan",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1040,
+        760
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: the fixed check every plan must pass before any search uses it (the model alone dropped whole topics on 22, 25 and 26 Nov).\nconst s = $('Store Settings').first().json;\nconst inp = $('When Called By Workflow').first().json;\nconst out = $input.first().json.output || {};\nconst words = (g) => [...new Set([].concat(g || []).map(w => String(w).replace(/[\"()#]/g, '').trim()).filter(w => w.length >= 2))]; // one letter (B, M) matches almost any post\nlet angles = [].concat(out.angles || []).map(a => ({ keyword: inp.keyword, angle: String(a.angle || '').trim(), search_phrase: String(a.search_phrase || '').trim(),\n  trends_term: String(a.trends_term || '').trim(), word_groups: [].concat(a.word_groups || []).map(words).filter(g => g.length >= 2).slice(0, 3) }))\n  .filter(a => a.angle && a.search_phrase && a.word_groups.length >= 2);\nconst wide = angles.find(a => /^all news on/i.test(a.angle));\nif (wide) angles = [wide, ...angles.filter(a => a !== wide)];\nangles = angles.slice(0, s.angles);\nconst ok = !!wide && angles.length >= s.min_angles;\nconst reason = ok ? '' : !wide ? 'no wide angle (\"All news on ...\")' : `only ${angles.length} usable angles (at least ${s.min_angles} needed)`;\nlet old = []; try { old = (JSON.parse(inp.current_plan || '[]') || []).map(a => a.angle); } catch (e) { old = []; }\nconst now = angles.map(a => a.angle);\nreturn [{ json: { ok, keyword: inp.keyword, reason, angles: ok ? angles : [],\n  added: ok ? now.filter(x => !old.includes(x)) : [], removed: ok && old.length ? old.filter(x => !now.includes(x)) : [] } }];"
+      }
+    },
+    {
+      "id": "672b1359-a3b1-4d9e-8181-4f4bb658c9ce",
+      "name": "Title Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "width": 1880,
+        "height": 340,
+        "color": 5,
+        "content": "# Claim Checks | Plan Topic\n\nWrites the search plan of ONE topic: 6 angles (the first is always the wide angle \"All news on <topic>\"), each with 2-3 word lists in every word form. A fixed check in code decides whether the plan can be used.\n\n**Called by:** \"Manage Topics\" (add or update a topic), \"Refresh Topic Plans\" (Mondays, with last week's posts) and \"WF3\" (a topic with no saved plan, such as a bot search). The caller waits and gets `ok`, the angles, the reason when the check fails, and what was added or removed.\n**Alerts:** none here; the caller keeps the last good plan (or a plain wide angle) and reports the failure.\nstructure-ok: no error workflow on purpose, like the other run steps.\n**Services called:** Venice (Kimi K2.6; GPT-6 Luna for the second try) via \"Ask Venice\"."
+      }
+    },
+    {
+      "id": "e3e26484-5dff-4118-8b8a-c692c7ebbaf9",
+      "name": "Plan Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        400
+      ],
+      "parameters": {
+        "width": 1880,
+        "height": 760,
+        "color": 4,
+        "content": "## Write And Check The Plan\n\nTriggered by: the caller (When Called By Workflow), with the topic, whether it is a question, and (weekly refresh) its current plan and the posts it caught.\n\n1. Store Settings: 6 angles wanted, at least 4 to pass.\n2. Write Plan (via Ask Venice, Kimi K2.6): the angles, or on the weekly refresh the updated angles (keep the ones that found posts, replace the ones that found nothing, add one for a sub-topic seen often).\n3. Check Plan: wide angle present and first, each angle with a phrase and 2-3 word lists, at least 4 angles. Returns ok, the angles, the reason if not ok, and the angles added and removed.\n4. Plan Passed? true → the plan goes back to the caller. false (e.g. Kimi sent one broken angle on 26 Nov) → Write Plan Again (via Ask Venice, backup model GPT-6 Luna) → Check Plan Again (the same check); its result goes back, ok or not."
+      }
+    },
+    {
+      "id": "pt-passed",
+      "name": "Plan Passed?",
+      "notesInFlow": true,
+      "notes": "true: return it. false: one more try, backup model.",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1260,
+        760
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "pt-c1",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "pt-write-again",
+      "name": "Write Plan Again (via Ask Venice)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        1480,
+        960
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "RzRuzMVi64lHyHwy",
+          "cachedResultName": "Claim Checks | Ask Venice"
+        },
+        "mode": "each",
+        "options": {
+          "waitForSubWorkflow": true
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "step": "Write Plan Again",
+            "body": "={{ { model: 'openai-gpt-6-luna', temperature: 0, max_tokens: 2500, venice_parameters: { disable_thinking: true }, response_format: { type: 'json_schema', json_schema: { name: 'topic_plan', strict: true, schema: {\"type\": \"object\", \"properties\": {\"angles\": {\"type\": \"array\", \"items\": {\"type\": \"object\", \"properties\": {\"angle\": {\"type\": \"string\"}, \"search_phrase\": {\"type\": \"string\"}, \"trends_term\": {\"type\": \"string\"}, \"word_groups\": {\"type\": \"array\", \"items\": {\"type\": \"array\", \"items\": {\"type\": \"string\"} } } }, \"required\": [\"angle\", \"search_phrase\", \"trends_term\", \"word_groups\"], \"additionalProperties\": false} } }, \"required\": [\"angles\"], \"additionalProperties\": false} } }, messages: [{ role: 'system', content: \"<role>You plan the searches for ONE topic of a claim-checking report: a few search angles that together cover what people are discussing about it.</role>\\n\\n<rules>\\n1. Return exactly the number of angles in <angles>. Only a topic too narrow for that many different angles gets fewer, never fewer than 4.\\n2. The first angle is the wide angle: angle \\\"All news on <topic>\\\", with word_groups that cover everything the topic means, so a post the narrower angles miss is still found.\\n3. angle: a short name for the sub-topic, 3-6 words.\\n4. search_phrase: 2-5 plain words that would find posts about the angle. No quotes, no operators.\\n5. Prefer concrete angles (a product, a release, a company, an event, a rule) over vague ones (\\\"the future of AI\\\").\\n6. trends_term: 1-2 everyday words many people type into Google about the angle (for example: drug discovery, crypto hack).\\n7. word_groups: 2 or 3 groups of 4-16 words or short phrases, written the way people write them in posts: nouns, abbreviations, well-known names in the field. A post is found when it contains one item from EVERY group, so each group is ONE idea in many wordings, for example the subject (crypto, DeFi, exchange, protocol, bridge, wallet, token) and the event (hack, hacks, hacked, hacker, hackers, exploit, exploited, drained, stolen, breach, attacker, attackers, attack, attacks, backdoor, backdoored, malware, compromised). Write every word form as its own item, because X matches whole words only. Never put the same idea in two groups. No operators, no quotes, no hashtags.\\n8. When <is_question> is true, the topic is a question: the wide angle covers its subject (the event, product, project or body it names); the other angles name the kinds of answer (for example: submitted projects, demos, launches, winners, finalists).\\n9. When <current_angles> and <caught> are given, this is the weekly refresh. <caught> lists the posts the searches kept for this topic in the last 7 days, each with the angle that found it. Keep every current angle that found posts, with its name unchanged. Replace a narrow angle that found nothing. Add an angle for a sub-topic that appears in several caught posts and that no narrow angle covers (often posts found only by the wide angle). Never drop the wide angle.\\n</rules>\\n\\n<example>\\n<input>\\n<topic>AI coding agents</topic>\\n<angles>4</angles>\\n<is_question>false</is_question>\\n</input>\\n<output>{\\\"angles\\\":[{\\\"angle\\\":\\\"All news on AI coding agents\\\",\\\"search_phrase\\\":\\\"AI coding agent\\\",\\\"trends_term\\\":\\\"coding agent\\\",\\\"word_groups\\\":[[\\\"AI\\\",\\\"LLM\\\",\\\"Claude\\\",\\\"GPT\\\",\\\"Codex\\\",\\\"Copilot\\\",\\\"Cursor\\\"],[\\\"coding agent\\\",\\\"coding agents\\\",\\\"coding assistant\\\",\\\"code agent\\\",\\\"agentic coding\\\",\\\"AI coding\\\",\\\"writes code\\\"]]},{\\\"angle\\\":\\\"New coding agent releases\\\",\\\"search_phrase\\\":\\\"coding agent release\\\",\\\"trends_term\\\":\\\"coding agent\\\",\\\"word_groups\\\":[[\\\"coding agent\\\",\\\"coding assistant\\\",\\\"Copilot\\\",\\\"Cursor\\\",\\\"Codex\\\",\\\"Claude Code\\\"],[\\\"release\\\",\\\"released\\\",\\\"launch\\\",\\\"launched\\\",\\\"announces\\\",\\\"announced\\\",\\\"new version\\\",\\\"update\\\"]]},{\\\"angle\\\":\\\"Agent pricing and usage limits\\\",\\\"search_phrase\\\":\\\"coding agent pricing limits\\\",\\\"trends_term\\\":\\\"AI pricing\\\",\\\"word_groups\\\":[[\\\"coding agent\\\",\\\"Copilot\\\",\\\"Cursor\\\",\\\"Codex\\\",\\\"Claude Code\\\"],[\\\"price\\\",\\\"prices\\\",\\\"pricing\\\",\\\"cost\\\",\\\"costs\\\",\\\"subscription\\\",\\\"rate limit\\\",\\\"usage limit\\\",\\\"quota\\\"]]},{\\\"angle\\\":\\\"Agent security incidents\\\",\\\"search_phrase\\\":\\\"coding agent security\\\",\\\"trends_term\\\":\\\"AI security\\\",\\\"word_groups\\\":[[\\\"coding agent\\\",\\\"Copilot\\\",\\\"Cursor\\\",\\\"Codex\\\",\\\"Claude Code\\\",\\\"MCP\\\"],[\\\"vulnerability\\\",\\\"vulnerabilities\\\",\\\"backdoor\\\",\\\"backdoored\\\",\\\"prompt injection\\\",\\\"leak\\\",\\\"leaked\\\",\\\"malware\\\",\\\"exploit\\\",\\\"exploited\\\"]]}]}</output>\\n</example>\" }, { role: 'user', content: '<topic>' + $('When Called By Workflow').first().json.keyword + '</topic>\\n<angles>' + $('Store Settings').first().json.angles + '</angles>\\n<is_question>' + ($('When Called By Workflow').first().json.is_question === true) + '</is_question>' + (($('When Called By Workflow').first().json.current_plan || '') ? '\\n<current_angles>' + JSON.stringify((JSON.parse($('When Called By Workflow').first().json.current_plan || '[]') || []).map(a => a.angle)) + '</current_angles>\\n<caught>' + JSON.stringify([].concat($('When Called By Workflow').first().json.caught || []).slice(0, 80)) + '</caught>' : '') }] } }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "step",
+              "displayName": "step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string"
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "object"
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      }
+    },
+    {
+      "id": "pt-check-again",
+      "name": "Check Plan Again",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        960
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "// Why Code: the same fixed check as Check Plan, on the backup model's plan. The fixed check every plan must pass before any search uses it (the model alone dropped whole topics on 22, 25 and 26 Nov).\nconst s = $('Store Settings').first().json;\nconst inp = $('When Called By Workflow').first().json;\nconst out = $input.first().json.output || {};\nconst words = (g) => [...new Set([].concat(g || []).map(w => String(w).replace(/[\"()#]/g, '').trim()).filter(w => w.length >= 2))]; // one letter (B, M) matches almost any post\nlet angles = [].concat(out.angles || []).map(a => ({ keyword: inp.keyword, angle: String(a.angle || '').trim(), search_phrase: String(a.search_phrase || '').trim(),\n  trends_term: String(a.trends_term || '').trim(), word_groups: [].concat(a.word_groups || []).map(words).filter(g => g.length >= 2).slice(0, 3) }))\n  .filter(a => a.angle && a.search_phrase && a.word_groups.length >= 2);\nconst wide = angles.find(a => /^all news on/i.test(a.angle));\nif (wide) angles = [wide, ...angles.filter(a => a !== wide)];\nangles = angles.slice(0, s.angles);\nconst ok = !!wide && angles.length >= s.min_angles;\nconst reason = ok ? '' : !wide ? 'no wide angle (\"All news on ...\")' : `only ${angles.length} usable angles (at least ${s.min_angles} needed)`;\nlet old = []; try { old = (JSON.parse(inp.current_plan || '[]') || []).map(a => a.angle); } catch (e) { old = []; }\nconst now = angles.map(a => a.angle);\nreturn [{ json: { ok, keyword: inp.keyword, reason, angles: ok ? angles : [],\n  added: ok ? now.filter(x => !old.includes(x)) : [], removed: ok && old.length ? old.filter(x => !now.includes(x)) : [] } }];"
+      }
+    }
+  ],
+  "connections": {
+    "When Called By Workflow": {
+      "main": [
+        [
+          {
+            "node": "Store Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Settings": {
+      "main": [
+        [
+          {
+            "node": "Write Plan (via Ask Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Plan (via Ask Venice)": {
+      "main": [
+        [
+          {
+            "node": "Check Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Plan": {
+      "main": [
+        [
+          {
+            "node": "Plan Passed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Plan Passed?": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Write Plan Again (via Ask Venice)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Plan Again (via Ask Venice)": {
+      "main": [
+        [
+          {
+            "node": "Check Plan Again",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "errorWorkflow": "",
+    "timezone": "Europe/Rome",
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "ccResearchPipe01,pKSN3PgpfSGos2eL,xE85IM6zoJIj27SV"
+  },
+  "active": false
+}
